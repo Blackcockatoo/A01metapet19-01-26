@@ -1,0 +1,2280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>B$S • Master Switchboard Ultimate - Complete Astrological Analysis Suite</title>
+<style>
+  :root{
+    --bg:#0b0d10; --panel:#12151a; --ink:#e9eef7; --muted:#9aa7b8;
+    --bss-blue:#29b0ff; --bss-red:#ff3b5c; --bss-gold:#f0c34e;
+    --ring:#1c222b; --prime:#89ffa3; --match:#ffd166; --accent:#7cc7ff;
+    --retrograde:#ff6b6b; --event:#ff9f43; --cycle:#26de81;
+  }
+  html,body{height:100%}
+  body{
+    margin:0; background: radial-gradient(1200px 800px at 50% 0%, #0f141b 0%, var(--bg) 60%),
+                           radial-gradient(800px 600px at 50% 100%, #0f141b 0%, var(--bg) 70%);
+    color:var(--ink);
+    font:500 16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+  }
+  .wrap{display:grid; grid-template-rows:auto 1fr auto; min-height:100%}
+  header{padding:10px 12px 6px; display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap}
+  .brand{display:flex; align-items:center; gap:10px; text-transform:uppercase; letter-spacing:.12em; font-weight:800}
+  .brand .snake{width:28px; height:28px; border-radius:50%;
+    background: conic-gradient(from 220deg, var(--bss-blue), var(--bss-gold), var(--bss-red), var(--bss-blue));
+    box-shadow: 0 0 0 2px #ffffff10 inset, 0 2px 8px #0008;
+  }
+  .brand .name{font-size:13px; color:#d4e5ff}
+  .controls{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+  .group{display:flex; gap:6px; background:var(--panel); padding:6px 8px; border-radius:9px; box-shadow: 0 1px 0 #ffffff08 inset, 0 8px 24px #0008}
+  button,.toggle,select,input[type="time"],input[type="datetime-local"],input[type="number"],input[type="text"]{
+    background:#141922; color:var(--ink); border:1px solid #ffffff10;
+    padding:8px 10px; border-radius:8px; font-weight:600; letter-spacing:.02em;
+  }
+  button:hover,.toggle:hover,select:hover,input:hover{border-color:#ffffff2a}
+  .toggle input{display:none}
+  .toggle label{display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; padding:6px 8px; border-radius:6px; color:#9aa7b8; border:1px solid transparent}
+  .toggle input:checked + label{color:var(--ink); border-color:#ffffff20; background:#0f131a}
+  .legend{color:#9aa7b8; font-size:13px; display:flex; align-items:center; gap:8px}
+  .stage{display:grid; place-items:center; padding:6px 10px 14px}
+  svg{width:min(100vw, 940px); height:min(100vw, 940px)}
+  .guide{fill:none; stroke:var(--ring); stroke-width:1.2}
+  .tick{stroke:#2a313c; stroke-width:1}
+  .ring-label{fill:#9aa7b8; font-size:14px; letter-spacing:.15em; text-anchor:middle; font-weight:600}
+
+  /* Enhanced Aspects */
+  .aspect-conj{stroke:var(--bss-gold); stroke-width:2; opacity:.95}
+  .aspect-opp{stroke:#ff98b0; stroke-width:1.8; opacity:.95}
+  .aspect-square{stroke:#ff6a8a; stroke-width:1.6; opacity:.9; stroke-dasharray:4 4}
+  .aspect-trine{stroke:#7ee0ff; stroke-width:1.6; opacity:.9}
+  .aspect-sextile{stroke:#89ffa3; stroke-width:1.4; opacity:.85}
+  .aspect-quincunx{stroke:#f0c34e; stroke-width:1.2; opacity:.8; stroke-dasharray:2 2}
+  .aspect-semisquare{stroke:#ff9966; stroke-width:1; opacity:.7; stroke-dasharray:1 1}
+  .aspect-sesquiquadrate{stroke:#cc88ff; stroke-width:1; opacity:.7; stroke-dasharray:1 1}
+  
+  /* Applying vs Separating */
+  .aspect-applying{filter:brightness(1.2)}
+  .aspect-separating{opacity:0.6}
+  
+  /* Orb tightness visual feedback */
+  .aspect-tight{stroke-width:2.5; filter:drop-shadow(0 0 3px currentColor)}
+  .aspect-loose{opacity:0.4}
+
+  /* Retrograde Indicators */
+  .planet-retrograde .p-glyph{fill:var(--retrograde); filter:drop-shadow(0 0 2px var(--retrograde))}
+  .planet-retrograde .p-dot{fill:var(--retrograde)}
+  .retrograde-indicator{fill:var(--retrograde); font-size:10px; font-weight:900; text-anchor:middle; dominant-baseline:middle}
+
+  /* Event Markers */
+  .event-marker{stroke:var(--event); stroke-width:3; opacity:.8; stroke-dasharray:6 3}
+  .event-label{fill:var(--event); font-size:11px; font-weight:700; text-anchor:middle; dominant-baseline:middle}
+
+  /* Cycle Indicators */
+  .cycle-indicator{stroke:var(--cycle); stroke-width:2; opacity:.7; stroke-dasharray:8 4}
+  .cycle-label{fill:var(--cycle); font-size:10px; font-weight:600; text-anchor:middle; dominant-baseline:middle}
+
+  /* Tooltip */
+  .aspect-tooltip{
+    position:absolute; background:#0c121a; border:1px solid #ffffff18;
+    padding:8px 12px; border-radius:8px; color:#cfe6ff; font-size:13px;
+    pointer-events:none; z-index:1000; display:none; font-weight:600;
+  }
+
+  .aspect-group line{pointer-events:stroke;}
+  .aspect-label{
+    font-size:11px; font-weight:700; fill:#d9e8ff;
+    text-anchor:middle; dominant-baseline:middle;
+    letter-spacing:.18em; pointer-events:none;
+  }
+
+  /* Clock & Number Rings - ENHANCED READABILITY */
+  .clock-hour { stroke:#cfe6ff; stroke-width:2.5; opacity:.95 }
+  .clock-min  { stroke:#cfe6ff; stroke-width:1.2; opacity:.6 }
+  .clock-num  { fill:#e7f1ff; font-size:16px; font-weight:800; text-anchor:middle; dominant-baseline:middle }
+  .num-blue   { fill: var(--bss-blue); font-size:14px; font-weight:800; opacity:.95; text-anchor:middle; dominant-baseline:middle }
+  .num-red    { fill: var(--bss-red);  font-size:14px; font-weight:800; opacity:.95; text-anchor:middle; dominant-baseline:middle }
+
+  /* === JYOTI LAYERS - ENHANCED READABILITY === */
+  .nak-line { stroke:#2b3240; stroke-width:1.5 }
+  .nak-name { fill:#cfe6ff; font-size:12px; text-anchor:middle; dominant-baseline:middle; opacity:.9; font-weight:600 }
+  .nak-name-english { fill:#89c7ff; font-size:10px; text-anchor:middle; dominant-baseline:middle; opacity:.8; font-weight:500 }
+  .nak-active { fill:#f0c34e; font-weight:900; opacity:1; font-size:14px }
+  .nak-active-english { fill:#ffe9a6; font-weight:700; opacity:1; font-size:11px }
+
+  .tithi-arc-bg { fill:none; stroke:#233043; stroke-width:18 }
+  .tithi-arc-fg { fill:none; stroke:#f0c34e; stroke-width:18; stroke-linecap:round; filter:url(#glow) }
+  .tithi-label { fill:#ffe9a6; font-size:15px; font-weight:900; text-anchor:middle; dominant-baseline:middle }
+  .tithi-label-english { fill:#ffd166; font-size:12px; font-weight:700; text-anchor:middle; dominant-baseline:middle }
+
+  .muhurta-tick { stroke:#7aa9ff66; stroke-width:2.5 }
+  .muhurta-active { stroke:#7aa9ff; stroke-width:4; filter:drop-shadow(0 0 2px #7aa9ff) }
+
+  .drishti-mars { stroke:#ff6a8a; opacity:.85; stroke-width:1.5 }
+  .drishti-jup  { stroke:#7ee0ff; opacity:.85; stroke-width:1.5 }
+  .drishti-sat  { stroke:#ccb6ff; opacity:.85; stroke-width:1.5 }
+  .drishti-gen  { stroke:#89ffa3; opacity:.75; stroke-width:1.2 }
+
+  .zodiac{stroke:#2b3240; stroke-width:1.5}
+  .z-label{fill:#9fb4d5; font-size:14px; text-anchor:middle; dominant-baseline:middle; font-weight:700}
+  .planet .p-dot{fill:#eaf2ff; r:5}
+  .p-glyph{font-size:16px; fill:#eaf2ff; font-weight:900; text-anchor:middle; dominant-baseline:middle}
+
+  .stats{position:fixed; left:12px; bottom:12px; background:var(--panel); border:1px solid #ffffff10; padding:12px 16px; border-radius:12px; font-size:13px; color:#cfe6ff; max-width:min(94vw, 720px); font-weight:600}
+  
+  /* Export Menu Styles */
+  .export-menu {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .export-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: var(--panel);
+    border: 1px solid #ffffff20;
+    border-radius: 8px;
+    padding: 8px;
+    min-width: 180px;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 8px 24px #0008;
+  }
+  
+  .export-dropdown.show {
+    display: block;
+  }
+  
+  .export-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 12px;
+    margin: 2px 0;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--ink);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  
+  .export-item:hover {
+    background: #0f131a;
+    border-color: #ffffff20;
+  }
+
+  /* Playback Range Styles */
+  .range-inputs {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  
+  .range-inputs input[type="datetime-local"] {
+    font-size: 11px;
+    padding: 4px 6px;
+    width: 140px;
+  }
+  
+  .playback-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  
+  .direction-indicator {
+    font-weight: 800;
+    color: var(--bss-blue);
+  }
+
+  /* Location Input Styles */
+  .location-inputs {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  
+  .location-inputs input[type="number"] {
+    font-size: 11px;
+    padding: 4px 6px;
+    width: 80px;
+  }
+
+  /* Analysis Panel */
+  .analysis-panel {
+    position: fixed;
+    right: 12px;
+    top: 12px;
+    background: var(--panel);
+    border: 1px solid #ffffff10;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 12px;
+    color: var(--ink);
+    max-width: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+  }
+
+  .analysis-panel.show {
+    display: block;
+  }
+
+  .analysis-section {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #ffffff10;
+  }
+
+  .analysis-title {
+    font-weight: 700;
+    color: var(--bss-gold);
+    margin-bottom: 6px;
+  }
+
+  .analysis-item {
+    margin: 4px 0;
+    font-size: 11px;
+  }
+  
+  @media (max-width:560px){ .legend{display:none} .brand .name{display:none} header{gap:6px} .analysis-panel{display:none !important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="snake"></div>
+      <div>
+        <div class="name">Blue $nake Studio</div>
+        <div style="font-size:11px; color:#9aa7b8; letter-spacing:.18em;">Master Switchboard Ultimate • Complete Astrological Analysis Suite</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <!-- Export Controls -->
+      <div class="group" aria-label="Export">
+        <div class="export-menu">
+          <button id="btnExport" type="button">Export ⬇</button>
+          <div class="export-dropdown" id="exportDropdown">
+            <button class="export-item" id="btnExportPNG">📷 Export PNG Image</button>
+            <button class="export-item" id="btnExportSVG">🎨 Export SVG Vector</button>
+            <button class="export-item" id="btnExportData">📊 Export Raw Data (JSON)</button>
+            <button class="export-item" id="btnExportCSV">📋 Export Data (CSV)</button>
+            <button class="export-item" id="btnExportReport">📄 Export Analysis Report</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analysis Controls -->
+      <div class="group" aria-label="Analysis">
+        <button id="btnAnalysis" type="button">Analysis 🔍</button>
+        <button id="btnCycleFinder" type="button">Cycles 🔄</button>
+        <button id="btnEventMarker" type="button">Events 📍</button>
+      </div>
+
+      <!-- Location Controls -->
+      <div class="group" aria-label="Location">
+        <span class="legend">Location</span>
+        <div class="location-inputs">
+          <input id="latitude" type="number" step="0.01" placeholder="Lat" title="Latitude" />
+          <input id="longitude" type="number" step="0.01" placeholder="Lng" title="Longitude" />
+        </div>
+        <span class="toggle"><input id="showAscMc" type="checkbox" /><label for="showAscMc">ASC/MC</label></span>
+      </div>
+
+      <!-- Aspect Controls -->
+      <div class="group" aria-label="Enhanced Aspects">
+        <span class="legend">Major Aspects</span>
+        <span class="toggle"><input id="asp-conj" type="checkbox" checked /><label for="asp-conj">0°</label></span>
+        <span class="toggle"><input id="asp-square" type="checkbox" checked /><label for="asp-square">90°</label></span>
+        <span class="toggle"><input id="asp-trine" type="checkbox" checked /><label for="asp-trine">120°</label></span>
+        <span class="toggle"><input id="asp-opp" type="checkbox" checked /><label for="asp-opp">180°</label></span>
+        <span class="toggle"><input id="asp-sextile" type="checkbox" /><label for="asp-sextile">60°</label></span>
+      </div>
+      <div class="group" aria-label="Minor Aspects">
+        <span class="legend">Minor Aspects</span>
+        <span class="toggle"><input id="asp-quincunx" type="checkbox" /><label for="asp-quincunx">150°</label></span>
+        <span class="toggle"><input id="asp-semisquare" type="checkbox" /><label for="asp-semisquare">45°</label></span>
+        <span class="toggle"><input id="asp-sesquiquadrate" type="checkbox" /><label for="asp-sesquiquadrate">135°</label></span>
+      </div>
+      <div class="group" aria-label="Orb Settings">
+        <label class="legend">Global Orb ±</label><input id="asp-orb" type="range" min="1" max="12" step="0.5" value="5" />
+        <span class="toggle"><input id="diff-orbs" type="checkbox" checked /><label for="diff-orbs">Diff Orbs</label></span>
+        <span class="toggle"><input id="luminary-bonus" type="checkbox" checked /><label for="luminary-bonus">☉☽ +20%</label></span>
+      </div>
+      <div class="group" aria-label="Aspect Features">
+        <span class="toggle"><input id="show-applying" type="checkbox" checked /><label for="show-applying">Apply/Sep</label></span>
+        <span class="toggle"><input id="orb-feedback" type="checkbox" checked /><label for="orb-feedback">Tightness</label></span>
+        <span class="toggle"><input id="aspect-tooltips" type="checkbox" checked /><label for="aspect-tooltips">Tooltips</label></span>
+        <span class="toggle"><input id="label-auto-hide" type="checkbox" checked /><label for="label-auto-hide">Smart Labels</label></span>
+      </div>
+      <div class="group" aria-label="Aspect Subject">
+        <label class="legend">Show aspects for:</label>
+        <select id="aspect-subject">
+          <option value="">All Planets</option>
+          <option value="Sun">Sun</option>
+          <option value="Moon">Moon</option>
+          <option value="Mercury">Mercury</option>
+          <option value="Venus">Venus</option>
+          <option value="Mars">Mars</option>
+          <option value="Jupiter">Jupiter</option>
+          <option value="Saturn">Saturn</option>
+        </select>
+      </div>
+      
+      <!-- Enhanced Time Transport -->
+      <div class="group" aria-label="Transport">
+        <button id="btnPlayPause" type="button" title="Play/Pause (Spacebar)">Play ▷</button>
+        <button id="btnRewind" type="button" title="Rewind">◁</button>
+        <button id="btnStepBack" type="button" title="Step back ([)">⟵</button>
+        <select id="stepSize" title="Step size">
+          <option value="minute">1m</option>
+          <option value="hour" selected>1h</option>
+          <option value="day">1d</option>
+        </select>
+        <button id="btnStepFwd" type="button" title="Step forward (])">⟶</button>
+        <button id="btnSnapPause" type="button" title="Snap to now & pause">Now ⏸</button>
+        <input id="dt" type="datetime-local" step="1" />
+      </div>
+
+      <!-- Playback Range Controls -->
+      <div class="group" aria-label="Playback Range">
+        <span class="legend">Range</span>
+        <div class="range-inputs">
+          <input id="startDate" type="datetime-local" step="1" title="Start Date" />
+          <span style="color: var(--muted);">to</span>
+          <input id="endDate" type="datetime-local" step="1" title="End Date" />
+        </div>
+        <span class="toggle"><input id="loopRange" type="checkbox" /><label for="loopRange">Loop</label></span>
+        <div class="playback-indicator">
+          <span class="direction-indicator" id="directionIndicator">▷</span>
+          <span id="speedIndicator">1x</span>
+        </div>
+      </div>
+
+      <!-- Speed Control -->
+      <div class="group" aria-label="Speed">
+        <label class="legend">Speed</label>
+        <select id="speedMultiplier" title="Playback speed">
+          <option value="1">1x</option>
+          <option value="2">2x</option>
+          <option value="5">5x</option>
+          <option value="10">10x</option>
+          <option value="60">60x</option>
+          <option value="3600">1hr/s</option>
+          <option value="86400">1day/s</option>
+        </select>
+      </div>
+
+      <!-- Advanced Features -->
+      <div class="group" aria-label="Advanced">
+        <span class="toggle"><input id="showRetrograde" type="checkbox" checked /><label for="showRetrograde">Retrograde</label></span>
+        <span class="toggle"><input id="showEvents" type="checkbox" /><label for="showEvents">Events</label></span>
+        <span class="toggle"><input id="showCycles" type="checkbox" /><label for="showCycles">Cycles</label></span>
+        <span class="toggle"><input id="showDeclination" type="checkbox" /><label for="showDeclination">Declination</label></span>
+      </div>
+
+      <!-- Visual Layers -->
+      <div class="group" aria-label="Numbers &amp; Clock">
+        <span class="legend">Rings &amp; Clock</span>
+        <span class="toggle"><input id="showBlueNums" type="checkbox" /><label for="showBlueNums">Blue #</label></span>
+        <span class="toggle"><input id="showRedNums" type="checkbox" /><label for="showRedNums">Red #</label></span>
+        <span class="toggle"><input id="showClock" type="checkbox" /><label for="showClock">Clock</label></span>
+        <select id="modulusSel" title="Number ring modulus">
+          <option value="60" selected>60</option>
+          <option value="108">108</option>
+          <option value="360">360</option>
+        </select>
+      </div>
+
+      <!-- === JYOTI LAYERS === -->
+      <div class="group" aria-label="Jyoti Layers">
+        <span class="legend">Jyoti Layers</span>
+        <span class="toggle"><input id="showNakshatras" type="checkbox" checked /><label for="showNakshatras">Star Mansions</label></span>
+        <span class="toggle"><input id="showTithi" type="checkbox" checked /><label for="showTithi">Lunar Days</label></span>
+        <span class="toggle"><input id="showMuhurta" type="checkbox" /><label for="showMuhurta">Time Windows</label></span>
+      </div>
+
+      <div class="group" aria-label="Sight Lines">
+        <span class="legend">Sight Lines</span>
+        <span class="toggle"><input id="showDrishti" type="checkbox" /><label for="showDrishti">Classical</label></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="stage">
+    <svg id="scene" viewBox="-470 -470 940 940" role="img" aria-label="Master Switchboard Ultimate">
+      <defs>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="retrograde-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- Guides -->
+      <g id="guides">
+        <circle class="guide" r="360"/><circle class="guide" r="300"/><circle class="guide" r="240"/><circle class="guide" r="200"/>
+        <text class="ring-label" x="0" y="-390">Master Switchboard Ultimate • Complete Astrological Analysis Suite</text>
+      </g>
+
+      <!-- Visual Layers -->
+      <g id="clock-face"></g>
+      <g id="blue-numbers"></g>
+      <g id="red-numbers"></g>
+
+      <!-- Jyoti layers -->
+      <g id="nakshatra-ring"></g>
+      <g id="tithi-meter"></g>
+      <g id="muhurta-ring"></g>
+      
+      <!-- Advanced layers -->
+      <g id="event-markers"></g>
+      <g id="cycle-indicators"></g>
+      <g id="asc-mc-lines"></g>
+      
+      <!-- Main Content -->
+      <g id="rotor">
+        <g id="planet-ring"></g>
+        <g id="aspects-layer" class="aspect-group"></g>
+        <g id="drishti-layer" class="aspect-group"></g>
+        <g id="zodiac-ring"></g>
+      </g>
+    </svg>
+  </main>
+
+  <div class="stats" id="stats">
+    <div id="aspectStats">Aspects Active</div>
+    <div id="planetStats" style="margin-top:6px;">—</div>
+    <div id="timeStats" style="margin-top:6px;">Simulated time: —</div>
+    <div id="locationStats" style="margin-top:6px;">Location: Universal</div>
+  </div>
+
+  <!-- Analysis Panel -->
+  <div class="analysis-panel" id="analysisPanel">
+    <div class="analysis-section">
+      <div class="analysis-title">🔍 Current Analysis</div>
+      <div id="analysisContent">Click Analysis button to generate insights</div>
+    </div>
+  </div>
+
+  <div class="aspect-tooltip" id="aspectTooltip"></div>
+</div>
+
+<script>
+  // --- B$S Number Rings (real sequences) ---
+  window.BLUE60 = "012776329785893036118967145479098334781325217074992143965631";
+  window.RED60  = "113031491493585389543778774590997079619617525721567332336510";
+  window.N = 60;
+  window.seqBlue = Array.from(window.BLUE60.replace(/\s+/g, ''), ch => Number(ch));
+  window.seqRed  = Array.from(window.RED60.replace(/\s+/g, ''), ch => Number(ch));
+</script>
+
+<script>
+/* =================== CONFIG & DATA =================== */
+const ENHANCED_ASPECTS = {
+  conj: { angle: 0, orb: 10.5, class: 'aspect-conj', name: 'Conjunction', glyph: '☌' },
+  opp: { angle: 180, orb: 10.0, class: 'aspect-opp', name: 'Opposition', glyph: '☍' },
+  trine: { angle: 120, orb: 8.3, class: 'aspect-trine', name: 'Trine', glyph: '△' },
+  square: { angle: 90, orb: 7.8, class: 'aspect-square', name: 'Square', glyph: '□' },
+  sextile: { angle: 60, orb: 6.1, class: 'aspect-sextile', name: 'Sextile', glyph: '✶' },
+  quincunx: { angle: 150, orb: 2.7, class: 'aspect-quincunx', name: 'Quincunx', glyph: '⚻' },
+  semisquare: { angle: 45, orb: 1.5, class: 'aspect-semisquare', name: 'Semi-square', glyph: '∠' },
+  sesquiquadrate: { angle: 135, orb: 1.5, class: 'aspect-sesquiquadrate', name: 'Sesquiquadrate', glyph: '∡' }
+};
+
+const ORB_MODIFIERS = { Sun: 1.2, Moon: 1.2 };
+
+const DEMO_PLANETS = {
+  Sun: { name: 'Sun', glyph: '☉', lon: 0, retrograde: false, declination: 0 }, 
+  Moon: { name: 'Moon', glyph: '☽', lon: 45, retrograde: false, declination: 5 },
+  Mercury: { name: 'Mercury', glyph: '☿', lon: 15, retrograde: false, declination: -2 }, 
+  Venus: { name: 'Venus', glyph: '♀', lon: 330, retrograde: false, declination: 8 },
+  Mars: { name: 'Mars', glyph: '♂', lon: 120, retrograde: false, declination: -12 }, 
+  Jupiter: { name: 'Jupiter', glyph: '♃', lon: 200, retrograde: true, declination: 3 },
+  Saturn: { name: 'Saturn', glyph: '♄', lon: 280, retrograde: true, declination: -7 }
+};
+
+const ZODIAC_SIGNS = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
+
+const ORBITAL_SPEEDS = { // degrees per hour
+  Sun: 0.041067, Moon: 0.549016, Mercury: 0.17051, Venus: 0.06675,
+  Mars: 0.02183, Jupiter: 0.00346, Saturn: 0.00137
+};
+
+// Retrograde periods (simplified approximation)
+const RETROGRADE_CYCLES = {
+  Mercury: { period: 88, retrograde_duration: 22 },
+  Venus: { period: 225, retrograde_duration: 42 },
+  Mars: { period: 687, retrograde_duration: 72 },
+  Jupiter: { period: 4333, retrograde_duration: 120 },
+  Saturn: { period: 10759, retrograde_duration: 138 }
+};
+
+// Historical events for demonstration
+const HISTORICAL_EVENTS = [
+  { date: '2024-04-08T18:00:00Z', name: 'Total Solar Eclipse', type: 'eclipse' },
+  { date: '2024-10-14T18:00:00Z', name: 'Annular Solar Eclipse', type: 'eclipse' },
+  { date: '2025-03-29T10:00:00Z', name: 'Lunar Eclipse', type: 'eclipse' },
+  { date: '2025-09-07T18:00:00Z', name: 'Total Lunar Eclipse', type: 'eclipse' }
+];
+
+// 27 Nakshatras with English equivalents
+const NAKSHATRAS = [
+  {sanskrit: 'Aśvinī', english: 'Horse Twins'},
+  {sanskrit: 'Bharaṇī', english: 'Bearer'},
+  {sanskrit: 'Kṛttikā', english: 'Cutters'},
+  {sanskrit: 'Rohiṇī', english: 'Red One'},
+  {sanskrit: 'Mṛgaśīrṣa', english: 'Deer Head'},
+  {sanskrit: 'Ārdrā', english: 'Moist One'},
+  {sanskrit: 'Punarvasu', english: 'Return of Light'},
+  {sanskrit: 'Puṣya', english: 'Nourisher'},
+  {sanskrit: 'Aśleṣā', english: 'Embracer'},
+  {sanskrit: 'Maghā', english: 'Mighty One'},
+  {sanskrit: 'Pūrvaphalgunī', english: 'First Reddish'},
+  {sanskrit: 'Uttaraphalgunī', english: 'Second Reddish'},
+  {sanskrit: 'Hasta', english: 'Hand'},
+  {sanskrit: 'Chitrā', english: 'Bright One'},
+  {sanskrit: 'Svātī', english: 'Self-Going'},
+  {sanskrit: 'Viśākhā', english: 'Forked'},
+  {sanskrit: 'Anurādhā', english: 'Following Radha'},
+  {sanskrit: 'Jyeṣṭhā', english: 'Eldest'},
+  {sanskrit: 'Mūla', english: 'Root'},
+  {sanskrit: 'Pūrvāṣāḍhā', english: 'First Victory'},
+  {sanskrit: 'Uttarāṣāḍhā', english: 'Second Victory'},
+  {sanskrit: 'Śravaṇa', english: 'Hearing'},
+  {sanskrit: 'Dhaniṣṭhā', english: 'Richest'},
+  {sanskrit: 'Śatabhiṣaj', english: 'Hundred Healers'},
+  {sanskrit: 'Pūrvabhādrapadā', english: 'First Lucky Feet'},
+  {sanskrit: 'Uttarabhādrapadā', english: 'Second Lucky Feet'},
+  {sanskrit: 'Revatī', english: 'Wealthy'}
+];
+
+// 30 Tithis (lunar days)
+const TITHIS = [
+  'Pratipadā', 'Dvitīyā', 'Tritīyā', 'Caturthī', 'Pañcamī',
+  'Ṣaṣṭhī', 'Saptamī', 'Aṣṭamī', 'Navamī', 'Daśamī',
+  'Ekādaśī', 'Dvādaśī', 'Trayodaśī', 'Caturdaśī', 'Pūrṇimā',
+  'Pratipadā', 'Dvitīyā', 'Tritīyā', 'Caturthī', 'Pañcamī',
+  'Ṣaṣṭhī', 'Saptamī', 'Aṣṭamī', 'Navamī', 'Daśamī',
+  'Ekādaśī', 'Dvādaśī', 'Trayodaśī', 'Caturdaśī', 'Amāvasyā'
+];
+
+/* =================== GLOBAL STATE =================== */
+let simTime = new Date();
+let playing = false;
+let warp = 3600; // seconds per second
+let lastRAF = 0;
+let previousPlanetPositions = {};
+let lastLabelEntries = [];
+let autoHideCrowdedLabels = true;
+let tooltipListenersAttached = false;
+let ringSize = 60;
+
+// Enhanced playback state
+let playbackDirection = 1; // 1 for forward, -1 for reverse
+let startDate = null;
+let endDate = null;
+let loopEnabled = false;
+let speedMultiplier = 1;
+
+// Location state
+let latitude = null;
+let longitude = null;
+let ascendant = 0;
+let midheaven = 90;
+
+// Analysis state
+let analysisVisible = false;
+let currentAnalysis = null;
+
+const STATE_KEY = 'bss-master-switchboard-ultimate-state';
+const R_PLAN = 300;
+
+/* =================== DOM REFERENCES =================== */
+const dom = {
+  scene: document.getElementById('scene'),
+  planetRing: document.getElementById('planet-ring'),
+  aspectsLayer: document.getElementById('aspects-layer'),
+  drishtiLayer: document.getElementById('drishti-layer'),
+  zodiacRing: document.getElementById('zodiac-ring'),
+  nakRing: document.getElementById('nakshatra-ring'),
+  tithiMeter: document.getElementById('tithi-meter'),
+  muhurtaRing: document.getElementById('muhurta-ring'),
+  clockFace: document.getElementById('clock-face'),
+  blueNumsG: document.getElementById('blue-numbers'),
+  redNumsG: document.getElementById('red-numbers'),
+  eventMarkers: document.getElementById('event-markers'),
+  cycleIndicators: document.getElementById('cycle-indicators'),
+  ascMcLines: document.getElementById('asc-mc-lines'),
+  aspectStats: document.getElementById('aspectStats'),
+  planetStats: document.getElementById('planetStats'),
+  timeStats: document.getElementById('timeStats'),
+  locationStats: document.getElementById('locationStats'),
+  aspectTooltip: document.getElementById('aspectTooltip'),
+  analysisPanel: document.getElementById('analysisPanel'),
+  analysisContent: document.getElementById('analysisContent'),
+  controls: {
+    aspToggles: {
+      conj: document.getElementById('asp-conj'),
+      square: document.getElementById('asp-square'),
+      trine: document.getElementById('asp-trine'),
+      opp: document.getElementById('asp-opp'),
+      sextile: document.getElementById('asp-sextile'),
+      quincunx: document.getElementById('asp-quincunx'),
+      semisquare: document.getElementById('asp-semisquare'),
+      sesquiquadrate: document.getElementById('asp-sesquiquadrate')
+    },
+    aspOrb: document.getElementById('asp-orb'),
+    diffOrbs: document.getElementById('diff-orbs'),
+    luminaryBonus: document.getElementById('luminary-bonus'),
+    showApplying: document.getElementById('show-applying'),
+    orbFeedback: document.getElementById('orb-feedback'),
+    aspectTooltips: document.getElementById('aspect-tooltips'),
+    labelAutoHide: document.getElementById('label-auto-hide'),
+    aspectSubject: document.getElementById('aspect-subject'),
+    btnPlayPause: document.getElementById('btnPlayPause'),
+    btnRewind: document.getElementById('btnRewind'),
+    btnStepBack: document.getElementById('btnStepBack'),
+    btnStepFwd: document.getElementById('btnStepFwd'),
+    btnSnapPause: document.getElementById('btnSnapPause'),
+    stepSizeSel: document.getElementById('stepSize'),
+    dtInput: document.getElementById('dt'),
+    showBlueNums: document.getElementById('showBlueNums'),
+    showRedNums: document.getElementById('showRedNums'),
+    showClock: document.getElementById('showClock'),
+    modulusSel: document.getElementById('modulusSel'),
+    showNakshatras: document.getElementById('showNakshatras'),
+    showTithi: document.getElementById('showTithi'),
+    showMuhurta: document.getElementById('showMuhurta'),
+    showDrishti: document.getElementById('showDrishti'),
+    // Export controls
+    btnExport: document.getElementById('btnExport'),
+    exportDropdown: document.getElementById('exportDropdown'),
+    btnExportPNG: document.getElementById('btnExportPNG'),
+    btnExportSVG: document.getElementById('btnExportSVG'),
+    btnExportData: document.getElementById('btnExportData'),
+    btnExportCSV: document.getElementById('btnExportCSV'),
+    btnExportReport: document.getElementById('btnExportReport'),
+    // Enhanced playback controls
+    startDate: document.getElementById('startDate'),
+    endDate: document.getElementById('endDate'),
+    loopRange: document.getElementById('loopRange'),
+    speedMultiplier: document.getElementById('speedMultiplier'),
+    directionIndicator: document.getElementById('directionIndicator'),
+    speedIndicator: document.getElementById('speedIndicator'),
+    // Location controls
+    latitude: document.getElementById('latitude'),
+    longitude: document.getElementById('longitude'),
+    showAscMc: document.getElementById('showAscMc'),
+    // Analysis controls
+    btnAnalysis: document.getElementById('btnAnalysis'),
+    btnCycleFinder: document.getElementById('btnCycleFinder'),
+    btnEventMarker: document.getElementById('btnEventMarker'),
+    // Advanced features
+    showRetrograde: document.getElementById('showRetrograde'),
+    showEvents: document.getElementById('showEvents'),
+    showCycles: document.getElementById('showCycles'),
+    showDeclination: document.getElementById('showDeclination')
+  }
+};
+
+/* =================== UTILITY FUNCTIONS =================== */
+function createSVGElement(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
+  return el;
+}
+
+function polarToCartesian(radius, angleDegrees) {
+  const angleRadians = (angleDegrees - 90) * Math.PI / 180.0;
+  return [radius * Math.cos(angleRadians), radius * Math.sin(angleRadians)];
+}
+
+function polarXY(r, deg) { return polarToCartesian(r, deg); }
+
+function shortestArc(lon1, lon2) {
+  let diff = lon2 - lon1;
+  while (diff > 180) diff -= 360;
+  while (diff < -180) diff += 360;
+  return Math.abs(diff);
+}
+
+function safeTightness(deviation, orb) {
+  if (!Number.isFinite(deviation) || !Number.isFinite(orb) || orb <= 0) return 0;
+  return Math.max(0, Math.min(1, 1 - (deviation / orb)));
+}
+
+function signIndexFromLon(lon) { return Math.floor(((lon % 360) + 360) % 360 / 30); }
+
+function toNakIndex(lon) { return Math.floor(((lon % 360) + 360) % 360 / (360/27)); }
+
+function tithiFromSunMoon(sunLon, moonLon) {
+  let diff = ((moonLon - sunLon) % 360 + 360) % 360;
+  return Math.floor(diff / 12) + 1;
+}
+
+function muhurtaIndex(date) {
+  const hours = date.getUTCHours();
+  const minutes = date.getUTCMinutes();
+  const totalMinutes = hours * 60 + minutes;
+  return Math.floor(totalMinutes / 48) % 30;
+}
+
+function hasDrishti(planetName, signDelta) {
+  if (planetName === 'Mars') return [4, 7, 8].includes(signDelta);
+  if (planetName === 'Jupiter') return [5, 7, 9].includes(signDelta);
+  if (planetName === 'Saturn') return [3, 7, 10].includes(signDelta);
+  return [7].includes(signDelta);
+}
+
+function getBlueSeq() { return window.seqBlue || []; }
+function getRedSeq() { return window.seqRed || []; }
+
+function setModulus(newSize) {
+  ringSize = newSize;
+  renderNumberRings();
+}
+
+function snapshotPrevPositions() {
+  previousPlanetPositions = {};
+  Object.values(DEMO_PLANETS).forEach(planet => {
+    previousPlanetPositions[planet.name] = planet.lon;
+  });
+}
+
+function advancePlanets(deltaHours) {
+  snapshotPrevPositions();
+  Object.values(DEMO_PLANETS).forEach(planet => {
+    const speed = ORBITAL_SPEEDS[planet.name] || 0;
+    planet.lon = (planet.lon + speed * deltaHours * playbackDirection) % 360;
+    if (planet.lon < 0) planet.lon += 360;
+    
+    // Update retrograde status (simplified)
+    if (RETROGRADE_CYCLES[planet.name]) {
+      const cycle = RETROGRADE_CYCLES[planet.name];
+      const daysSinceEpoch = (simTime.getTime() / (1000 * 60 * 60 * 24)) % cycle.period;
+      planet.retrograde = daysSinceEpoch < cycle.retrograde_duration;
+    }
+  });
+}
+
+function calculateAscendantMidheaven() {
+  if (latitude === null || longitude === null) return;
+  
+  // Simplified calculation for demonstration
+  const lst = (simTime.getUTCHours() + longitude / 15) % 24;
+  ascendant = (lst * 15) % 360;
+  midheaven = (ascendant + 90) % 360;
+}
+
+function rerenderWithoutTimeChange() {
+  renderAll();
+  saveAspectPreferences();
+}
+
+/* =================== EXPORT FUNCTIONS =================== */
+function exportToPNG() {
+  const svg = dom.scene;
+  const svgData = new XMLSerializer().serializeToString(svg);
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  
+  canvas.width = 940;
+  canvas.height = 940;
+  
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  img.onload = function() {
+    ctx.drawImage(img, 0, 0);
+    const link = document.createElement('a');
+    link.download = `master-switchboard-ultimate-${formatDateForFilename(simTime)}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+  
+  const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+  img.src = url;
+}
+
+function exportToSVG() {
+  const svg = dom.scene;
+  const svgData = new XMLSerializer().serializeToString(svg);
+  const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+  const link = document.createElement('a');
+  link.download = `master-switchboard-ultimate-${formatDateForFilename(simTime)}.svg`;
+  link.href = URL.createObjectURL(blob);
+  link.click();
+}
+
+function exportToJSON() {
+  const data = {
+    timestamp: simTime.toISOString(),
+    location: { latitude, longitude, ascendant, midheaven },
+    planets: Object.entries(DEMO_PLANETS).reduce((acc, [name, planet]) => {
+      acc[name] = {
+        longitude: planet.lon,
+        sign: ZODIAC_SIGNS[signIndexFromLon(planet.lon)],
+        signIndex: signIndexFromLon(planet.lon),
+        retrograde: planet.retrograde,
+        declination: planet.declination
+      };
+      return acc;
+    }, {}),
+    aspects: getActiveAspects(),
+    jyotiLayers: {
+      currentNakshatra: {
+        index: toNakIndex(DEMO_PLANETS.Moon.lon),
+        name: NAKSHATRAS[toNakIndex(DEMO_PLANETS.Moon.lon)]
+      },
+      tithi: tithiFromSunMoon(DEMO_PLANETS.Sun.lon, DEMO_PLANETS.Moon.lon),
+      muhurta: muhurtaIndex(simTime)
+    },
+    analysis: currentAnalysis,
+    settings: {
+      playbackDirection: playbackDirection,
+      speedMultiplier: speedMultiplier,
+      startDate: startDate?.toISOString(),
+      endDate: endDate?.toISOString(),
+      loopEnabled: loopEnabled
+    }
+  };
+  
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.download = `master-switchboard-ultimate-data-${formatDateForFilename(simTime)}.json`;
+  link.href = URL.createObjectURL(blob);
+  link.click();
+}
+
+function exportToCSV() {
+  const planets = Object.entries(DEMO_PLANETS);
+  const aspects = getActiveAspects();
+  
+  let csv = 'Type,Name,Value,Details,Extra\n';
+  csv += `Timestamp,Current Time,${simTime.toISOString()},UTC,\n`;
+  csv += `Location,Latitude,${latitude || 'N/A'},,\n`;
+  csv += `Location,Longitude,${longitude || 'N/A'},,\n`;
+  csv += `Location,Ascendant,${ascendant.toFixed(2)},${ZODIAC_SIGNS[signIndexFromLon(ascendant)]},\n`;
+  csv += `Location,Midheaven,${midheaven.toFixed(2)},${ZODIAC_SIGNS[signIndexFromLon(midheaven)]},\n`;
+  
+  planets.forEach(([name, planet]) => {
+    csv += `Planet,${name},${planet.lon.toFixed(2)},${ZODIAC_SIGNS[signIndexFromLon(planet.lon)]},${planet.retrograde ? 'Rx' : ''}\n`;
+  });
+  
+  aspects.forEach(aspect => {
+    csv += `Aspect,${aspect.name},${aspect.angle.toFixed(1)},${aspect.planet1} ${aspect.glyph} ${aspect.planet2},${aspect.phase}\n`;
+  });
+  
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const link = document.createElement('a');
+  link.download = `master-switchboard-ultimate-data-${formatDateForFilename(simTime)}.csv`;
+  link.href = URL.createObjectURL(blob);
+  link.click();
+}
+
+function exportAnalysisReport() {
+  if (!currentAnalysis) {
+    generateAnalysis();
+  }
+  
+  const report = generateDetailedReport();
+  const blob = new Blob([report], { type: 'text/plain' });
+  const link = document.createElement('a');
+  link.download = `astrological-analysis-${formatDateForFilename(simTime)}.txt`;
+  link.href = URL.createObjectURL(blob);
+  link.click();
+}
+
+function getActiveAspects() {
+  const aspects = [];
+  const aspectLines = dom.aspectsLayer.querySelectorAll('line[data-asp]');
+  
+  aspectLines.forEach(line => {
+    aspects.push({
+      planet1: line.dataset.a,
+      planet2: line.dataset.b,
+      name: line.dataset.aspect,
+      glyph: line.dataset.symbol || '',
+      angle: parseFloat(line.dataset.angle),
+      target: parseFloat(line.dataset.target),
+      orb: parseFloat(line.dataset.orb),
+      phase: line.dataset.phase
+    });
+  });
+  
+  return aspects;
+}
+
+function formatDateForFilename(date) {
+  return date.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+}
+
+/* =================== ANALYSIS FUNCTIONS =================== */
+function generateAnalysis() {
+  const aspects = getActiveAspects();
+  const retroPlanets = Object.values(DEMO_PLANETS).filter(p => p.retrograde);
+  const currentNak = NAKSHATRAS[toNakIndex(DEMO_PLANETS.Moon.lon)];
+  const tithi = tithiFromSunMoon(DEMO_PLANETS.Sun.lon, DEMO_PLANETS.Moon.lon);
+  
+  currentAnalysis = {
+    timestamp: simTime.toISOString(),
+    aspectCount: aspects.length,
+    majorAspects: aspects.filter(a => ['Conjunction', 'Opposition', 'Trine', 'Square'].includes(a.name)),
+    retrogradeCount: retroPlanets.length,
+    retrogradePlanets: retroPlanets.map(p => p.name),
+    moonNakshatra: currentNak,
+    lunarDay: tithi,
+    dominantElement: calculateDominantElement(),
+    aspectPattern: analyzeAspectPattern(aspects),
+    recommendations: generateRecommendations(aspects, retroPlanets)
+  };
+  
+  updateAnalysisDisplay();
+}
+
+function calculateDominantElement() {
+  const elements = { Fire: 0, Earth: 0, Air: 0, Water: 0 };
+  const elementMap = {
+    0: 'Fire', 1: 'Earth', 2: 'Air', 3: 'Water',
+    4: 'Fire', 5: 'Earth', 6: 'Air', 7: 'Water',
+    8: 'Fire', 9: 'Earth', 10: 'Air', 11: 'Water'
+  };
+  
+  Object.values(DEMO_PLANETS).forEach(planet => {
+    const sign = signIndexFromLon(planet.lon);
+    const element = elementMap[sign];
+    elements[element]++;
+  });
+  
+  return Object.entries(elements).reduce((a, b) => elements[a[0]] > elements[b[0]] ? a : b)[0];
+}
+
+function analyzeAspectPattern(aspects) {
+  if (aspects.length === 0) return 'No major aspects';
+  
+  const conjunctions = aspects.filter(a => a.name === 'Conjunction').length;
+  const oppositions = aspects.filter(a => a.name === 'Opposition').length;
+  const trines = aspects.filter(a => a.name === 'Trine').length;
+  const squares = aspects.filter(a => a.name === 'Square').length;
+  
+  if (trines >= 2) return 'Harmonious Grand Trine energy';
+  if (squares >= 2 && oppositions >= 1) return 'Challenging T-Square pattern';
+  if (conjunctions >= 2) return 'Concentrated stellium energy';
+  if (oppositions >= 2) return 'Polarized opposition pattern';
+  
+  return 'Mixed aspect pattern';
+}
+
+function generateRecommendations(aspects, retroPlanets) {
+  const recommendations = [];
+  
+  if (retroPlanets.length > 2) {
+    recommendations.push('High retrograde activity - time for reflection and review');
+  }
+  
+  const harmonious = aspects.filter(a => ['Trine', 'Sextile'].includes(a.name)).length;
+  const challenging = aspects.filter(a => ['Square', 'Opposition'].includes(a.name)).length;
+  
+  if (harmonious > challenging) {
+    recommendations.push('Favorable time for new initiatives and creative projects');
+  } else if (challenging > harmonious) {
+    recommendations.push('Navigate challenges with patience and strategic planning');
+  }
+  
+  const moonNak = NAKSHATRAS[toNakIndex(DEMO_PLANETS.Moon.lon)];
+  recommendations.push(`Moon in ${moonNak.sanskrit} (${moonNak.english}) - focus on ${getNakshatraGuidance(moonNak.sanskrit)}`);
+  
+  return recommendations;
+}
+
+function getNakshatraGuidance(nakshatra) {
+  const guidance = {
+    'Aśvinī': 'new beginnings and healing',
+    'Bharaṇī': 'transformation and creativity',
+    'Kṛttikā': 'purification and cutting away',
+    'Rohiṇī': 'growth and material prosperity',
+    'Mṛgaśīrṣa': 'seeking and exploration',
+    'Ārdrā': 'emotional cleansing',
+    'Punarvasu': 'renewal and return',
+    'Puṣya': 'nourishment and support',
+    'Aśleṣā': 'deep psychological work',
+    'Maghā': 'honoring ancestors and tradition',
+    'Pūrvaphalgunī': 'creativity and pleasure',
+    'Uttaraphalgunī': 'service and healing',
+    'Hasta': 'skill and craftsmanship',
+    'Chitrā': 'beauty and artistic expression',
+    'Svātī': 'independence and movement',
+    'Viśākhā': 'determination and focus',
+    'Anurādhā': 'friendship and cooperation',
+    'Jyeṣṭhā': 'protection and seniority',
+    'Mūla': 'getting to the root',
+    'Pūrvāṣāḍhā': 'invincibility and victory',
+    'Uttarāṣāḍhā': 'final victory and achievement',
+    'Śravaṇa': 'listening and learning',
+    'Dhaniṣṭhā': 'wealth and music',
+    'Śatabhiṣaj': 'healing and mysticism',
+    'Pūrvabhādrapadā': 'spiritual transformation',
+    'Uttarabhādrapadā': 'deep wisdom',
+    'Revatī': 'completion and prosperity'
+  };
+  
+  return guidance[nakshatra] || 'spiritual growth';
+}
+
+function updateAnalysisDisplay() {
+  if (!currentAnalysis) return;
+  
+  let html = `
+    <div class="analysis-section">
+      <div class="analysis-title">🔍 Current Analysis</div>
+      <div class="analysis-item">Active Aspects: ${currentAnalysis.aspectCount}</div>
+      <div class="analysis-item">Major Aspects: ${currentAnalysis.majorAspects.length}</div>
+      <div class="analysis-item">Retrograde Planets: ${currentAnalysis.retrogradeCount}</div>
+      <div class="analysis-item">Dominant Element: ${currentAnalysis.dominantElement}</div>
+    </div>
+    
+    <div class="analysis-section">
+      <div class="analysis-title">🌙 Lunar Information</div>
+      <div class="analysis-item">Nakshatra: ${currentAnalysis.moonNakshatra.sanskrit}</div>
+      <div class="analysis-item">English: ${currentAnalysis.moonNakshatra.english}</div>
+      <div class="analysis-item">Tithi: ${currentAnalysis.lunarDay}/30</div>
+    </div>
+    
+    <div class="analysis-section">
+      <div class="analysis-title">📊 Pattern Analysis</div>
+      <div class="analysis-item">${currentAnalysis.aspectPattern}</div>
+    </div>
+    
+    <div class="analysis-section">
+      <div class="analysis-title">💡 Recommendations</div>
+      ${currentAnalysis.recommendations.map(rec => `<div class="analysis-item">• ${rec}</div>`).join('')}
+    </div>
+  `;
+  
+  dom.analysisContent.innerHTML = html;
+}
+
+function generateDetailedReport() {
+  if (!currentAnalysis) return '';
+  
+  return `
+MASTER SWITCHBOARD ULTIMATE - ASTROLOGICAL ANALYSIS REPORT
+Generated: ${new Date().toISOString()}
+Chart Time: ${simTime.toISOString()}
+Location: ${latitude || 'Universal'}, ${longitude || 'Universal'}
+
+=== PLANETARY POSITIONS ===
+${Object.entries(DEMO_PLANETS).map(([name, planet]) => 
+  `${name}: ${planet.lon.toFixed(2)}° ${ZODIAC_SIGNS[signIndexFromLon(planet.lon)]} ${planet.retrograde ? '(Retrograde)' : ''}`
+).join('\n')}
+
+Ascendant: ${ascendant.toFixed(2)}° ${ZODIAC_SIGNS[signIndexFromLon(ascendant)]}
+Midheaven: ${midheaven.toFixed(2)}° ${ZODIAC_SIGNS[signIndexFromLon(midheaven)]}
+
+=== ACTIVE ASPECTS ===
+${getActiveAspects().map(aspect => 
+  `${aspect.planet1} ${aspect.glyph} ${aspect.planet2}: ${aspect.angle.toFixed(1)}° (${aspect.phase})`
+).join('\n')}
+
+=== JYOTI LAYERS ===
+Moon Nakshatra: ${currentAnalysis.moonNakshatra.sanskrit} (${currentAnalysis.moonNakshatra.english})
+Lunar Day (Tithi): ${currentAnalysis.lunarDay}/30
+Muhurta: ${muhurtaIndex(simTime) + 1}/30
+
+=== ANALYSIS ===
+Dominant Element: ${currentAnalysis.dominantElement}
+Aspect Pattern: ${currentAnalysis.aspectPattern}
+Retrograde Count: ${currentAnalysis.retrogradeCount}
+${currentAnalysis.retrogradeCount > 0 ? `Retrograde Planets: ${currentAnalysis.retrogradePlanets.join(', ')}` : ''}
+
+=== RECOMMENDATIONS ===
+${currentAnalysis.recommendations.map(rec => `• ${rec}`).join('\n')}
+
+=== TECHNICAL DETAILS ===
+Total Aspects: ${currentAnalysis.aspectCount}
+Major Aspects: ${currentAnalysis.majorAspects.length}
+Chart Calculation Method: Tropical Zodiac
+Coordinate System: Geocentric
+Time Zone: UTC
+
+Generated by Master Switchboard Ultimate
+Blue Snake Studio - Complete Astrological Analysis Suite
+  `.trim();
+}
+
+/* =================== ENHANCED PLAYBACK FUNCTIONS =================== */
+function updatePlaybackIndicators() {
+  if (dom.controls.directionIndicator) {
+    dom.controls.directionIndicator.textContent = playbackDirection === 1 ? '▷' : '◁';
+  }
+  if (dom.controls.speedIndicator) {
+    dom.controls.speedIndicator.textContent = `${speedMultiplier}x`;
+  }
+}
+
+function checkPlaybackBounds() {
+  if (!startDate || !endDate) return;
+  
+  const currentTime = simTime.getTime();
+  const start = startDate.getTime();
+  const end = endDate.getTime();
+  
+  if (playbackDirection === 1 && currentTime >= end) {
+    if (loopEnabled) {
+      simTime = new Date(start);
+      updateDateInput();
+    } else {
+      playing = false;
+      if (dom.controls.btnPlayPause) {
+        dom.controls.btnPlayPause.textContent = 'Play ▷';
+      }
+    }
+  } else if (playbackDirection === -1 && currentTime <= start) {
+    if (loopEnabled) {
+      simTime = new Date(end);
+      updateDateInput();
+    } else {
+      playing = false;
+      if (dom.controls.btnPlayPause) {
+        dom.controls.btnPlayPause.textContent = 'Play ▷';
+      }
+    }
+  }
+}
+
+function setPlaybackRange() {
+  const start = dom.controls.startDate?.value;
+  const end = dom.controls.endDate?.value;
+  
+  if (start) {
+    startDate = new Date(start);
+  }
+  if (end) {
+    endDate = new Date(end);
+  }
+  
+  saveAspectPreferences();
+}
+
+function setLocation() {
+  const lat = parseFloat(dom.controls.latitude?.value);
+  const lng = parseFloat(dom.controls.longitude?.value);
+  
+  if (!isNaN(lat) && !isNaN(lng)) {
+    latitude = lat;
+    longitude = lng;
+    calculateAscendantMidheaven();
+    renderAll();
+    saveAspectPreferences();
+  }
+}
+
+/* =================== STATE PERSISTENCE =================== */
+function loadStoredAspectPreferences() {
+  try {
+    const stored = localStorage.getItem(STATE_KEY);
+    if (!stored) return;
+    const s = JSON.parse(stored);
+    
+    // Load aspect toggles
+    if (s.toggles) {
+      Object.entries(s.toggles).forEach(([id, checked]) => {
+        const el = document.getElementById(id);
+        if (el) el.checked = checked;
+      });
+    }
+    
+    // Load other settings
+    if (s.orb != null) dom.controls.aspOrb.value = s.orb;
+    if (s.diffOrbs != null) dom.controls.diffOrbs.checked = s.diffOrbs;
+    if (s.luminaryBonus != null) dom.controls.luminaryBonus.checked = s.luminaryBonus;
+    if (s.showApplying != null) dom.controls.showApplying.checked = s.showApplying;
+    if (s.orbFeedback != null) dom.controls.orbFeedback.checked = s.orbFeedback;
+    if (s.tooltips != null) dom.controls.aspectTooltips.checked = s.tooltips;
+    if (s.autoHide != null) dom.controls.labelAutoHide.checked = s.autoHide;
+    if (s.subject) dom.controls.aspectSubject.value = s.subject;
+    if (s.playing != null) { 
+      playing = s.playing; 
+      dom.controls.btnPlayPause.textContent = playing ? 'Pause ▣' : 'Play ▷'; 
+    }
+    if (s.stepSize) dom.controls.stepSizeSel.value = s.stepSize;
+    if (s.showBlueNums != null) dom.controls.showBlueNums.checked = s.showBlueNums;
+    if (s.showRedNums != null) dom.controls.showRedNums.checked = s.showRedNums;
+    if (s.showClock != null) dom.controls.showClock.checked = s.showClock;
+    if (s.showNakshatras != null) dom.controls.showNakshatras.checked = s.showNakshatras;
+    if (s.showTithi != null) dom.controls.showTithi.checked = s.showTithi;
+    if (s.showMuhurta != null) dom.controls.showMuhurta.checked = s.showMuhurta;
+    if (s.showDrishti != null) dom.controls.showDrishti.checked = s.showDrishti;
+    if (s.modulus) {
+      if (dom.controls.modulusSel) { 
+        dom.controls.modulusSel.value = String(s.modulus); 
+      }
+      setModulus(Number(s.modulus));
+    }
+    
+    // Load enhanced playback settings
+    if (s.playbackDirection != null) playbackDirection = s.playbackDirection;
+    if (s.speedMultiplier != null) {
+      speedMultiplier = s.speedMultiplier;
+      if (dom.controls.speedMultiplier) {
+        dom.controls.speedMultiplier.value = String(speedMultiplier);
+      }
+    }
+    if (s.startDate) {
+      startDate = new Date(s.startDate);
+      if (dom.controls.startDate) {
+        dom.controls.startDate.value = formatDateForInput(startDate);
+      }
+    }
+    if (s.endDate) {
+      endDate = new Date(s.endDate);
+      if (dom.controls.endDate) {
+        dom.controls.endDate.value = formatDateForInput(endDate);
+      }
+    }
+    if (s.loopEnabled != null) {
+      loopEnabled = s.loopEnabled;
+      if (dom.controls.loopRange) {
+        dom.controls.loopRange.checked = loopEnabled;
+      }
+    }
+    
+    // Load location settings
+    if (s.latitude != null) {
+      latitude = s.latitude;
+      if (dom.controls.latitude) {
+        dom.controls.latitude.value = latitude;
+      }
+    }
+    if (s.longitude != null) {
+      longitude = s.longitude;
+      if (dom.controls.longitude) {
+        dom.controls.longitude.value = longitude;
+      }
+    }
+    if (s.showAscMc != null) {
+      if (dom.controls.showAscMc) {
+        dom.controls.showAscMc.checked = s.showAscMc;
+      }
+    }
+    
+    // Load advanced features
+    if (s.showRetrograde != null && dom.controls.showRetrograde) {
+      dom.controls.showRetrograde.checked = s.showRetrograde;
+    }
+    if (s.showEvents != null && dom.controls.showEvents) {
+      dom.controls.showEvents.checked = s.showEvents;
+    }
+    if (s.showCycles != null && dom.controls.showCycles) {
+      dom.controls.showCycles.checked = s.showCycles;
+    }
+    if (s.showDeclination != null && dom.controls.showDeclination) {
+      dom.controls.showDeclination.checked = s.showDeclination;
+    }
+    
+    autoHideCrowdedLabels = dom.controls.labelAutoHide ? dom.controls.labelAutoHide.checked : true;
+    updatePlaybackIndicators();
+    calculateAscendantMidheaven();
+  } catch (e) { 
+    console.warn("Failed to load state", e); 
+  }
+}
+
+function saveAspectPreferences() {
+  try {
+    const s = {
+      toggles: Object.values(dom.controls.aspToggles).reduce((acc, el) => { 
+        if(el) acc[el.id] = el.checked; 
+        return acc; 
+      }, {}),
+      orb: dom.controls.aspOrb.value,
+      diffOrbs: dom.controls.diffOrbs.checked,
+      luminaryBonus: dom.controls.luminaryBonus.checked,
+      showApplying: dom.controls.showApplying.checked,
+      orbFeedback: dom.controls.orbFeedback.checked,
+      tooltips: dom.controls.aspectTooltips.checked,
+      autoHide: dom.controls.labelAutoHide.checked,
+      subject: dom.controls.aspectSubject.value,
+      playing: playing,
+      stepSize: dom.controls.stepSizeSel.value,
+      showBlueNums: dom.controls.showBlueNums.checked,
+      showRedNums: dom.controls.showRedNums.checked,
+      showClock: dom.controls.showClock.checked,
+      showNakshatras: dom.controls.showNakshatras.checked,
+      showTithi: dom.controls.showTithi.checked,
+      showMuhurta: dom.controls.showMuhurta.checked,
+      showDrishti: dom.controls.showDrishti.checked,
+      modulus: (dom.controls.modulusSel?.value || String(ringSize)),
+      // Enhanced playback settings
+      playbackDirection: playbackDirection,
+      speedMultiplier: speedMultiplier,
+      startDate: startDate?.toISOString(),
+      endDate: endDate?.toISOString(),
+      loopEnabled: loopEnabled,
+      // Location settings
+      latitude: latitude,
+      longitude: longitude,
+      showAscMc: dom.controls.showAscMc?.checked,
+      // Advanced features
+      showRetrograde: dom.controls.showRetrograde?.checked,
+      showEvents: dom.controls.showEvents?.checked,
+      showCycles: dom.controls.showCycles?.checked,
+      showDeclination: dom.controls.showDeclination?.checked
+    };
+    localStorage.setItem(STATE_KEY, JSON.stringify(s));
+  } catch (e) { 
+    console.warn("Failed to save state", e); 
+  }
+}
+
+/* =================== CORE RENDERING FUNCTIONS =================== */
+function renderPlanets() {
+  dom.planetRing.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  Object.values(DEMO_PLANETS).forEach(planet => {
+    const [x, y] = polarToCartesian(R_PLAN, planet.lon);
+    const group = createSVGElement('g', { 
+      class: `planet ${planet.retrograde && dom.controls.showRetrograde?.checked ? 'planet-retrograde' : ''}` 
+    });
+    
+    // Planet dot
+    group.appendChild(createSVGElement('circle', { cx: x, cy: y, r: 5, class: 'p-dot' }));
+    
+    // Planet glyph
+    const glyph = createSVGElement('text', { x, y, class: 'p-glyph' });
+    glyph.textContent = planet.glyph;
+    group.appendChild(glyph);
+    
+    // Retrograde indicator
+    if (planet.retrograde && dom.controls.showRetrograde?.checked) {
+      const rxIndicator = createSVGElement('text', { 
+        x: x + 12, y: y - 8, 
+        class: 'retrograde-indicator' 
+      });
+      rxIndicator.textContent = 'Rx';
+      group.appendChild(rxIndicator);
+    }
+    
+    // Declination indicator (out of bounds)
+    if (dom.controls.showDeclination?.checked && Math.abs(planet.declination) > 23.5) {
+      const decIndicator = createSVGElement('circle', { 
+        cx: x, cy: y, r: 8, 
+        fill: 'none', 
+        stroke: '#ff9f43', 
+        'stroke-width': 2,
+        opacity: 0.7
+      });
+      group.appendChild(decIndicator);
+    }
+    
+    frag.appendChild(group);
+  });
+  dom.planetRing.appendChild(frag);
+}
+
+function renderZodiac() {
+  dom.zodiacRing.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < 12; i++) {
+    const angle = i * 30;
+    const [x, y] = polarToCartesian(220, angle + 15);
+    const text = createSVGElement('text', { x, y, class: 'z-label' });
+    text.textContent = ZODIAC_SIGNS[i];
+    frag.appendChild(text);
+    const [x1, y1] = polarToCartesian(200, angle);
+    const [x2, y2] = polarToCartesian(240, angle);
+    frag.appendChild(createSVGElement('line', { x1, y1, x2, y2, class: 'zodiac' }));
+  }
+  dom.zodiacRing.appendChild(frag);
+}
+
+function renderAscendantMidheaven() {
+  dom.ascMcLines.innerHTML = '';
+  if (!dom.controls.showAscMc?.checked || latitude === null || longitude === null) return;
+  
+  const frag = document.createDocumentFragment();
+  
+  // Ascendant line
+  const [ascX1, ascY1] = polarToCartesian(180, ascendant);
+  const [ascX2, ascY2] = polarToCartesian(360, ascendant);
+  const ascLine = createSVGElement('line', { 
+    x1: ascX1, y1: ascY1, x2: ascX2, y2: ascY2, 
+    stroke: '#26de81', 'stroke-width': 2, opacity: 0.8 
+  });
+  frag.appendChild(ascLine);
+  
+  // Ascendant label
+  const [ascLabelX, ascLabelY] = polarToCartesian(370, ascendant);
+  const ascLabel = createSVGElement('text', { 
+    x: ascLabelX, y: ascLabelY, 
+    fill: '#26de81', 'font-size': '12px', 'font-weight': '700',
+    'text-anchor': 'middle', 'dominant-baseline': 'middle'
+  });
+  ascLabel.textContent = 'ASC';
+  frag.appendChild(ascLabel);
+  
+  // Midheaven line
+  const [mcX1, mcY1] = polarToCartesian(180, midheaven);
+  const [mcX2, mcY2] = polarToCartesian(360, midheaven);
+  const mcLine = createSVGElement('line', { 
+    x1: mcX1, y1: mcY1, x2: mcX2, y2: mcY2, 
+    stroke: '#ff9f43', 'stroke-width': 2, opacity: 0.8 
+  });
+  frag.appendChild(mcLine);
+  
+  // Midheaven label
+  const [mcLabelX, mcLabelY] = polarToCartesian(370, midheaven);
+  const mcLabel = createSVGElement('text', { 
+    x: mcLabelX, y: mcLabelY, 
+    fill: '#ff9f43', 'font-size': '12px', 'font-weight': '700',
+    'text-anchor': 'middle', 'dominant-baseline': 'middle'
+  });
+  mcLabel.textContent = 'MC';
+  frag.appendChild(mcLabel);
+  
+  dom.ascMcLines.appendChild(frag);
+}
+
+function renderEventMarkers() {
+  dom.eventMarkers.innerHTML = '';
+  if (!dom.controls.showEvents?.checked) return;
+  
+  const frag = document.createDocumentFragment();
+  const currentTime = simTime.getTime();
+  const timeWindow = 30 * 24 * 60 * 60 * 1000; // 30 days
+  
+  HISTORICAL_EVENTS.forEach(event => {
+    const eventTime = new Date(event.date).getTime();
+    const timeDiff = Math.abs(currentTime - eventTime);
+    
+    if (timeDiff <= timeWindow) {
+      const angle = (timeDiff / timeWindow) * 360;
+      const [x1, y1] = polarToCartesian(350, angle);
+      const [x2, y2] = polarToCartesian(380, angle);
+      
+      const line = createSVGElement('line', { 
+        x1, y1, x2, y2, 
+        class: 'event-marker' 
+      });
+      frag.appendChild(line);
+      
+      const label = createSVGElement('text', { 
+        x: x2 + 10, y: y2, 
+        class: 'event-label' 
+      });
+      label.textContent = event.name;
+      frag.appendChild(label);
+    }
+  });
+  
+  dom.eventMarkers.appendChild(frag);
+}
+
+function calculateEnhancedAspects() {
+  dom.aspectsLayer.innerHTML = '';
+  lastLabelEntries = [];
+  
+  const globalOrb = parseFloat(dom.controls.aspOrb.value);
+  const useDiffOrbs = dom.controls.diffOrbs.checked;
+  const useLuminaryBonus = dom.controls.luminaryBonus.checked;
+  const showApplyingSep = dom.controls.showApplying.checked;
+  const showOrbFeedback = dom.controls.orbFeedback.checked;
+  const selectedSubject = dom.controls.aspectSubject.value;
+  
+  const planets = Object.values(DEMO_PLANETS);
+  const planetIndex = new Map(planets.map((p, idx) => [p.name, idx]));
+  const enabledAspects = Object.entries(ENHANCED_ASPECTS).filter(([key]) => dom.controls.aspToggles[key]?.checked);
+  
+  const planetsToCheck = selectedSubject ? planets.filter(p => p.name === selectedSubject) : planets;
+
+  planetsToCheck.forEach(planet1 => {
+    planets.forEach(planet2 => {
+      if (planet1.name === planet2.name) return;
+      if (selectedSubject && planet2.name === selectedSubject) return;
+      if (!selectedSubject) {
+        const idx1 = planetIndex.get(planet1.name);
+        const idx2 = planetIndex.get(planet2.name);
+        if (idx2 <= idx1) return;
+      }
+
+      const angle = shortestArc(planet1.lon, planet2.lon);
+
+      enabledAspects.forEach(([aspectKey, aspectData]) => {
+        const deviation = Math.abs(angle - aspectData.angle);
+        let effectiveOrb = useDiffOrbs ? aspectData.orb : globalOrb;
+
+        if (useLuminaryBonus && (ORB_MODIFIERS[planet1.name] || ORB_MODIFIERS[planet2.name])) {
+          const modifier = Math.max(ORB_MODIFIERS[planet1.name] || 1, ORB_MODIFIERS[planet2.name] || 1);
+          effectiveOrb *= modifier;
+        }
+
+        if (!Number.isFinite(effectiveOrb) || effectiveOrb <= 0) return;
+
+        if (deviation <= effectiveOrb) {
+          const aspectGroup = createAspectLine(planet1, planet2, aspectKey, aspectData, {
+            angle, deviation, effectiveOrb, showApplyingSep, showOrbFeedback
+          });
+          dom.aspectsLayer.appendChild(aspectGroup);
+        }
+      });
+    });
+  });
+
+  applyLabelOpacity(lastLabelEntries);
+  applyLabelCollisions(lastLabelEntries);
+}
+
+function createAspectLine(planet1, planet2, aspectKey, aspectData, meta) {
+  const [x1, y1] = polarToCartesian(R_PLAN, planet1.lon);
+  const [x2, y2] = polarToCartesian(R_PLAN, planet2.lon);
+  const midX = (x1 + x2) / 2;
+  const midY = (y1 + y2) / 2;
+
+  const line = createSVGElement('line', { x1, y1, x2, y2, class: aspectData.class });
+
+  let phase = 'applying';
+  let isApplying = null;
+  if (Object.prototype.hasOwnProperty.call(previousPlanetPositions, planet1.name) &&
+      Object.prototype.hasOwnProperty.call(previousPlanetPositions, planet2.name)) {
+    const prevAngle = shortestArc(previousPlanetPositions[planet1.name], previousPlanetPositions[planet2.name]);
+    const prevDeviation = Math.abs(prevAngle - aspectData.angle);
+    isApplying = meta.deviation <= prevDeviation;
+    phase = isApplying ? 'applying' : 'separating';
+  }
+
+  if (meta.showApplyingSep) {
+    if (isApplying === null || isApplying) {
+      line.classList.add('aspect-applying');
+    } else {
+      line.classList.add('aspect-separating');
+    }
+  }
+
+  const tightness = safeTightness(meta.deviation, meta.effectiveOrb);
+  if (meta.showOrbFeedback) {
+    if (tightness > 0.8) {
+      line.classList.add('aspect-tight');
+    } else if (tightness < 0.3) {
+      line.classList.add('aspect-loose');
+    }
+
+    let computedOpacity = 0.4 + (tightness * 0.6);
+    if (phase === 'separating') {
+      computedOpacity = Math.min(computedOpacity, 0.6);
+    }
+    line.style.opacity = computedOpacity;
+  } else {
+    line.style.opacity = '';
+  }
+
+  line.dataset.a = planet1.name;
+  line.dataset.b = planet2.name;
+  line.dataset.asp = aspectKey;
+  line.dataset.aspect = aspectData.name;
+  line.dataset.orb = meta.deviation.toFixed(1);
+  line.dataset.phase = phase;
+  line.dataset.angle = meta.angle.toFixed(1);
+  line.dataset.target = aspectData.angle.toFixed(1);
+  if (aspectData.glyph) {
+    line.dataset.symbol = aspectData.glyph;
+  }
+
+  const label = createSVGElement('text', { x: midX, y: midY, class: 'aspect-label' });
+  label.textContent = aspectData.glyph;
+  if (Array.isArray(lastLabelEntries)) {
+    lastLabelEntries.push({ textEl: label, x: midX, y: midY, tightness });
+  }
+
+  const group = createSVGElement('g', { class: 'aspect-group' });
+  group.appendChild(line);
+  group.appendChild(label);
+  return group;
+}
+
+function renderDrishti(){
+  dom.drishtiLayer.innerHTML = '';
+  if (!dom.controls.showDrishti?.checked) return;
+
+  const frag = document.createDocumentFragment();
+  const planets = Object.values(DEMO_PLANETS);
+  for (let i = 0; i < planets.length; i++) {
+    for (let j = 0; j < planets.length; j++) {
+      if (i === j) continue;
+      const p1 = planets[i], p2 = planets[j];
+      const s1 = signIndexFromLon(p1.lon), s2 = signIndexFromLon(p2.lon);
+      const signDelta = (s2 - s1 + 12) % 12;
+      if (!hasDrishti(p1.name, signDelta)) continue;
+
+      const [x1, y1] = polarToCartesian(R_PLAN, p1.lon);
+      const [x2, y2] = polarToCartesian(R_PLAN, p2.lon);
+      const cls = (p1.name==='Mars'?'drishti-mars':p1.name==='Jupiter'?'drishti-jup':p1.name==='Saturn'?'drishti-sat':'drishti-gen');
+      const line = createSVGElement('line', { x1, y1, x2, y2, class: cls });
+      frag.appendChild(line);
+    }
+  }
+  dom.drishtiLayer.appendChild(frag);
+}
+
+function renderNakshatraRing(){
+  dom.nakRing.innerHTML = '';
+  if (!dom.controls.showNakshatras?.checked) return;
+
+  const R_IN = 255, R_OUT = 305, R_TEXT = 330, R_ENG = 345;
+  const frag = document.createDocumentFragment();
+  
+  // ring spokes
+  for(let i=0;i<27;i++){
+    const deg = i * (360/27);
+    const [x1,y1] = polarXY(R_IN, deg);
+    const [x2,y2] = polarXY(R_OUT, deg);
+    const line = createSVGElement('line', {x1,y1,x2,y2, class:'nak-line'});
+    frag.appendChild(line);
+    
+    // Sanskrit names
+    const [nx,ny] = polarXY(R_TEXT, deg + (360/27)/2);
+    const t = createSVGElement('text', {x:nx, y:ny, class:'nak-name'});
+    t.textContent = NAKSHATRAS[i].sanskrit;
+    frag.appendChild(t);
+    
+    // English names
+    const [ex,ey] = polarXY(R_ENG, deg + (360/27)/2);
+    const e = createSVGElement('text', {x:ex, y:ey, class:'nak-name-english'});
+    e.textContent = NAKSHATRAS[i].english;
+    frag.appendChild(e);
+  }
+
+  // highlight current Moon nakṣatra
+  const mi = toNakIndex(DEMO_PLANETS.Moon.lon);
+  const a0 = mi*(360/27) + (360/27)/2;
+  const [hx,hy] = polarXY(R_TEXT, a0);
+  const hi = createSVGElement('text', {x:hx, y:hy, class:'nak-name nak-active'});
+  hi.textContent = NAKSHATRAS[mi].sanskrit;
+  frag.appendChild(hi);
+  
+  const [hex,hey] = polarXY(R_ENG, a0);
+  const hie = createSVGElement('text', {x:hex, y:hey, class:'nak-name-english nak-active-english'});
+  hie.textContent = NAKSHATRAS[mi].english;
+  frag.appendChild(hie);
+  
+  dom.nakRing.appendChild(frag);
+}
+
+function renderTithiMeter(){
+  dom.tithiMeter.innerHTML = '';
+  if (!dom.controls.showTithi?.checked) return;
+
+  const sun = DEMO_PLANETS.Sun.lon, moon = DEMO_PLANETS.Moon.lon;
+  const tithi = tithiFromSunMoon(sun, moon); // 1..30
+  const prog = tithi/30; // 0..1
+
+  const R_BG = 155, R_FG = 155;
+  const frag = document.createDocumentFragment();
+  
+  // background arc (full circle shown as ring)
+  const bg = createSVGElement('circle', {r:R_BG, class:'tithi-arc-bg'});
+  frag.appendChild(bg);
+
+  // foreground arc (0..tithi portion)
+  const arcLen = prog * 2*Math.PI*R_FG;
+  const fg = createSVGElement('circle', {r:R_FG, class:'tithi-arc-fg'});
+  fg.style.strokeDasharray = `${arcLen.toFixed(2)} ${ (2*Math.PI*R_FG).toFixed(2) }`;
+  frag.appendChild(fg);
+
+  // Sanskrit label
+  const lbl = createSVGElement('text', {x:0, y:-R_FG-25, class:'tithi-label'});
+  lbl.textContent = `Tithi ${tithi}/30`;
+  frag.appendChild(lbl);
+  
+  // English label
+  const lblEng = createSVGElement('text', {x:0, y:-R_FG-8, class:'tithi-label-english'});
+  lblEng.textContent = `Lunar Day ${tithi}/30`;
+  frag.appendChild(lblEng);
+  
+  dom.tithiMeter.appendChild(frag);
+}
+
+function renderMuhurtaRing(){
+  dom.muhurtaRing.innerHTML = '';
+  if (!dom.controls.showMuhurta?.checked) return;
+
+  const idx = muhurtaIndex(simTime); // 0..29
+  const R_IN = 120, R_OUT = 140;
+  const frag = document.createDocumentFragment();
+
+  for(let i=0;i<30;i++){
+    const deg = i * (360/30);
+    const [x1,y1] = polarXY(R_IN, deg);
+    const [x2,y2] = polarXY(R_OUT, deg);
+    const line = createSVGElement('line', {x1,y1,x2,y2, class: 'muhurta-tick' + (i===idx?' muhurta-active':'')});
+    frag.appendChild(line);
+  }
+  
+  dom.muhurtaRing.appendChild(frag);
+}
+
+function renderClockFace() {
+  if (!dom.clockFace) return;
+  dom.clockFace.innerHTML = '';
+  if (!dom.controls.showClock?.checked) return;
+
+  const R_IN = 195;
+  const R_OUT = 245;
+  const R_NUM = 258;
+  const frag = document.createDocumentFragment();
+  for (let t = 0; t < 60; t++) {
+    const deg = t * 6;
+    const isHour = t % 5 === 0;
+    const r1 = isHour ? R_IN : R_IN + 8;
+    const r2 = isHour ? R_OUT : R_OUT - 6;
+    const [x1, y1] = polarXY(r1, deg);
+    const [x2, y2] = polarXY(r2, deg);
+    const tick = createSVGElement('line', { x1, y1, x2, y2, class: isHour ? 'clock-hour' : 'clock-min' });
+    frag.appendChild(tick);
+    if (isHour) {
+      const hr = (t / 5) || 12;
+      const [nx, ny] = polarXY(R_NUM, deg);
+      const text = createSVGElement('text', { x: nx, y: ny, class: 'clock-num' });
+      text.textContent = hr;
+      frag.appendChild(text);
+    }
+  }
+  dom.clockFace.appendChild(frag);
+}
+
+function renderNumberRings() {
+  if (dom.controls.showBlueNums?.checked) {
+    renderNumberRing(getBlueSeq(), ringSize, 275, dom.blueNumsG, 'num-blue');
+  } else if (dom.blueNumsG) {
+    dom.blueNumsG.innerHTML = '';
+  }
+
+  if (dom.controls.showRedNums?.checked) {
+    renderNumberRing(getRedSeq(), ringSize, 290, dom.redNumsG, 'num-red');
+  } else if (dom.redNumsG) {
+    dom.redNumsG.innerHTML = '';
+  }
+}
+
+function renderNumberRing(seq, modulus, radius, group, cls) {
+  if (!group) return;
+  group.innerHTML = '';
+  if (!Array.isArray(seq) || !seq.length) return;
+
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < modulus; i++) {
+    const [x, y] = polarXY(radius, i * (360 / modulus));
+    const text = createSVGElement('text', { x, y, class: cls });
+    text.textContent = String(seq[i % seq.length]);
+    frag.appendChild(text);
+  }
+  group.appendChild(frag);
+}
+
+function applyLabelOpacity(entries) {
+  for (const { textEl, tightness } of entries) {
+    const op = Math.max(0.35, Math.min(1, 0.35 + 0.65 * (tightness || 0)));
+    textEl.setAttribute('opacity', op.toFixed(2));
+  }
+}
+
+function applyLabelCollisions(entries) {
+  if (!autoHideCrowdedLabels) {
+    for (const { textEl } of entries) {
+      textEl.removeAttribute('display');
+    }
+    return;
+  }
+
+  const MIN = 10;
+  const threshold = MIN * MIN;
+  for (let i = 0; i < entries.length; i++) {
+    const a = entries[i];
+    let crowded = false;
+    for (let j = i + 1; j < entries.length; j++) {
+      const b = entries[j];
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      if (dx * dx + dy * dy < threshold) {
+        crowded = true;
+        break;
+      }
+    }
+    if (crowded) {
+      a.textEl.setAttribute('display', 'none');
+    } else {
+      a.textEl.removeAttribute('display');
+    }
+  }
+}
+
+/* =================== TOOLTIP SYSTEM =================== */
+function attachTooltipHandlers() {
+  if (tooltipListenersAttached) return;
+  dom.aspectsLayer.addEventListener('mouseover', onAspectMouseOver);
+  dom.aspectsLayer.addEventListener('mousemove', onAspectMouseMove);
+  dom.aspectsLayer.addEventListener('mouseout', onAspectMouseOut);
+  tooltipListenersAttached = true;
+}
+
+function detachTooltipHandlers() {
+  if (!tooltipListenersAttached) return;
+  dom.aspectsLayer.removeEventListener('mouseover', onAspectMouseOver);
+  dom.aspectsLayer.removeEventListener('mousemove', onAspectMouseMove);
+  dom.aspectsLayer.removeEventListener('mouseout', onAspectMouseOut);
+  tooltipListenersAttached = false;
+}
+
+function syncTooltipHandlers() {
+  if (dom.controls.aspectTooltips?.checked) {
+    attachTooltipHandlers();
+  } else {
+    detachTooltipHandlers();
+    if (dom.aspectTooltip) {
+      dom.aspectTooltip.style.display = 'none';
+    }
+  }
+}
+
+function onAspectMouseOver(e) {
+  if (!dom.controls.aspectTooltips?.checked) return;
+  if (e.target.tagName !== 'line' || !e.target.dataset.asp) return;
+  
+  const line = e.target;
+  const tooltip = dom.aspectTooltip;
+  if (!tooltip) return;
+
+  const planet1 = line.dataset.a;
+  const planet2 = line.dataset.b;
+  const aspect = line.dataset.aspect;
+  const orb = line.dataset.orb;
+  const phase = line.dataset.phase;
+  const symbol = line.dataset.symbol || '';
+  
+  tooltip.innerHTML = `
+    <div><strong>${planet1} ${symbol} ${planet2}</strong></div>
+    <div>${aspect} (${phase})</div>
+    <div>Orb: ±${orb}°</div>
+  `;
+  
+  tooltip.style.display = 'block';
+}
+
+function onAspectMouseMove(e) {
+  if (!dom.controls.aspectTooltips?.checked) return;
+  const tooltip = dom.aspectTooltip;
+  if (!tooltip || tooltip.style.display === 'none') return;
+  
+  tooltip.style.left = (e.pageX + 10) + 'px';
+  tooltip.style.top = (e.pageY - 10) + 'px';
+}
+
+function onAspectMouseOut(e) {
+  if (!dom.controls.aspectTooltips?.checked) return;
+  const tooltip = dom.aspectTooltip;
+  if (!tooltip) return;
+  
+  tooltip.style.display = 'none';
+}
+
+/* =================== TIME FUNCTIONS =================== */
+function formatSimTime(date) {
+  if (Number.isNaN(date.getTime())) return '—';
+  return `${date.toISOString().replace('T', ' ').slice(0, 19)} UTC`;
+}
+
+function formatDateForInput(date) {
+  const pad = (value) => String(value).padStart(2, '0');
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  const seconds = pad(date.getSeconds());
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+}
+
+function updateDateInput() {
+  if (!Number.isNaN(simTime.getTime())) {
+    dom.controls.dtInput.value = formatDateForInput(simTime);
+  }
+}
+
+function getStepMs() {
+  const size = dom.controls.stepSizeSel.value;
+  switch (size) {
+    case 'minute': return 60 * 1000;
+    case 'hour': return 3600 * 1000;
+    case 'day': return 24 * 3600 * 1000;
+    default: return 3600 * 1000;
+  }
+}
+
+function advanceByMs(deltaMs) {
+  const deltaHours = deltaMs / 3600000;
+  simTime = new Date(simTime.getTime() + deltaMs);
+  updateDateInput();
+  advancePlanets(deltaHours);
+  calculateAscendantMidheaven();
+  renderAll();
+}
+
+function renderAll() {
+  renderPlanets();
+  renderZodiac();
+  renderAscendantMidheaven();
+  calculateEnhancedAspects();
+  syncTooltipHandlers();
+  renderClockFace();
+  renderNumberRings();
+  renderEventMarkers();
+
+  // Jyoti layers
+  renderNakshatraRing();
+  renderTithiMeter();
+  renderMuhurtaRing();
+  renderDrishti();
+
+  // Stats
+  const activeAspects = dom.aspectsLayer.children.length + dom.drishtiLayer.children.length;
+  dom.aspectStats.textContent = `${activeAspects} aspects active`;
+  const subjectValue = dom.controls.aspectSubject.value;
+  const warpLabel = warp === 0 ? 'Time paused' : (warp === 3600 ? '+1 hr/s' : (warp === 86400 ? '+1 day/s' : `+${warp}/s`));
+  dom.planetStats.textContent = subjectValue ? `Subject: ${subjectValue} • ${warpLabel}` : `All planets • ${warpLabel}`;
+  dom.timeStats.textContent = `Simulated time: ${formatSimTime(simTime)}`;
+  
+  const locationText = latitude !== null && longitude !== null ? 
+    `${latitude.toFixed(2)}°, ${longitude.toFixed(2)}°` : 'Universal';
+  dom.locationStats.textContent = `Location: ${locationText}`;
+}
+
+function frame(timestamp) {
+  if (!lastRAF) lastRAF = timestamp;
+  const dt = (timestamp - lastRAF) / 1000;
+  lastRAF = timestamp;
+
+  if (playing && warp > 0) {
+    const deltaSeconds = warp * dt * speedMultiplier * playbackDirection;
+    simTime = new Date(simTime.getTime() + deltaSeconds * 1000);
+    updateDateInput();
+    advancePlanets(deltaSeconds / 3600);
+    calculateAscendantMidheaven();
+    renderAll();
+    
+    // Check playback bounds
+    checkPlaybackBounds();
+  }
+
+  requestAnimationFrame(frame);
+}
+
+/* =================== EVENT LISTENERS =================== */
+// Export controls
+dom.controls.btnExport?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const dropdown = dom.controls.exportDropdown;
+  dropdown.classList.toggle('show');
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.export-menu')) {
+    dom.controls.exportDropdown?.classList.remove('show');
+  }
+  if (!e.target.closest('.analysis-panel') && !e.target.closest('#btnAnalysis')) {
+    dom.analysisPanel?.classList.remove('show');
+  }
+});
+
+dom.controls.btnExportPNG?.addEventListener('click', () => {
+  exportToPNG();
+  dom.controls.exportDropdown?.classList.remove('show');
+});
+
+dom.controls.btnExportSVG?.addEventListener('click', () => {
+  exportToSVG();
+  dom.controls.exportDropdown?.classList.remove('show');
+});
+
+dom.controls.btnExportData?.addEventListener('click', () => {
+  exportToJSON();
+  dom.controls.exportDropdown?.classList.remove('show');
+});
+
+dom.controls.btnExportCSV?.addEventListener('click', () => {
+  exportToCSV();
+  dom.controls.exportDropdown?.classList.remove('show');
+});
+
+dom.controls.btnExportReport?.addEventListener('click', () => {
+  exportAnalysisReport();
+  dom.controls.exportDropdown?.classList.remove('show');
+});
+
+// Analysis controls
+dom.controls.btnAnalysis?.addEventListener('click', () => {
+  generateAnalysis();
+  analysisVisible = !analysisVisible;
+  if (analysisVisible) {
+    dom.analysisPanel?.classList.add('show');
+  } else {
+    dom.analysisPanel?.classList.remove('show');
+  }
+});
+
+dom.controls.btnCycleFinder?.addEventListener('click', () => {
+  // Placeholder for cycle finder functionality
+  alert('Cycle Finder: This feature will calculate when specific planetary alignments return to their current state.');
+});
+
+dom.controls.btnEventMarker?.addEventListener('click', () => {
+  // Placeholder for event marker functionality
+  alert('Event Marker: This feature will allow you to mark significant dates and events on the timeline.');
+});
+
+// Location controls
+dom.controls.latitude?.addEventListener('change', setLocation);
+dom.controls.longitude?.addEventListener('change', setLocation);
+dom.controls.showAscMc?.addEventListener('change', () => {
+  saveAspectPreferences();
+  rerenderWithoutTimeChange();
+});
+
+// Advanced feature controls
+[dom.controls.showRetrograde, dom.controls.showEvents, dom.controls.showCycles, dom.controls.showDeclination].forEach(el => {
+  el?.addEventListener('change', () => {
+    saveAspectPreferences();
+    rerenderWithoutTimeChange();
+  });
+});
+
+// Aspect controls
+Object.values(dom.controls.aspToggles).forEach(el => {
+  el?.addEventListener('change', rerenderWithoutTimeChange);
+});
+
+[dom.controls.diffOrbs, dom.controls.luminaryBonus, dom.controls.showApplying, dom.controls.orbFeedback].forEach(el => {
+  el?.addEventListener('change', rerenderWithoutTimeChange);
+});
+
+dom.controls.aspOrb?.addEventListener('input', rerenderWithoutTimeChange);
+dom.controls.aspectSubject?.addEventListener('change', rerenderWithoutTimeChange);
+
+dom.controls.aspectTooltips?.addEventListener('change', () => {
+  syncTooltipHandlers();
+  rerenderWithoutTimeChange();
+});
+
+// Enhanced time controls
+dom.controls.btnPlayPause?.addEventListener('click', () => {
+  playing = !playing;
+  if (dom.controls.btnPlayPause) {
+    dom.controls.btnPlayPause.textContent = playing ? 'Pause ▣' : 'Play ▷';
+  }
+  saveAspectPreferences();
+  rerenderWithoutTimeChange();
+});
+
+dom.controls.btnRewind?.addEventListener('click', () => {
+  playbackDirection = playbackDirection === 1 ? -1 : 1;
+  updatePlaybackIndicators();
+  saveAspectPreferences();
+});
+
+dom.controls.btnStepBack?.addEventListener('click', () => {
+  advanceByMs(-getStepMs());
+});
+
+dom.controls.btnStepFwd?.addEventListener('click', () => {
+  advanceByMs(getStepMs());
+});
+
+dom.controls.btnSnapPause?.addEventListener('click', () => {
+  const previous = simTime;
+  simTime = new Date();
+  const deltaHours = (simTime.getTime() - previous.getTime()) / 3600000;
+  updateDateInput();
+  advancePlanets(deltaHours);
+  calculateAscendantMidheaven();
+  playing = false;
+  if (dom.controls.btnPlayPause) {
+    dom.controls.btnPlayPause.textContent = 'Play ▷';
+  }
+  saveAspectPreferences();
+  renderAll();
+});
+
+dom.controls.dtInput?.addEventListener('change', () => {
+  if (!dom.controls.dtInput.value) {
+    updateDateInput();
+    return;
+  }
+  const timestamp = dom.controls.dtInput.valueAsNumber;
+  if (!Number.isNaN(timestamp)) {
+    const nextTime = new Date(timestamp);
+    const currentTime = simTime.getTime();
+    const deltaHours = Number.isNaN(currentTime) ? 0 : (nextTime.getTime() - currentTime) / 3600000;
+    simTime = nextTime;
+    updateDateInput();
+    advancePlanets(deltaHours);
+    calculateAscendantMidheaven();
+    renderAll();
+  } else {
+    updateDateInput();
+  }
+});
+
+// Enhanced playback controls
+dom.controls.startDate?.addEventListener('change', setPlaybackRange);
+dom.controls.endDate?.addEventListener('change', setPlaybackRange);
+dom.controls.loopRange?.addEventListener('change', () => {
+  loopEnabled = dom.controls.loopRange.checked;
+  saveAspectPreferences();
+});
+
+dom.controls.speedMultiplier?.addEventListener('change', () => {
+  speedMultiplier = parseInt(dom.controls.speedMultiplier.value);
+  updatePlaybackIndicators();
+  saveAspectPreferences();
+});
+
+dom.controls.stepSizeSel?.addEventListener('change', saveAspectPreferences);
+
+// Visual layer controls
+dom.controls.showBlueNums?.addEventListener('change', () => {
+  saveAspectPreferences();
+  rerenderWithoutTimeChange();
+});
+
+dom.controls.showRedNums?.addEventListener('change', () => {
+  saveAspectPreferences();
+  rerenderWithoutTimeChange();
+});
+
+dom.controls.showClock?.addEventListener('change', () => {
+  saveAspectPreferences();
+  rerenderWithoutTimeChange();
+});
+
+// Modulus selector
+dom.controls.modulusSel?.addEventListener('change', () => {
+  setModulus(Number(dom.controls.modulusSel.value));
+  saveAspectPreferences();
+});
+
+// Jyoti layer controls
+dom.controls.showNakshatras?.addEventListener('change', () => {
+  saveAspectPreferences();
+  rerenderWithoutTimeChange();
+});
+
+dom.controls.showTithi?.addEventListener('change', () => {
+  saveAspectPreferences();
+  rerenderWithoutTimeChange();
+});
+
+dom.controls.showMuhurta?.addEventListener('change', () => {
+  saveAspectPreferences();
+  rerenderWithoutTimeChange();
+});
+
+dom.controls.showDrishti?.addEventListener('change', () => {
+  saveAspectPreferences();
+  rerenderWithoutTimeChange();
+});
+
+// Label auto-hide
+if (dom.controls.labelAutoHide) {
+  autoHideCrowdedLabels = dom.controls.labelAutoHide.checked;
+  dom.controls.labelAutoHide.addEventListener('change', () => {
+    autoHideCrowdedLabels = dom.controls.labelAutoHide.checked;
+    applyLabelOpacity(lastLabelEntries);
+    applyLabelCollisions(lastLabelEntries);
+    saveAspectPreferences();
+  });
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (event) => {
+  const target = event.target;
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+    return;
+  }
+
+  if (event.code === 'Space') {
+    event.preventDefault();
+    playing = !playing;
+    if (dom.controls.btnPlayPause) {
+      dom.controls.btnPlayPause.textContent = playing ? 'Pause ▣' : 'Play ▷';
+    }
+    saveAspectPreferences();
+    rerenderWithoutTimeChange();
+    return;
+  }
+
+  if (event.key === '[') {
+    event.preventDefault();
+    advanceByMs(-getStepMs());
+    return;
+  }
+
+  if (event.key === ']') {
+    event.preventDefault();
+    advanceByMs(getStepMs());
+    return;
+  }
+
+  if (event.key.toLowerCase() === 'h') {
+    autoHideCrowdedLabels = !autoHideCrowdedLabels;
+    if (dom.controls.labelAutoHide) {
+      dom.controls.labelAutoHide.checked = autoHideCrowdedLabels;
+    }
+    applyLabelOpacity(lastLabelEntries);
+    applyLabelCollisions(lastLabelEntries);
+    saveAspectPreferences();
+  }
+
+  if (event.key.toLowerCase() === 'r') {
+    event.preventDefault();
+    playbackDirection = playbackDirection === 1 ? -1 : 1;
+    updatePlaybackIndicators();
+    saveAspectPreferences();
+  }
+
+  if (event.key.toLowerCase() === 'a') {
+    event.preventDefault();
+    generateAnalysis();
+    analysisVisible = !analysisVisible;
+    if (analysisVisible) {
+      dom.analysisPanel?.classList.add('show');
+    } else {
+      dom.analysisPanel?.classList.remove('show');
+    }
+  }
+});
+
+/* =================== INITIALIZATION =================== */
+loadStoredAspectPreferences();
+snapshotPrevPositions();
+updateDateInput();
+updatePlaybackIndicators();
+calculateAscendantMidheaven();
+renderAll();
+requestAnimationFrame(frame);
+
+</script>
+</body>
+</html>
+

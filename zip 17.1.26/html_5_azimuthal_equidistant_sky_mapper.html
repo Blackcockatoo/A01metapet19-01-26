@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Azimuthal Equidistant Sky Mapper (HTML5)</title>
+  <style>
+    :root{ --bg:#0b0d10; --panel:#12151a; --ink:#e9eef7; --muted:#9aa7b8; --ring:#1c222b; --accent:#7cc7ff; --gold:#f0c34e; --red:#ff3b5c; }
+    html,body{height:100%}
+    body{
+      margin:0;
+      background: radial-gradient(1200px 800px at 50% 0%, #0f141b 0%, var(--bg) 60%),
+                  radial-gradient(900px 700px at 50% 100%, #0f141b 0%, var(--bg) 70%);
+      color:var(--ink);
+      font:500 14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+    }
+    header{
+      display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;
+      padding:10px 12px; border-bottom:1px solid #ffffff10; background:#0c1016cc; backdrop-filter: blur(8px);
+      position:sticky; top:0; z-index:5;
+    }
+    .brand{display:flex; gap:10px; align-items:center}
+    .badge{width:26px; height:26px; border-radius:50%; background: conic-gradient(from 220deg, var(--accent), var(--gold), var(--red), var(--accent)); box-shadow: 0 0 0 2px #ffffff10 inset, 0 8px 20px #0009;}
+    .title{font-weight:900; letter-spacing:.08em; text-transform:uppercase; font-size:12px}
+    .subtitle{color:var(--muted); font-size:11px; letter-spacing:.12em}
+
+    .controls{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+    .group{display:flex; gap:6px; align-items:center; padding:6px 8px; background:var(--panel); border:1px solid #ffffff10; border-radius:10px; box-shadow: 0 1px 0 #ffffff08 inset, 0 10px 24px #0008;}
+    label{color:var(--muted); font-size:11px; letter-spacing:.08em; text-transform:uppercase}
+    input, select, button, textarea{
+      background:#141922; color:var(--ink); border:1px solid #ffffff10;
+      padding:7px 9px; border-radius:8px; font-weight:650;
+    }
+    input[type="number"]{width:92px}
+    input[type="range"]{width:150px}
+    button{cursor:pointer}
+    button:hover{border-color:#ffffff2a}
+
+    main{display:grid; grid-template-columns: 1fr; place-items:center; padding:12px}
+    canvas{width:min(980px, 96vw); height:min(980px, 96vw); border-radius:18px; background:#070a0f; border:1px solid #ffffff10; box-shadow: 0 22px 60px #000c;}
+
+    .dock{
+      width:min(980px, 96vw);
+      margin-top:10px;
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:10px;
+    }
+    @media (max-width: 860px){ .dock{grid-template-columns:1fr} }
+
+    .panel{
+      background:var(--panel);
+      border:1px solid #ffffff10;
+      border-radius:14px;
+      padding:10px;
+      box-shadow: 0 1px 0 #ffffff08 inset, 0 14px 30px #0008;
+    }
+
+    textarea{width:100%; min-height:138px; resize:vertical; font:600 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+    .hint{color:var(--muted); font-size:12px; margin-top:6px}
+    .row{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px}
+    .pill{display:inline-flex; gap:6px; align-items:center; padding:6px 9px; border:1px solid #ffffff14; border-radius:999px; background:#0f131a; color:var(--muted); font-size:12px}
+    .dot{width:8px; height:8px; border-radius:50%}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="badge" aria-hidden="true"></div>
+      <div>
+        <div class="title">Azimuthal Equidistant Sky Mapper</div>
+        <div class="subtitle">Map RA/Dec (or lon/lat) onto a 2D plane from a chosen center</div>
+      </div>
+    </div>
+
+    <div class="controls" role="group" aria-label="Controls">
+      <div class="group">
+        <label>Center</label>
+        <input id="centerLat" type="number" step="0.1" value="0" title="Center latitude / declination (deg)" />
+        <input id="centerLon" type="number" step="0.1" value="0" title="Center longitude / RA (deg)" />
+        <select id="lonMode" title="How to interpret longitude values">
+          <option value="deg" selected>Lon in °</option>
+          <option value="raHours">RA in hours</option>
+        </select>
+      </div>
+
+      <div class="group">
+        <label>View</label>
+        <label class="pill"><span class="dot" style="background:var(--accent)"></span>Grid</label>
+        <input id="showGrid" type="checkbox" checked />
+        <label class="pill"><span class="dot" style="background:var(--gold)"></span>Labels</label>
+        <input id="showLabels" type="checkbox" checked />
+      </div>
+
+      <div class="group">
+        <label>Scale</label>
+        <input id="scale" type="range" min="120" max="560" step="1" value="360" />
+      </div>
+
+      <div class="group">
+        <button id="btnRender" type="button">Render</button>
+        <button id="btnDemo" type="button">Load Demo Stars</button>
+        <button id="btnClear" type="button">Clear</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <canvas id="c" width="980" height="980" aria-label="Sky map canvas"></canvas>
+
+    <div class="dock">
+      <div class="panel">
+        <div style="font-weight:900; letter-spacing:.08em; text-transform:uppercase; font-size:12px;">Points</div>
+        <div class="hint">One per line: <b>Name, lon/RA, lat/Dec, magnitude(optional)</b>. Example: <code>Sirius, 101.287, -16.716, -1.46</code></div>
+        <textarea id="points"></textarea>
+        <div class="row">
+          <span class="pill"><span class="dot" style="background:var(--accent)"></span>Stars</span>
+          <span class="pill"><span class="dot" style="background:var(--gold)"></span>Center</span>
+          <span class="pill"><span class="dot" style="background:var(--red)"></span>Horizon (optional)</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div style="font-weight:900; letter-spacing:.08em; text-transform:uppercase; font-size:12px;">Projection Notes</div>
+        <div class="hint">
+          <b>Azimuthal equidistant</b> preserves distances and bearings from the center. Distortion grows toward the rim.
+          
+          <div style="margin-top:10px; color:var(--muted)">
+            Tip: Use center = your zenith, ecliptic pole, or an event-point (e.g. eclipse degree) and let the sky radiate.
+          </div>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <label>Optional horizon circle</label>
+          <input id="showHorizon" type="checkbox" />
+        </div>
+        <div class="row">
+          <label>Horizon radius (°)</label>
+          <input id="horizonDeg" type="number" step="1" value="90" />
+        </div>
+      </div>
+    </div>
+  </main>
+
+<script>
+  // ===== Azimuthal Equidistant Projection =====
+  // Inputs/outputs in degrees; returned x,y are in "radians" scale, so you scale afterward.
+  function azimuthalEquidistant(latDeg, lonDeg, lat0Deg, lon0Deg){
+    const rad = Math.PI/180;
+    const φ  = latDeg * rad;
+    const λ  = lonDeg * rad;
+    const φ0 = lat0Deg * rad;
+    const λ0 = lon0Deg * rad;
+
+    const cosc = Math.sin(φ0)*Math.sin(φ) + Math.cos(φ0)*Math.cos(φ)*Math.cos(λ-λ0);
+    const clamped = Math.min(1, Math.max(-1, cosc));
+    const c = Math.acos(clamped);
+    if (c === 0) return {x:0, y:0, c:0};
+
+    const k = c / Math.sin(c);
+    const x = k * Math.cos(φ) * Math.sin(λ - λ0);
+    const y = k * (Math.cos(φ0)*Math.sin(φ) - Math.sin(φ0)*Math.cos(φ)*Math.cos(λ - λ0));
+    return {x, y, c};
+  }
+
+  // ===== Canvas setup =====
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+
+  const dom = {
+    centerLat: document.getElementById('centerLat'),
+    centerLon: document.getElementById('centerLon'),
+    lonMode: document.getElementById('lonMode'),
+    showGrid: document.getElementById('showGrid'),
+    showLabels: document.getElementById('showLabels'),
+    scale: document.getElementById('scale'),
+    points: document.getElementById('points'),
+    btnRender: document.getElementById('btnRender'),
+    btnDemo: document.getElementById('btnDemo'),
+    btnClear: document.getElementById('btnClear'),
+    showHorizon: document.getElementById('showHorizon'),
+    horizonDeg: document.getElementById('horizonDeg'),
+  };
+
+  function dprFix(){
+    const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+    const css = canvas.getBoundingClientRect();
+    const w = Math.round(css.width * dpr);
+    const h = Math.round(css.height * dpr);
+    if (canvas.width !== w || canvas.height !== h){
+      canvas.width = w; canvas.height = h;
+    }
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(dpr, dpr);
+  }
+
+  function clear(bg=true){
+    const r = canvas.getBoundingClientRect();
+    if (bg){
+      // soft vignette
+      const g = ctx.createRadialGradient(r.width/2, r.height/2, 10, r.width/2, r.height/2, r.width/2);
+      g.addColorStop(0, '#070a0f');
+      g.addColorStop(1, '#04060b');
+      ctx.fillStyle = g;
+      ctx.fillRect(0,0,r.width,r.height);
+    } else {
+      ctx.clearRect(0,0,r.width,r.height);
+    }
+  }
+
+  function parsePoints(text){
+    const out = [];
+    const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    for (const line of lines){
+      const parts = line.split(',').map(s => s.trim());
+      if (parts.length < 3) continue;
+      const name = parts[0] || '—';
+      const lon = Number(parts[1]);
+      const lat = Number(parts[2]);
+      const mag = parts.length >= 4 ? Number(parts[3]) : NaN;
+      if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
+      out.push({name, lon, lat, mag});
+    }
+    return out;
+  }
+
+  function lonToDeg(lon){
+    // If RA hours mode, interpret input as hours and convert to degrees.
+    if (dom.lonMode.value === 'raHours') return lon * 15;
+    return lon;
+  }
+
+  function drawGrid(cx, cy, pxPerRad, maxRadiusPx){
+    if (!dom.showGrid.checked) return;
+
+    // rings every 15 degrees angular distance
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+
+    for (let deg=15; deg<=165; deg+=15){
+      const rad = (deg * Math.PI/180) * pxPerRad;
+      if (rad > maxRadiusPx) break;
+      ctx.beginPath();
+      ctx.arc(0,0,rad,0,Math.PI*2);
+      ctx.stroke();
+
+      // label
+      ctx.fillStyle = 'rgba(154,167,184,0.9)';
+      ctx.font = '600 11px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+      ctx.fillText(`${deg}°`, 6, -rad + 14);
+    }
+
+    // spokes every 30 degrees
+    for (let a=0; a<360; a+=30){
+      const th = (a-90) * Math.PI/180;
+      const x = Math.cos(th) * maxRadiusPx;
+      const y = Math.sin(th) * maxRadiusPx;
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      ctx.lineTo(x,y);
+      ctx.stroke();
+
+      // azimuth label
+      ctx.fillStyle = 'rgba(154,167,184,0.8)';
+      ctx.font = '800 11px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+      const lx = Math.cos(th) * (maxRadiusPx + 16);
+      const ly = Math.sin(th) * (maxRadiusPx + 16);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(a), lx, ly);
+    }
+
+    // outer rim
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(0,0,maxRadiusPx,0,Math.PI*2);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function starRadiusFromMag(mag){
+    // Simple visual: brighter stars -> larger dots.
+    if (!Number.isFinite(mag)) return 3.2;
+    // clamp-ish
+    const m = Math.max(-1.5, Math.min(6.0, mag));
+    return 1.2 + (6.0 - m) * 0.45; // 1.2 .. ~4.8
+  }
+
+  function render(){
+    dprFix();
+    const rect = canvas.getBoundingClientRect();
+
+    const cx = rect.width/2;
+    const cy = rect.height/2;
+
+    // scale: how many pixels for 1 radian of angular distance
+    const pxPerRad = Number(dom.scale.value);
+
+    // fit max radius to the canvas nicely
+    const maxRadiusPx = Math.min(rect.width, rect.height) * 0.44;
+
+    clear(true);
+    drawGrid(cx, cy, pxPerRad, maxRadiusPx);
+
+    const lat0 = Number(dom.centerLat.value) || 0;
+    const lon0 = lonToDeg(Number(dom.centerLon.value) || 0);
+
+    // center marker
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.fillStyle = 'rgba(240,195,78,0.95)';
+    ctx.beginPath();
+    ctx.arc(0,0,5,0,Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(240,195,78,0.35)';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.arc(0,0,10,0,Math.PI*2);
+    ctx.stroke();
+    ctx.restore();
+
+    // optional horizon circle at given angular radius
+    if (dom.showHorizon.checked){
+      const hdeg = Number(dom.horizonDeg.value);
+      if (Number.isFinite(hdeg) && hdeg > 0 && hdeg < 180){
+        const hr = (hdeg * Math.PI/180) * pxPerRad;
+        if (hr <= maxRadiusPx * 1.15){
+          ctx.save();
+          ctx.translate(cx,cy);
+          ctx.strokeStyle = 'rgba(255,59,92,0.45)';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([8,5]);
+          ctx.beginPath();
+          ctx.arc(0,0,hr,0,Math.PI*2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = 'rgba(255,59,92,0.9)';
+          ctx.font = '800 12px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(`Horizon ${hdeg}°`, 0, -hr - 16);
+          ctx.restore();
+        }
+      }
+    }
+
+    const pts = parsePoints(dom.points.value);
+
+    // plot
+    ctx.save();
+    ctx.translate(cx, cy);
+    for (const p of pts){
+      const lon = lonToDeg(p.lon);
+      const {x, y, c} = azimuthalEquidistant(p.lat, lon, lat0, lon0);
+
+      // c is angular distance (radians). Convert to pixels.
+      const px = x * pxPerRad;
+      const py = y * pxPerRad;
+      const rr = starRadiusFromMag(p.mag);
+
+      // Fade points that go off the chosen “useful” disk
+      const r = Math.hypot(px, py);
+      const alpha = r <= maxRadiusPx ? 0.95 : 0.25;
+
+      ctx.fillStyle = `rgba(124,199,255,${alpha})`;
+      ctx.beginPath();
+      ctx.arc(px, py, rr, 0, Math.PI*2);
+      ctx.fill();
+
+      if (dom.showLabels.checked){
+        ctx.fillStyle = `rgba(233,238,247,${Math.min(1, alpha + 0.05)})`;
+        ctx.font = '700 12px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(p.name, px + rr + 6, py);
+      }
+    }
+    ctx.restore();
+
+    // footer text
+    ctx.fillStyle = 'rgba(154,167,184,0.85)';
+    ctx.font = '700 12px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(`Center lat=${lat0.toFixed(1)}°  lon=${lon0.toFixed(1)}°  |  AEP: distance+azimuth true from center`, 14, rect.height - 12);
+  }
+
+  function loadDemo(){
+    // A handful of bright stars: lon is RA in degrees (approx), lat is Dec.
+    // Sources not embedded here—this is just a practical demo set.
+    dom.lonMode.value = 'deg';
+    dom.centerLat.value = '0';
+    dom.centerLon.value = '0';
+    dom.points.value = [
+      'Sirius, 101.287, -16.716, -1.46',
+      'Canopus, 95.988, -52.696, -0.72',
+      'Arcturus, 213.915, 19.182, -0.05',
+      'Vega, 279.234, 38.783, 0.03',
+      'Capella, 79.172, 45.998, 0.08',
+      'Rigel, 78.634, -8.202, 0.12',
+      'Procyon, 114.825, 5.225, 0.34',
+      'Betelgeuse, 88.793, 7.407, 0.42',
+      'Altair, 297.696, 8.868, 0.77',
+      'Aldebaran, 68.980, 16.509, 0.85'
+    ].join('\n');
+    render();
+  }
+
+  dom.btnRender.addEventListener('click', render);
+  dom.btnDemo.addEventListener('click', loadDemo);
+  dom.btnClear.addEventListener('click', () => { dom.points.value=''; render(); });
+
+  // Re-render on most control changes
+  ['change','input'].forEach(evt => {
+    [dom.centerLat, dom.centerLon, dom.lonMode, dom.showGrid, dom.showLabels, dom.scale, dom.showHorizon, dom.horizonDeg]
+      .forEach(el => el.addEventListener(evt, () => render()));
+  });
+
+  window.addEventListener('resize', () => render());
+
+  // first paint
+  render();
+</script>
+</body>
+</html>

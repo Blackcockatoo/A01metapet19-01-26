@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jewble Astrogenetics Prototype</title>
+<style>
+:root {
+  --bg: #0a0e14;
+  --panel: #151922;
+  --accent: #6b4ce6;
+  --accent-dim: #4a3399;
+  --text: #e8ecf5;
+  --muted: #8a95ad;
+  --border: #1f2937;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.header h1 {
+  font-size: 32px;
+  margin: 0 0 8px;
+  background: linear-gradient(135deg, #6b4ce6, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.card h2 {
+  font-size: 18px;
+  margin: 0 0 16px;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card h3 {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 16px 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn:hover {
+  background: var(--accent-dim);
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: #374151;
+  color: var(--text);
+}
+
+.btn-secondary:hover {
+  background: #4b5563;
+}
+
+.input-group {
+  margin-bottom: 16px;
+}
+
+.input-group label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.input-group input {
+  width: 100%;
+  background: #0f1419;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.sequence {
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  letter-spacing: 2px;
+  padding: 12px;
+  background: #0f1419;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+
+.sequence.red { color: #f87171; border-color: #7f1d1d; }
+.sequence.blue { color: #60a5fa; border-color: #1e3a8a; }
+.sequence.black { color: #a1a1aa; border-color: #3f3f46; }
+
+.trait-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.trait-item {
+  background: #0f1419;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  border-left: 3px solid var(--accent);
+}
+
+.planet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.planet-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #0f1419;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.planet-name {
+  font-weight: 600;
+  min-width: 80px;
+}
+
+.planet-angle {
+  font-family: 'Courier New', monospace;
+  color: var(--muted);
+}
+
+.planet-mod {
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.planet-mod.positive {
+  color: var(--success);
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.planet-mod.negative {
+  color: var(--danger);
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.planet-mod.neutral {
+  color: var(--muted);
+}
+
+.gate-banner {
+  background: linear-gradient(135deg, var(--accent-dim), var(--accent));
+  padding: 16px;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.gate-banner h3 {
+  margin: 0 0 4px;
+  color: white;
+  font-size: 16px;
+}
+
+.gate-banner p {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255,255,255,0.8);
+}
+
+.grs-meter {
+  margin-top: 12px;
+}
+
+.grs-bar-container {
+  height: 24px;
+  background: #0f1419;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--border);
+}
+
+.grs-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #f87171, #fbbf24, #4ade80);
+  transition: width 0.5s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 12px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.grs-status {
+  margin-top: 8px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.grs-status.evolve {
+  background: rgba(74, 222, 128, 0.2);
+  color: var(--success);
+}
+
+.grs-status.grow {
+  background: rgba(251, 191, 36, 0.2);
+  color: var(--warning);
+}
+
+.grs-status.rest {
+  background: rgba(248, 113, 113, 0.2);
+  color: var(--danger);
+}
+
+.horoscope {
+  background: linear-gradient(135deg, #1e1b4b, #312e81);
+  border: 1px solid #4c1d95;
+  padding: 20px;
+  border-radius: 12px;
+  margin-top: 16px;
+}
+
+.horoscope h4 {
+  margin: 0 0 12px;
+  color: #c4b5fd;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.horoscope p {
+  margin: 8px 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.horoscope .fortune {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.fortune.stellar {
+  background: rgba(74, 222, 128, 0.2);
+  color: var(--success);
+}
+
+.fortune.calm {
+  background: rgba(251, 191, 36, 0.2);
+  color: var(--warning);
+}
+
+.fortune.tension {
+  background: rgba(248, 113, 113, 0.2);
+  color: var(--danger);
+}
+
+.astrolabe {
+  width: 100%;
+  max-width: 400px;
+  height: 400px;
+  margin: 0 auto;
+}
+
+.breeding-result {
+  margin-top: 16px;
+  padding: 16px;
+  background: #0f1419;
+  border-radius: 12px;
+  border: 2px solid var(--accent);
+}
+
+.emoji {
+  font-size: 20px;
+  margin-right: 4px;
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>🌌 Jewble Astrogenetics System</h1>
+    <p>Cosmic Birth Charts & Meta-Horoscope Prototype</p>
+  </div>
+
+  <div class="grid">
+    <!-- Pet Creator -->
+    <div class="card">
+      <h2><span class="emoji">🥚</span> Create Pet</h2>
+      <div class="input-group">
+        <label>Birth Timestamp</label>
+        <input type="datetime-local" id="birthTime">
+      </div>
+      <button class="btn" onclick="generatePet()">
+        <span class="emoji">✨</span> Hatch Pet
+      </button>
+      <button class="btn btn-secondary" onclick="setNow()">Use Now</button>
+    </div>
+
+    <!-- Birth Chart Display -->
+    <div class="card" id="birthChartCard" style="display:none;">
+      <h2><span class="emoji">🔮</span> Cosmic Birth Chart</h2>
+      <div id="birthChartContent"></div>
+    </div>
+  </div>
+
+  <!-- Pet Details -->
+  <div class="grid" id="petDetails" style="display:none;">
+    <!-- Genetic Sequences -->
+    <div class="card">
+      <h2><span class="emoji">🧬</span> Genetic Sequences</h2>
+      <h3>Red (Physical)</h3>
+      <div class="sequence red" id="redSeq">00000</div>
+      <div class="trait-grid" id="redTraits"></div>
+
+      <h3>Blue (Personality)</h3>
+      <div class="sequence blue" id="blueSeq">00000</div>
+      <div class="trait-grid" id="blueTraits"></div>
+
+      <h3>Black (Hidden Potential)</h3>
+      <div class="sequence black" id="blackSeq">?????</div>
+      <div style="text-align:center; margin-top:8px; color:var(--muted); font-size:12px;">
+        Unlocks at Level 10
+      </div>
+    </div>
+
+    <!-- Planetary Influences -->
+    <div class="card">
+      <h2><span class="emoji">🪐</span> Planetary Heritage</h2>
+      <div class="planet-list" id="planetList"></div>
+    </div>
+
+    <!-- GRS System -->
+    <div class="card">
+      <h2><span class="emoji">📊</span> Growth Readiness Score</h2>
+      <p style="font-size:13px; color:var(--muted);">
+        Optimal timing for evolution and training
+      </p>
+      <div class="grs-meter">
+        <div class="grs-bar-container">
+          <div class="grs-bar" id="grsBar" style="width:0%;">0%</div>
+        </div>
+        <div class="grs-status rest" id="grsStatus">REST</div>
+      </div>
+      <div style="margin-top:12px; display:grid; grid-template-columns: repeat(2,1fr); gap:8px;">
+        <input type="number" id="happiness" placeholder="Happiness (-3 to +3)" step="0.1">
+        <input type="number" id="activity" placeholder="Activity (0-9)" step="1">
+      </div>
+      <button class="btn btn-secondary" style="margin-top:12px; width:100%;" onclick="updateGRS()">
+        Calculate GRS
+      </button>
+    </div>
+
+    <!-- Daily Horoscope -->
+    <div class="card">
+      <h2><span class="emoji">🌙</span> Today's Cosmic Forecast</h2>
+      <div id="horoscopeContent"></div>
+    </div>
+
+    <!-- Breeding Simulator -->
+    <div class="card" style="grid-column: 1/-1;">
+      <h2><span class="emoji">💕</span> Breeding Simulator</h2>
+      <p style="font-size:13px; color:var(--muted);">
+        Simulate offspring by choosing a breeding time
+      </p>
+      <div style="display:flex; gap:12px; align-items:flex-end;">
+        <div class="input-group" style="flex:1; margin:0;">
+          <label>Breeding Time</label>
+          <input type="datetime-local" id="breedTime">
+        </div>
+        <button class="btn" onclick="simulateBreeding()">
+          <span class="emoji">🧪</span> Simulate Breeding
+        </button>
+      </div>
+      <div id="breedingResult"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Constants from astrolabe
+const RED = "113031491493585389543778774590997079619617525721567332336510";
+const BLUE = "012776329785893036118967145479098334781325217074992143965631";
+const BLACK = "011235831459437077415617853819099875279651673033695493257291";
+const BIRTH_EPOCH = new Date("1989-10-13T07:06:00+10:00");
+const MS_PER_DAY = 86400000;
+
+const PLANETS = [
+  { name: "Sun", symbol: "☉", period: 365.2422, trait: "Vitality" },
+  { name: "Moon", symbol: "☽", period: 27.321661, trait: "Mood" },
+  { name: "Mercury", symbol: "☿", period: 87.969, trait: "Learning" },
+  { name: "Venus", symbol: "♀", period: 224.701, trait: "Social" },
+  { name: "Mars", symbol: "♂", period: 686.98, trait: "Energy" },
+  { name: "Jupiter", symbol: "♃", period: 4332.589, trait: "Luck" },
+  { name: "Saturn", symbol: "♄", period: 10759.22, trait: "Growth" }
+];
+
+const GATES = [
+  "New Moon (Seed Gate)",
+  "First Quarter (Friction Gate)",
+  "Full Moon (Amplify Gate)",
+  "Last Quarter (Cut Gate)",
+  "Lunar Eclipse (Shadow Gate)",
+  "Solar Eclipse (Shadow Gate)",
+  "Mercury Station (Rx begins)",
+  "Mercury Retrograde",
+  "Mercury Station (Direct)",
+  "Super Full Moon (Amplify Gate)",
+  "Nodes Alignment"
+];
+
+const RUNES = {
+  "New Moon (Seed Gate)": { name: "Fehu", effect: "Echo ×3 - Triple first reward" },
+  "First Quarter (Friction Gate)": { name: "Thurisaz", effect: "XOR(Red,Blue) - Hybrid vigor" },
+  "Full Moon (Amplify Gate)": { name: "Wunjo", effect: "Mirror parent traits" },
+  "Last Quarter (Cut Gate)": { name: "Isa", effect: "Hold best stats" },
+  "Lunar Eclipse (Shadow Gate)": { name: "Hagalaz", effect: "9's complement - Inverse" },
+  "Solar Eclipse (Shadow Gate)": { name: "Hagalaz", effect: "Shadow form unlocked" },
+  "Mercury Station (Rx begins)": { name: "Ansuz", effect: "Chaos mode - Shuffle traits" },
+  "Mercury Retrograde": { name: "Ansuz", effect: "Rotate indices" },
+  "Mercury Station (Direct)": { name: "Ansuz", effect: "Restore order" },
+  "Super Full Moon (Amplify Gate)": { name: "Wunjo", effect: "Legendary potential" },
+  "Nodes Alignment": { name: "Raidho", effect: "Journey begins" }
+};
+
+let currentPet = null;
+
+// Lucas number mod 60
+function lucasMod60(n) {
+  if (n <= 0) return 2 % 60;
+  let a = 2 % 60, b = 1 % 60;
+  if (n === 1) return b;
+  for (let k = 2; k <= n; k++) {
+    let t = a;
+    a = b;
+    b = (t + b) % 60;
+  }
+  return b;
+}
+
+// Get slice from sequence
+function getSlice(seq, index, length = 5) {
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += seq[(index + i) % seq.length];
+  }
+  return result;
+}
+
+// Calculate days since epoch
+function daysSince(date, epoch = BIRTH_EPOCH) {
+  return Math.floor((date - epoch) / MS_PER_DAY);
+}
+
+// Calculate planetary angle
+function planetAngle(days, period) {
+  return (360 * (days % period) / period) % 360;
+}
+
+// Calculate planetary modifier
+function planetModifier(angle, period) {
+  const harmonic = Math.sin(angle * Math.PI / 180);
+  const periodWeight = Math.log10(period) / 4;
+  return 1 + (harmonic * periodWeight * 0.15);
+}
+
+// Decode RED sequence to traits
+function decodeRed(seq) {
+  const digits = seq.split('').map(Number);
+  const sizes = ["Tiny", "Small", "Medium", "Medium", "Large", "Large", "Huge"];
+  const patterns = ["Solid", "Solid", "Spots", "Spots", "Spots", "Stripes", "Stripes", "Stripes", "Gradient", "Gradient"];
+  
+  return {
+    size: sizes[Math.min(digits[0], 6)],
+    colorHue: digits[1] * 36,
+    pattern: patterns[digits[2]],
+    limbs: (digits[3] % 4) + 2,
+    accent: ["Single eye", "Double eyes", "Triple eyes", "Horns", "Wings", "Tail curl", "Spikes", "Glow", "Antennae", "Crown"][digits[4]]
+  };
+}
+
+// Decode BLUE sequence to traits
+function decodeBlue(seq) {
+  const digits = seq.split('').map(Number);
+  const social = ["Very Shy", "Shy", "Shy", "Reserved", "Neutral", "Neutral", "Friendly", "Outgoing", "Very Outgoing", "Extroverted"];
+  
+  return {
+    sociability: social[digits[0]],
+    energy: digits[1] * 11,
+    intelligence: ["Slow learner", "Below avg", "Average", "Average", "Average", "Above avg", "Smart", "Very smart", "Genius", "Prodigy"][digits[2]],
+    stability: 9 - digits[3],
+    affection: digits[4]
+  };
+}
+
+// Decode BLACK sequence (hidden)
+function decodeBlack(seq) {
+  const digits = seq.split('').map(Number);
+  return {
+    mutationChance: digits[0],
+    rareTrait: ["None", "Starlight Glow", "Phase Shift", "Telepathy", "Time Sense", "Astral Form", "Cosmic Echo", "Void Walk", "Star Born", "Transcendent"][digits[1]],
+    evolutionPath: ["Path A", "Path B", "Path C"][digits[2] % 3],
+    shinyVariant: digits[3] > 7,
+    secretAbility: ["None", "Mind Read", "Heal", "Teleport", "Invisibility", "Flight", "Shield", "Boost", "Transform", "Ascend"][digits[4]]
+  };
+}
+
+// Get active gate for day
+function getGate(days) {
+  return GATES[days % GATES.length];
+}
+
+// Generate pet from timestamp
+function generatePet() {
+  const birthTime = new Date(document.getElementById('birthTime').value);
+  if (isNaN(birthTime)) {
+    alert('Please select a valid birth time');
+    return;
+  }
+
+  const days = daysSince(birthTime);
+  const lucas = lucasMod60(days);
+  const gate = getGate(days);
+  const rune = RUNES[gate];
+
+  const red = getSlice(RED, lucas);
+  const blue = getSlice(BLUE, lucas);
+  const black = getSlice(BLACK, lucas);
+
+  const redTraits = decodeRed(red);
+  const blueTraits = decodeBlue(blue);
+  const blackTraits = decodeBlack(black);
+
+  // Calculate planetary positions
+  const planets = PLANETS.map(p => {
+    const angle = planetAngle(days, p.period);
+    const mod = planetModifier(angle, p.period);
+    return { ...p, angle, modifier: mod };
+  });
+
+  currentPet = {
+    birthTime,
+    days,
+    lucas,
+    gate,
+    rune,
+    sequences: { red, blue, black },
+    traits: { red: redTraits, blue: blueTraits, black: blackTraits },
+    planets
+  };
+
+  displayPet();
+}
+
+// Display pet data
+function displayPet() {
+  if (!currentPet) return;
+
+  // Show cards
+  document.getElementById('birthChartCard').style.display = 'block';
+  document.getElementById('petDetails').style.display = 'grid';
+
+  // Birth chart summary
+  const chartHTML = `
+    <div class="gate-banner">
+      <h3>${currentPet.gate}</h3>
+      <p>Rune: ${currentPet.rune.name} - ${currentPet.rune.effect}</p>
+    </div>
+    <div style="text-align:center; margin-bottom:12px;">
+      <div style="font-size:13px; color:var(--muted);">Lucas Index</div>
+      <div style="font-size:24px; font-weight:600; color:var(--accent);">${currentPet.lucas}</div>
+    </div>
+    <div style="font-size:12px; color:var(--muted); text-align:center;">
+      Born: ${currentPet.birthTime.toLocaleString()}<br>
+      Age: ${currentPet.days} days
+    </div>
+  `;
+  document.getElementById('birthChartContent').innerHTML = chartHTML;
+
+  // Sequences
+  document.getElementById('redSeq').textContent = currentPet.sequences.red;
+  document.getElementById('blueSeq').textContent = currentPet.sequences.blue;
+  document.getElementById('blackSeq').textContent = currentPet.sequences.black;
+
+  // Red traits
+  const redHTML = Object.entries(currentPet.traits.red).map(([key, val]) => {
+    const display = key === 'colorHue' ? `${val}° HSL` : val;
+    return `<div class="trait-item">${key}: ${display}</div>`;
+  }).join('');
+  document.getElementById('redTraits').innerHTML = redHTML;
+
+  // Blue traits
+  const blueHTML = Object.entries(currentPet.traits.blue).map(([key, val]) => {
+    const display = key === 'energy' ? `${val}%` : val;
+    return `<div class="trait-item">${key}: ${display}</div>`;
+  }).join('');
+  document.getElementById('blueTraits').innerHTML = blueHTML;
+
+  // Planets
+  const planetHTML = currentPet.planets.map(p => {
+    const modPercent = ((p.modifier - 1) * 100).toFixed(1);
+    const modClass = p.modifier > 1.05 ? 'positive' : (p.modifier < 0.95 ? 'negative' : 'neutral');
+    const sign = modPercent > 0 ? '+' : '';
+    return `
+      <div class="planet-row">
+        <span class="planet-name">${p.symbol} ${p.name}</span>
+        <span class="planet-angle">${p.angle.toFixed(1)}°</span>
+        <span class="planet-mod ${modClass}">${sign}${modPercent}% ${p.trait}</span>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('planetList').innerHTML = planetHTML;
+
+  // Generate horoscope
+  generateHoroscope();
+}
+
+// Generate daily horoscope
+function generateHoroscope() {
+  if (!currentPet) return;
+
+  const today = new Date();
+  const currentDays = daysSince(today);
+  const currentLucas = lucasMod60(currentDays);
+  
+  // Resonance calculation
+  const resonance = Math.cos((currentLucas - currentPet.lucas) * 6 * Math.PI / 180);
+  
+  const gate = getGate(currentDays);
+  const rune = RUNES[gate];
+
+  let fortuneLevel, fortuneClass, effects;
+  if (resonance > 0.7) {
+    fortuneLevel = "Stellar Alignment";
+    fortuneClass = "stellar";
+    effects = ["XP gain +20%", "Resource finds +15%", "Rare event chance boosted"];
+  } else if (resonance > 0.3) {
+    fortuneLevel = "Calm Skies";
+    fortuneClass = "calm";
+    effects = ["Normal gameplay", "Steady progress"];
+  } else {
+    fortuneLevel = "Cosmic Tension";
+    fortuneClass = "tension";
+    effects = ["Mutation chance +30%", "Resources -10%", "Chaos content unlocked"];
+  }
+
+  const horoscopeHTML = `
+    <div class="horoscope">
+      <h4>🌙 ${today.toLocaleDateString()}</h4>
+      <p><strong>Active Gate:</strong> ${gate}</p>
+      <p><strong>Active Rune:</strong> ${rune.name} - ${rune.effect}</p>
+      <p><strong>Resonance:</strong> ${(resonance * 100).toFixed(1)}%</p>
+      <div class="fortune ${fortuneClass}">${fortuneLevel}</div>
+      <div style="margin-top:12px;">
+        <strong>Today's Effects:</strong>
+        <ul style="margin:8px 0; padding-left:20px;">
+          ${effects.map(e => `<li>${e}</li>`).join('')}
+        </ul>
+      </div>
+    </div>
+  `;
+  document.getElementById('horoscopeContent').innerHTML = horoscopeHTML;
+}
+
+// Update GRS
+function updateGRS() {
+  const happiness = parseFloat(document.getElementById('happiness').value) || 0;
+  const activity = parseFloat(document.getElementById('activity').value) || 5;
+
+  const x = 0.25 * happiness
+          + 0.15 * (activity < 3 ? -1 : 1)
+          + 0.10 * 1  // assume not neglected
+          + 0.20 * 0.5  // neutral social
+          + 0.10 * 0.7  // moderate predictability
+          + 0.20 * 0.6; // moderate challenge
+
+  const grs = Math.round(100 / (1 + Math.exp(-x)));
+
+  document.getElementById('grsBar').style.width = grs + '%';
+  document.getElementById('grsBar').textContent = grs + '%';
+
+  let status, statusClass;
+  if (grs >= 70) {
+    status = 'EVOLVE';
+    statusClass = 'evolve';
+  } else if (grs >= 55) {
+    status = 'GROW';
+    statusClass = 'grow';
+  } else {
+    status = 'REST';
+    statusClass = 'rest';
+  }
+
+  const statusEl = document.getElementById('grsStatus');
+  statusEl.textContent = status;
+  statusEl.className = 'grs-status ' + statusClass;
+}
+
+// XOR two sequences (for breeding)
+function xorSequences(seq1, seq2) {
+  let result = "";
+  for (let i = 0; i < 5; i++) {
+    const d1 = parseInt(seq1[i]);
+    const d2 = parseInt(seq2[i]);
+    result += (d1 ^ d2) % 10;
+  }
+  return result;
+}
+
+// Simulate breeding
+function simulateBreeding() {
+  if (!currentPet) {
+    alert('Please create a pet first!');
+    return;
+  }
+
+  const breedTime = new Date(document.getElementById('breedTime').value);
+  if (isNaN(breedTime)) {
+    alert('Please select a valid breeding time');
+    return;
+  }
+
+  const breedDays = daysSince(breedTime);
+  const babyLucas = lucasMod60(breedDays);
+  const gate = getGate(breedDays);
+  const rune = RUNES[gate];
+
+  // For demo, assume breeding with self - real game would have two parents
+  let babyRed, babyBlue, babyBlack;
+
+  // Apply rune breeding operation
+  if (gate.includes("Friction")) {
+    // XOR hybrid
+    babyRed = xorSequences(currentPet.sequences.red, currentPet.sequences.red);
+    babyBlue = xorSequences(currentPet.sequences.blue, currentPet.sequences.blue);
+    babyBlack = xorSequences(currentPet.sequences.black, currentPet.sequences.black);
+  } else if (gate.includes("Amplify")) {
+    // Mirror parent
+    babyRed = currentPet.sequences.red;
+    babyBlue = currentPet.sequences.blue;
+    babyBlack = currentPet.sequences.black;
+  } else {
+    // Default: use baby's own sequences
+    babyRed = getSlice(RED, babyLucas);
+    babyBlue = getSlice(BLUE, babyLucas);
+    babyBlack = getSlice(BLACK, babyLucas);
+  }
+
+  const babyTraits = decodeRed(babyRed);
+
+  const resultHTML = `
+    <div class="breeding-result">
+      <h3 style="margin:0 0 12px; color:var(--accent);">🐣 Offspring Preview</h3>
+      <p><strong>Breed Time:</strong> ${breedTime.toLocaleString()}</p>
+      <p><strong>Active Gate:</strong> ${gate}</p>
+      <p><strong>Rune Effect:</strong> ${rune.effect}</p>
+      <p><strong>Baby Lucas Index:</strong> ${babyLucas}</p>
+      <div style="margin-top:12px;">
+        <div class="sequence red">${babyRed}</div>
+        <div style="margin-top:8px; font-size:13px; color:var(--muted);">
+          Size: ${babyTraits.size} | Color: ${babyTraits.colorHue}° | Pattern: ${babyTraits.pattern}
+        </div>
+      </div>
+      <p style="margin-top:12px; font-size:12px; color:var(--muted); font-style:italic;">
+        Tip: Try breeding during different gates to see how offspring change!
+      </p>
+    </div>
+  `;
+
+  document.getElementById('breedingResult').innerHTML = resultHTML;
+}
+
+// Set current time
+function setNow() {
+  const now = new Date();
+  const localISOTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  document.getElementById('birthTime').value = localISOTime;
+  document.getElementById('breedTime').value = localISOTime;
+}
+
+// Initialize
+setNow();
+</script>
+
+</body>
+</html>
