@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout /t 5)",
+      "Bash(\"C:\\Users\\Tom\\OneDrive\\Desktop\\test\\jewble\\meta-pet\\src\\components\\PetSprite.tsx\")",
+      "Bash(\"C:\\Users\\Tom\\OneDrive\\Desktop\\test\\jewble\\meta-pet\\src\\app\\page.tsx\")",
+      "Bash(npm run build:*)",
+      "Bash(cat:*)",
+      "Bash(npx tsc:*)",
+      "Bash(node node_modules/typescript/bin/tsc:*)",
+      "Bash(curl:*)",
+      "Bash(unzip:*)",
+      "Bash(git mv:*)",
+      "Bash(npm ls:*)",
+      "Bash(dir /b:*)",
+      "Bash(findstr:*)",
+      "Bash(npm outdated:*)",
+      "Bash($env:NODE_OPTIONS='--inspect')",
+      "Bash(timeout /t 10)",
+      "Bash(npm update:*)",
+      "Bash(taskkill /F /PID 69644)",
+      "Bash(netstat:*)",
+      "Bash(if exist \"C:\\\\Users\\\\Tom\\\\OneDrive\\\\Desktop\\\\test\\\\jewble\\\\meta-pet\\\\.next\\\\dev\\\\lock\" del \"C:\\\\Users\\\\Tom\\\\OneDrive\\\\Desktop\\\\test\\\\jewble\\\\meta-pet\\\\.next\\\\dev\\\\lock\")",
+      "Bash(npm test:*)",
+      "Bash(dir:*)",
+      "Bash(npx next dev:*)",
+      "Bash(taskkill:*)",
+      "Bash(npm run test:*)",
+      "Bash(timeout:*)",
+      "Bash(ping:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
