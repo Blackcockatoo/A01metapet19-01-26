@@ -40,12 +40,14 @@ import {
 
 export type { Vitals };
 export type PetType = 'geometric' | 'auralia';
-export type RewardSource = 'battle' | 'care' | 'exploration' | 'minigame' | 'ritual' | 'other';
-
-export interface EssenceRewardPayload {
-  essenceDelta: number;
-  source: RewardSource;
-}
+export type RewardSource =
+  | 'battle'
+  | 'exploration'
+  | 'minigame'
+  | 'mirror'
+  | 'ritual'
+  | 'system'
+  | 'vimana';
 
 export interface MetaPetState {
   vitals: Vitals;
@@ -53,14 +55,21 @@ export interface MetaPetState {
   traits: DerivedTraits | null;
   evolution: EvolutionData;
   ritualProgress: RitualProgress;
+  essence: number;
+  lastRewardSource: string | null;
+  lastRewardAmount: number;
   achievements: Achievement[];
   battle: BattleStats;
   miniGames: MiniGameProgress;
   vimana: VimanaState;
+  rewardHistory: RewardPayload[];
+  lastReward: RewardPayload | null;
   petType: PetType;
   mirrorMode: MirrorModeState;
   lastAction: null | 'feed' | 'clean' | 'play' | 'sleep';
   lastActionAt: number;
+  essence: number;
+  lastRewardSource: RewardSource | null;
   tickId?: ReturnType<typeof setInterval>;
   setGenome: (genome: Genome, traits: DerivedTraits) => void;
   setPetType: (petType: PetType) => void;
@@ -70,12 +79,19 @@ export interface MetaPetState {
     traits: DerivedTraits;
     evolution: EvolutionData;
     ritualProgress?: RitualProgress;
+    essence?: number;
+    lastRewardSource?: string | null;
+    lastRewardAmount?: number;
     achievements?: Achievement[];
     battle?: BattleStats;
     miniGames?: MiniGameProgress;
     vimana?: VimanaState;
+    rewardHistory?: RewardPayload[];
+    lastReward?: RewardPayload | null;
     petType?: PetType;
     mirrorMode?: MirrorModeState;
+    essence?: number;
+    lastRewardSource?: RewardSource | null;
   }) => void;
   startTick: () => void;
   stopTick: () => void;
@@ -84,21 +100,23 @@ export interface MetaPetState {
   play: () => void;
   sleep: () => void;
   setLastAction: (action: 'feed' | 'clean' | 'play' | 'sleep') => void;
+  addEssence: (payload: { amount: number; source: RewardSource }) => void;
   tryEvolve: () => boolean;
   recordBattle: (result: 'win' | 'loss', opponent: string) => void;
   updateMiniGameScore: (game: 'memory' | 'rhythm', score: number) => void;
   recordVimanaRun: (score: number, lines: number, level: number) => void;
   exploreCell: (cellId: string) => void;
   resolveAnomaly: (cellId: string) => void;
-  awardEssence: (payload: EssenceRewardPayload) => void;
+  recordReward: (payload: RewardPayloadInput) => void;
   addRitualRewards: (payload: {
-    resonance: number;
-    nectar: number;
-    streak: number;
-    totalSessions: number;
-    lastDayKey: number | null;
-    history: RitualProgress['history'];
+    resonanceDelta: number;
+    reward: {
+      essenceDelta: number;
+      source: 'ritual';
+    };
+    progress: RitualProgress;
   }) => void;
+  applyReward: (payload: { essenceDelta: number; source: 'achievement' | 'battle' | 'minigame' | 'ritual' | 'system' }) => void;
   beginMirrorMode: (preset: MirrorPrivacyPreset, durationMinutes?: number) => void;
   confirmMirrorCross: () => void;
   completeMirrorMode: (outcome: MirrorOutcome, note?: string) => void;
@@ -145,6 +163,24 @@ const achievementDefinitions: AchievementMap = new Map(
   ACHIEVEMENT_CATALOG.map(item => [item.id, item])
 );
 
+export interface RewardPayload {
+  id: string;
+  source: 'ritual' | 'achievement' | 'exploration' | 'minigame';
+  title: string;
+  description: string;
+  reward: {
+    type: 'ritual' | 'achievement' | 'exploration' | 'minigame' | 'vitals' | 'score' | 'xp';
+    value: number | string | Record<string, number>;
+  };
+  createdAt: number;
+}
+
+export type RewardPayloadInput = Omit<RewardPayload, 'id' | 'createdAt'> & {
+  createdAt?: number;
+};
+
+const REWARD_HISTORY_LIMIT = 20;
+
 const DEFAULT_MIRROR_MODE: MirrorModeState = {
   phase: 'idle',
   startedAt: null,
@@ -167,6 +203,35 @@ function unlockAchievement(list: Achievement[], id: Achievement['id']): Achievem
   return [...list, { ...definition, earnedAt: Date.now() }];
 }
 
+function unlockAchievementWithReward(list: Achievement[], id: Achievement['id']): {
+  achievements: Achievement[];
+  reward?: RewardPayloadInput;
+} {
+  if (list.some(entry => entry.id === id)) {
+    return { achievements: list };
+  }
+
+  const definition = achievementDefinitions.get(id);
+  if (!definition) {
+    return { achievements: list };
+  }
+
+  const achievements = [...list, { ...definition, earnedAt: Date.now() }];
+
+  return {
+    achievements,
+    reward: {
+      source: 'achievement',
+      title: 'Achievement Unlocked',
+      description: `${definition.title} achieved.`,
+      reward: {
+        type: 'achievement',
+        value: definition.title,
+      },
+    },
+  };
+}
+
 function applyVimanaReward(reward: VimanaReward, vitals: Vitals): Vitals {
   switch (reward) {
     case 'mood':
@@ -186,6 +251,21 @@ function applyVimanaReward(reward: VimanaReward, vitals: Vitals): Vitals {
   }
 }
 
+function getVimanaRewardDelta(reward: VimanaReward): Record<string, number> {
+  switch (reward) {
+    case 'mood':
+      return { mood: 10 };
+    case 'energy':
+      return { energy: 10 };
+    case 'hygiene':
+      return { hygiene: 12 };
+    case 'mystery':
+      return { mood: 5, energy: 5 };
+    default:
+      return {};
+  }
+}
+
 export function createMetaPetWebStore(
   options: CreateMetaPetWebStoreOptions = {}
 ): MetaPetStore {
@@ -200,14 +280,21 @@ export function createMetaPetWebStore(
     traits: null,
     evolution: initializeEvolution(),
     ritualProgress: createDefaultRitualProgress(),
+    essence: 0,
+    lastRewardSource: null,
+    lastRewardAmount: 0,
     achievements: [],
     battle: createDefaultBattleStats(),
     miniGames: createDefaultMiniGameProgress(),
     vimana: createDefaultVimanaState(),
+    rewardHistory: [],
+    lastReward: null,
     petType: 'geometric',
     mirrorMode: { ...DEFAULT_MIRROR_MODE },
     lastAction: null,
     lastActionAt: 0,
+    essence: 0,
+    lastRewardSource: null,
 
     setGenome(genome, traits) {
       set({ genome, traits: normalizeTraits(genome, traits) });
@@ -217,19 +304,42 @@ export function createMetaPetWebStore(
       set({ petType });
     },
 
-    hydrate({ vitals, genome, traits, evolution, ritualProgress, achievements, battle, miniGames, vimana, petType, mirrorMode }) {
+    hydrate({
+      vitals,
+      genome,
+      traits,
+      evolution,
+      ritualProgress,
+      achievements,
+      battle,
+      miniGames,
+      vimana,
+      petType,
+      mirrorMode,
+      essence,
+      lastRewardSource,
+    }) {
       set(state => ({
         vitals: { ...vitals },
         genome,
         traits: normalizeTraits(genome, traits),
         evolution: { ...evolution },
         ritualProgress: ritualProgress ? { ...ritualProgress, history: [...ritualProgress.history] } : state.ritualProgress,
+        essence: typeof essence === 'number' ? essence : state.essence,
+        lastRewardSource: typeof lastRewardSource === 'string' || lastRewardSource === null
+          ? lastRewardSource
+          : state.lastRewardSource,
+        lastRewardAmount: typeof lastRewardAmount === 'number' ? lastRewardAmount : state.lastRewardAmount,
         achievements: achievements ? achievements.map(entry => ({ ...entry })) : state.achievements,
         battle: battle ? { ...battle } : state.battle,
         miniGames: miniGames ? { ...miniGames } : state.miniGames,
         vimana: vimana ? cloneVimanaState(vimana) : state.vimana,
+        rewardHistory: rewardHistory ? rewardHistory.map(entry => ({ ...entry, reward: { ...entry.reward } })) : state.rewardHistory,
+        lastReward: lastReward ?? state.lastReward,
         petType: petType ?? state.petType,
         mirrorMode: mirrorMode ? { ...mirrorMode } : state.mirrorMode,
+        essence: essence ?? state.essence,
+        lastRewardSource: lastRewardSource ?? state.lastRewardSource,
         tickId: state.tickId,
       }));
     },
@@ -256,6 +366,13 @@ export function createMetaPetWebStore(
 
     setLastAction(action) {
       set({ lastAction: action, lastActionAt: Date.now() });
+    },
+
+    addEssence({ amount, source }) {
+      set(state => ({
+        essence: state.essence + amount,
+        lastRewardSource: source,
+      }));
     },
 
     feed() {
@@ -302,6 +419,7 @@ export function createMetaPetWebStore(
     },
 
     recordBattle(result, opponent) {
+      const rewardPayloads: RewardPayloadInput[] = [];
       set(state => {
         const next: BattleStats = {
           ...state.battle,
@@ -321,9 +439,13 @@ export function createMetaPetWebStore(
 
         let achievements = state.achievements;
         if (result === 'win') {
-          achievements = unlockAchievement(achievements, 'battle-first-win');
+          const firstWin = unlockAchievementWithReward(achievements, 'battle-first-win');
+          achievements = firstWin.achievements;
+          if (firstWin.reward) rewardPayloads.push(firstWin.reward);
           if (next.streak >= 3) {
-            achievements = unlockAchievement(achievements, 'battle-streak');
+            const streakWin = unlockAchievementWithReward(achievements, 'battle-streak');
+            achievements = streakWin.achievements;
+            if (streakWin.reward) rewardPayloads.push(streakWin.reward);
           }
         }
 
@@ -339,9 +461,12 @@ export function createMetaPetWebStore(
 
         return update;
       });
+
+      rewardPayloads.forEach(payload => get().recordReward(payload));
     },
 
     updateMiniGameScore(game, score) {
+      const rewardPayloads: RewardPayloadInput[] = [];
       set(state => {
         const next: MiniGameProgress = {
           ...state.miniGames,
@@ -356,10 +481,14 @@ export function createMetaPetWebStore(
 
         let achievements = state.achievements;
         if (game === 'memory' && next.memoryHighScore >= 10) {
-          achievements = unlockAchievement(achievements, 'minigame-memory');
+          const result = unlockAchievementWithReward(achievements, 'minigame-memory');
+          achievements = result.achievements;
+          if (result.reward) rewardPayloads.push(result.reward);
         }
         if (game === 'rhythm' && next.rhythmHighScore >= 12) {
-          achievements = unlockAchievement(achievements, 'minigame-rhythm');
+          const result = unlockAchievementWithReward(achievements, 'minigame-rhythm');
+          achievements = result.achievements;
+          if (result.reward) rewardPayloads.push(result.reward);
         }
 
         const update: Partial<MetaPetState> = { miniGames: next };
@@ -373,9 +502,12 @@ export function createMetaPetWebStore(
 
         return update;
       });
+
+      rewardPayloads.forEach(payload => get().recordReward(payload));
     },
 
     recordVimanaRun(score, lines, level) {
+      const rewardPayloads: RewardPayloadInput[] = [];
       set(state => {
         const previous = state.miniGames;
         const hasProgress = lines > 0 || score > 0;
@@ -394,10 +526,14 @@ export function createMetaPetWebStore(
 
         let achievements = state.achievements;
         if (next.vimanaHighScore >= 1500) {
-          achievements = unlockAchievement(achievements, 'minigame-vimana-score');
+          const result = unlockAchievementWithReward(achievements, 'minigame-vimana-score');
+          achievements = result.achievements;
+          if (result.reward) rewardPayloads.push(result.reward);
         }
         if (next.vimanaMaxLines >= 20) {
-          achievements = unlockAchievement(achievements, 'minigame-vimana-lines');
+          const result = unlockAchievementWithReward(achievements, 'minigame-vimana-lines');
+          achievements = result.achievements;
+          if (result.reward) rewardPayloads.push(result.reward);
         }
 
         const update: Partial<MetaPetState> = { miniGames: next };
@@ -413,9 +549,12 @@ export function createMetaPetWebStore(
 
         return update;
       });
+
+      rewardPayloads.forEach(payload => get().recordReward(payload));
     },
 
     exploreCell(cellId) {
+      const rewardPayloads: RewardPayloadInput[] = [];
       set(state => {
         const { vimana, vitals } = state;
         const previousCell = vimana.cells.find(cell => cell.id === cellId);
@@ -438,7 +577,26 @@ export function createMetaPetWebStore(
 
         let achievements = state.achievements;
         if (!previousCell?.discovered && target?.discovered) {
-          achievements = unlockAchievement(achievements, 'explorer-first-step');
+          const result = unlockAchievementWithReward(achievements, 'explorer-first-step');
+          achievements = result.achievements;
+          if (result.reward) {
+            rewardPayloads.push(result.reward);
+          }
+        }
+
+        if (target) {
+          const rewardDelta = getVimanaRewardDelta(target.reward);
+          if (Object.keys(rewardDelta).length > 0) {
+            rewardPayloads.push({
+              source: 'exploration',
+              title: 'Field Scan Reward',
+              description: `Exploration reward for ${target.label ?? target.id}.`,
+              reward: {
+                type: 'vitals',
+                value: rewardDelta,
+              },
+            });
+          }
         }
 
         const updatedVimana: VimanaState = {
@@ -461,9 +619,12 @@ export function createMetaPetWebStore(
 
         return update;
       });
+
+      rewardPayloads.forEach(payload => get().recordReward(payload));
     },
 
     resolveAnomaly(cellId) {
+      const rewardPayloads: RewardPayloadInput[] = [];
       set(state => {
         const { vimana, vitals } = state;
         const previousCell = vimana.cells.find(cell => cell.id === cellId);
@@ -488,7 +649,11 @@ export function createMetaPetWebStore(
 
         let achievements = state.achievements;
         if (anomaliesResolved >= 3) {
-          achievements = unlockAchievement(achievements, 'explorer-anomaly-hunter');
+          const result = unlockAchievementWithReward(achievements, 'explorer-anomaly-hunter');
+          achievements = result.achievements;
+          if (result.reward) {
+            rewardPayloads.push(result.reward);
+          }
         }
 
         const update: Partial<MetaPetState> = {
@@ -505,34 +670,56 @@ export function createMetaPetWebStore(
           update.achievements = achievements;
         }
 
+        rewardPayloads.push({
+          source: 'exploration',
+          title: 'Anomaly Resolved',
+          description: 'Stabilized a Vimana anomaly.',
+          reward: {
+            type: 'vitals',
+            value: getVimanaRewardDelta('mood'),
+          },
+        });
+
         return update;
+      });
+
+      rewardPayloads.forEach(payload => get().recordReward(payload));
+    },
+
+    recordReward(payload) {
+      set(state => {
+        const entry: RewardPayload = {
+          id: generateRewardId(),
+          createdAt: payload.createdAt ?? Date.now(),
+          ...payload,
+        };
+
+        return {
+          rewardHistory: [entry, ...state.rewardHistory].slice(0, REWARD_HISTORY_LIMIT),
+          lastReward: entry,
+        };
       });
     },
 
-    awardEssence({ essenceDelta }) {
-      if (essenceDelta <= 0) return;
-
-      set(state => ({
-        evolution: gainExperience(state.evolution, essenceDelta),
-      }));
-    },
-
-    addRitualRewards({ resonance, nectar, streak, totalSessions, lastDayKey, history }) {
+    addRitualRewards({ resonanceDelta, reward, progress }) {
       set(state => {
-        const moodBoost = Math.min(8, Math.floor(resonance / 4));
-        const energyBoost = Math.min(6, Math.floor(nectar / 2));
-        const xpGain = Math.min(12, 4 + Math.floor(resonance / 3) + nectar);
+        const moodBoost = Math.min(8, Math.floor(resonanceDelta / 4));
+        const energyBoost = Math.min(6, Math.floor(reward.essenceDelta / 2));
+        const xpGain = Math.min(12, 4 + Math.floor(resonanceDelta / 3) + reward.essenceDelta);
 
         return {
           ritualProgress: {
             ...state.ritualProgress,
-            resonance: state.ritualProgress.resonance + resonance,
-            nectar: state.ritualProgress.nectar + nectar,
-            streak,
-            totalSessions,
-            lastDayKey,
-            history: [...history],
+            resonance: progress.resonance,
+            nectar: progress.nectar,
+            streak: progress.streak,
+            totalSessions: progress.totalSessions,
+            lastDayKey: progress.lastDayKey,
+            history: [...progress.history],
           },
+          essence: state.essence + essenceDelta,
+          lastRewardSource: 'Ritual',
+          lastRewardAmount: essenceDelta,
           vitals: {
             ...state.vitals,
             mood: clamp(state.vitals.mood + moodBoost),
@@ -541,6 +728,23 @@ export function createMetaPetWebStore(
           evolution: gainExperience(state.evolution, xpGain),
         };
       });
+
+      get().recordReward({
+        source: 'ritual',
+        title: 'Ritual Complete',
+        description: `Resonance +${resonance}, Nectar +${nectar}.`,
+        reward: {
+          type: 'ritual',
+          value: { resonance, nectar },
+        },
+      });
+    },
+
+    applyReward({ essenceDelta }) {
+      if (!Number.isFinite(essenceDelta) || essenceDelta === 0) return;
+      set(state => ({
+        essence: Math.max(0, state.essence + essenceDelta),
+      }));
     },
 
     beginMirrorMode(preset, durationMinutes = 15) {
@@ -674,4 +878,14 @@ function generatePresenceToken(): string {
 
   const rand = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
   return `mirror-${rand.toString(36)}`;
+}
+
+function generateRewardId(): string {
+  const cryptoApi = typeof globalThis !== 'undefined' ? (globalThis.crypto as Crypto | undefined) : undefined;
+  if (cryptoApi && 'randomUUID' in cryptoApi) {
+    return cryptoApi.randomUUID();
+  }
+
+  const rand = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+  return `reward-${rand.toString(36)}`;
 }
