@@ -6,6 +6,10 @@ export interface Vitals {
   hygiene: number;
   mood: number;
   energy: number;
+  isSick: boolean;
+  sicknessSeverity: number; // 0-100, higher = worse
+  sicknessType: 'none' | 'hungry' | 'dirty' | 'exhausted' | 'depressed';
+  deathCount: number; // Track how many times pet has "died" (resets)
 }
 
 export const DEFAULT_VITALS: Vitals = {
@@ -13,6 +17,10 @@ export const DEFAULT_VITALS: Vitals = {
   hygiene: 70,
   mood: 60,
   energy: 80,
+  isSick: false,
+  sicknessSeverity: 0,
+  sicknessType: 'none',
+  deathCount: 0,
 };
 
 export function clamp(value: number, min = 0, max = 100): number {
@@ -45,12 +53,89 @@ export const DECAY_RATES = {
   mood: 0.05,
 } as const;
 
-export function applyDecay(vitals: Vitals): Vitals {
+// Check if pet should become sick based on vitals
+export function checkSickness(vitals: Vitals): { isSick: boolean; sicknessType: Vitals['sicknessType']; severity: number } {
+  // Check each vital for critical levels
+  if (vitals.hunger >= 90) {
+    return { isSick: true, sicknessType: 'hungry', severity: Math.min(100, (vitals.hunger - 80) * 5) };
+  }
+  if (vitals.hygiene <= 10) {
+    return { isSick: true, sicknessType: 'dirty', severity: Math.min(100, (10 - vitals.hygiene) * 10) };
+  }
+  if (vitals.energy <= 5) {
+    return { isSick: true, sicknessType: 'exhausted', severity: Math.min(100, (5 - vitals.energy) * 20) };
+  }
+  if (vitals.mood <= 10) {
+    return { isSick: true, sicknessType: 'depressed', severity: Math.min(100, (10 - vitals.mood) * 10) };
+  }
+
+  return { isSick: false, sicknessType: 'none', severity: 0 };
+}
+
+// Check if pet "dies" (sickness too severe) and needs reset
+export function checkDeath(vitals: Vitals): boolean {
+  return vitals.isSick && vitals.sicknessSeverity >= 100;
+}
+
+// Apply medicine/treatment to sick pet
+export function treatSickness(vitals: Vitals): Vitals {
+  if (!vitals.isSick) return vitals;
+
   return {
-    hunger: clamp(vitals.hunger + DECAY_RATES.hunger),
-    hygiene: clamp(vitals.hygiene + DECAY_RATES.hygiene),
-    energy: clamp(vitals.energy + DECAY_RATES.energy),
-    mood: clamp(vitals.mood + (vitals.energy > 50 ? DECAY_RATES.mood : -DECAY_RATES.mood)),
+    ...vitals,
+    sicknessSeverity: Math.max(0, vitals.sicknessSeverity - 30),
+    isSick: vitals.sicknessSeverity > 30,
+    sicknessType: vitals.sicknessSeverity > 30 ? vitals.sicknessType : 'none',
+    // Also give a small boost to the affected vital
+    hunger: vitals.sicknessType === 'hungry' ? clamp(vitals.hunger - 20) : vitals.hunger,
+    hygiene: vitals.sicknessType === 'dirty' ? clamp(vitals.hygiene + 20) : vitals.hygiene,
+    energy: vitals.sicknessType === 'exhausted' ? clamp(vitals.energy + 20) : vitals.energy,
+    mood: vitals.sicknessType === 'depressed' ? clamp(vitals.mood + 20) : vitals.mood,
+  };
+}
+
+// Reset pet after death (like reincarnation)
+export function resetAfterDeath(vitals: Vitals): Vitals {
+  return {
+    ...DEFAULT_VITALS,
+    deathCount: vitals.deathCount + 1,
+  };
+}
+
+export function applyDecay(vitals: Vitals): Vitals {
+  // Decay rates are worse when sick
+  const sickMultiplier = vitals.isSick ? 1.5 : 1;
+
+  const newVitals = {
+    ...vitals,
+    hunger: clamp(vitals.hunger + DECAY_RATES.hunger * sickMultiplier),
+    hygiene: clamp(vitals.hygiene + DECAY_RATES.hygiene * sickMultiplier),
+    energy: clamp(vitals.energy + DECAY_RATES.energy * sickMultiplier),
+    mood: clamp(vitals.mood + (vitals.energy > 50 ? DECAY_RATES.mood : -DECAY_RATES.mood * sickMultiplier)),
+  };
+
+  // Check for sickness
+  const sicknessCheck = checkSickness(newVitals);
+
+  // If already sick, severity increases over time
+  let newSeverity = vitals.sicknessSeverity;
+  if (sicknessCheck.isSick) {
+    if (vitals.isSick) {
+      newSeverity = Math.min(100, vitals.sicknessSeverity + 2); // Gets worse over time
+    } else {
+      newSeverity = sicknessCheck.severity;
+    }
+  } else if (vitals.isSick) {
+    // Recovering
+    newSeverity = Math.max(0, vitals.sicknessSeverity - 1);
+  }
+
+  return {
+    ...newVitals,
+    isSick: sicknessCheck.isSick || (vitals.isSick && newSeverity > 0),
+    sicknessSeverity: newSeverity,
+    sicknessType: sicknessCheck.isSick ? sicknessCheck.sicknessType : (newSeverity > 0 ? vitals.sicknessType : 'none'),
+    deathCount: vitals.deathCount,
   };
 }
 
@@ -83,7 +168,26 @@ export function applyInteraction(vitals: Vitals, interaction: Interaction): Vita
 
   for (const [key, value] of Object.entries(effects)) {
     const field = key as keyof Vitals;
-    result[field] = clamp(result[field] + value);
+    if (field === 'hunger' || field === 'hygiene' || field === 'mood' || field === 'energy') {
+      result[field] = clamp((result[field] as number) + value);
+    }
+  }
+
+  // Interactions can help recovery from sickness
+  if (vitals.isSick) {
+    const relevantAction =
+      (vitals.sicknessType === 'hungry' && interaction === 'feed') ||
+      (vitals.sicknessType === 'dirty' && interaction === 'clean') ||
+      (vitals.sicknessType === 'exhausted' && interaction === 'sleep') ||
+      (vitals.sicknessType === 'depressed' && interaction === 'play');
+
+    if (relevantAction) {
+      result.sicknessSeverity = Math.max(0, vitals.sicknessSeverity - 15);
+      if (result.sicknessSeverity === 0) {
+        result.isSick = false;
+        result.sicknessType = 'none';
+      }
+    }
   }
 
   return result;
