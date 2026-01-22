@@ -2,9 +2,12 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { HeptaYantraCanvas } from './HeptaYantraCanvas';
-
-type InputType = 'mood' | 'intention' | 'element';
-type RitualType = 'tap' | 'hold' | 'breath' | 'yantra';
+import type {
+  RitualHistoryEntry,
+  RitualInputType,
+  RitualProgress,
+  RitualType,
+} from '@/lib/ritual/types';
 
 type GeometryState = {
   points: number;
@@ -20,20 +23,13 @@ type Stage = {
   note: string;
 };
 
-type Session = {
-  inputType: InputType;
-  inputValue: string;
-  ritual: RitualType;
-  timestamp: number;
-};
-
-const INPUT_OPTIONS: Record<InputType, string[]> = {
+const INPUT_OPTIONS: Record<RitualInputType, string[]> = {
   mood: ['Calm', 'Curious', 'Energized', 'Reflective', 'Grateful'],
   intention: ['Focus', 'Healing', 'Courage', 'Joy', 'Clarity'],
   element: ['Fire', 'Water', 'Earth', 'Air', 'Aether'],
 };
 
-const INPUT_ICONS: Record<InputType, string> = {
+const INPUT_ICONS: Record<RitualInputType, string> = {
   mood: '心',
   intention: '意',
   element: '素',
@@ -64,6 +60,8 @@ const mythFragments = [
   'Through sacred geometry, dimensions converge.',
 ];
 
+const RITUAL_STORAGE_PREFIX = 'metapet-ritual-progress';
+
 function hashString(value: string): number {
   let hash = 0;
   for (let i = 0; i < value.length; i++) {
@@ -73,13 +71,49 @@ function hashString(value: string): number {
   return Math.abs(hash);
 }
 
+function getRitualStorageKey(petId?: string) {
+  return petId ? `${RITUAL_STORAGE_PREFIX}:${petId}` : `${RITUAL_STORAGE_PREFIX}:default`;
+}
+
+// Use a UTC day key to avoid locale-specific Date parsing.
 function dayKey(timestamp: number) {
   const date = new Date(timestamp);
-  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+  return Math.floor(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) / 86_400_000);
 }
 
 function clamp(value: number, min = 0, max = 1) {
   return Math.max(min, Math.min(max, value));
+}
+
+function isValidRitualProgress(value: unknown): value is RitualProgress {
+  if (!value || typeof value !== 'object') return false;
+  const progress = value as RitualProgress;
+  const historyValid = Array.isArray(progress.history) && progress.history.every(isValidHistoryEntry);
+  return (
+    typeof progress.resonance === 'number' &&
+    typeof progress.nectar === 'number' &&
+    typeof progress.streak === 'number' &&
+    typeof progress.totalSessions === 'number' &&
+    (progress.lastDayKey === null || typeof progress.lastDayKey === 'number') &&
+    historyValid
+  );
+}
+
+function isValidHistoryEntry(value: unknown): value is RitualHistoryEntry {
+  if (!value || typeof value !== 'object') return false;
+  const entry = value as RitualHistoryEntry;
+  const validInputType = entry.inputType === 'mood' || entry.inputType === 'intention' || entry.inputType === 'element';
+  const validRitual =
+    entry.ritual === 'tap' ||
+    entry.ritual === 'hold' ||
+    entry.ritual === 'breath' ||
+    entry.ritual === 'yantra';
+  return (
+    validInputType &&
+    validRitual &&
+    typeof entry.inputValue === 'string' &&
+    typeof entry.timestamp === 'number'
+  );
 }
 
 export interface RitualLoopProps {
@@ -88,12 +122,15 @@ export interface RitualLoopProps {
     nectar: number;
     energy: number;
     stage: string;
+    progress: RitualProgress;
   }) => void;
   jewbleDigits?: { red: number[]; blue: number[]; black: number[] };
+  initialProgress?: RitualProgress;
+  petId?: string;
 }
 
-export function RitualLoop({ onRitualComplete, jewbleDigits }: RitualLoopProps) {
-  const [inputType, setInputType] = useState<InputType>('mood');
+export function RitualLoop({ onRitualComplete, jewbleDigits, initialProgress, petId }: RitualLoopProps) {
+  const [inputType, setInputType] = useState<RitualInputType>('mood');
   const [inputValue, setInputValue] = useState<string>(INPUT_OPTIONS.mood[0]);
   const [ritualType, setRitualType] = useState<RitualType>('tap');
 
@@ -111,17 +148,18 @@ export function RitualLoop({ onRitualComplete, jewbleDigits }: RitualLoopProps) 
     intensity: 0.6,
   });
 
-  const [resonance, setResonance] = useState(12);
-  const [nectar, setNectar] = useState(1);
+  const [resonance, setResonance] = useState(initialProgress?.resonance ?? 0);
+  const [nectar, setNectar] = useState(initialProgress?.nectar ?? 0);
   const [oracle, setOracle] = useState('Begin your ritual when ready.');
   const [myth, setMyth] = useState('');
 
-  const [streak, setStreak] = useState(0);
-  const [lastDay, setLastDay] = useState<string | null>(null);
-  const [totalSessions, setTotalSessions] = useState(0);
+  const [streak, setStreak] = useState(initialProgress?.streak ?? 0);
+  const [lastDay, setLastDay] = useState<number | null>(initialProgress?.lastDayKey ?? null);
+  const [totalSessions, setTotalSessions] = useState(initialProgress?.totalSessions ?? 0);
   const [stage, setStage] = useState<Stage>(STAGE_FLOW[0]);
-  const [history, setHistory] = useState<Session[]>([]);
+  const [history, setHistory] = useState<RitualHistoryEntry[]>(initialProgress?.history ?? []);
   const [showYantra, setShowYantra] = useState(false);
+  const storageKey = useMemo(() => getRitualStorageKey(petId), [petId]);
 
   const ritualReady =
     (ritualType === 'tap' && tapCount >= (RITUALS.tap.taps ?? 0)) ||
@@ -203,7 +241,7 @@ export function RitualLoop({ onRitualComplete, jewbleDigits }: RitualLoopProps) 
   }, []);
 
   const deriveStage = useCallback(
-    (nextHistory: Session[], nextStreak: number): Stage => {
+    (nextHistory: RitualHistoryEntry[], nextStreak: number): Stage => {
       const total = nextHistory.length;
       if (nextStreak >= 7) return STAGE_FLOW[2];
       if (nextStreak >= 3 || total >= 5) return STAGE_FLOW[1];
@@ -211,6 +249,38 @@ export function RitualLoop({ onRitualComplete, jewbleDigits }: RitualLoopProps) 
     },
     []
   );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (initialProgress) {
+      setResonance(initialProgress.resonance);
+      setNectar(initialProgress.nectar);
+      setStreak(initialProgress.streak);
+      setLastDay(initialProgress.lastDayKey ?? null);
+      setTotalSessions(initialProgress.totalSessions);
+      setHistory(initialProgress.history ?? []);
+      setStage(deriveStage(initialProgress.history ?? [], initialProgress.streak));
+      return;
+    }
+
+    const stored = window.localStorage.getItem(storageKey);
+    if (!stored) return;
+
+    try {
+      const parsed = JSON.parse(stored);
+      if (!isValidRitualProgress(parsed)) return;
+      setResonance(parsed.resonance);
+      setNectar(parsed.nectar);
+      setStreak(parsed.streak);
+      setLastDay(parsed.lastDayKey ?? null);
+      setTotalSessions(parsed.totalSessions);
+      setHistory(parsed.history ?? []);
+      setStage(deriveStage(parsed.history ?? [], parsed.streak));
+    } catch (error) {
+      console.warn('Failed to hydrate ritual progress:', error);
+    }
+  }, [deriveStage, initialProgress, storageKey]);
 
   const completeRitual = useCallback((yantraEnergy?: number) => {
     // For yantra, we pass energy; for other rituals, check ritualReady
@@ -225,9 +295,8 @@ export function RitualLoop({ onRitualComplete, jewbleDigits }: RitualLoopProps) 
     let nextStreak = 1;
     if (lastDay === key) {
       nextStreak = streak;
-    } else if (lastDay) {
-      const prevDate = new Date(lastDay);
-      const diffDays = Math.floor((now - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+    } else if (lastDay !== null) {
+      const diffDays = key - lastDay;
       nextStreak = diffDays === 1 ? streak + 1 : 1;
     }
 
@@ -246,8 +315,11 @@ export function RitualLoop({ onRitualComplete, jewbleDigits }: RitualLoopProps) 
     const resonanceGain = 5 + (seed % 8) + (yantraEnergy ?? 0);
     const nectarGain = 1 + (yantraEnergy ? Math.floor(yantraEnergy / 5) : 0);
 
-    setResonance(value => value + resonanceGain);
-    setNectar(value => value + nectarGain);
+    const nextResonance = resonance + resonanceGain;
+    const nextNectar = nectar + nectarGain;
+
+    setResonance(nextResonance);
+    setNectar(nextNectar);
 
     // Oracle message
     const oracleMessages = [
@@ -270,11 +342,29 @@ export function RitualLoop({ onRitualComplete, jewbleDigits }: RitualLoopProps) 
     resetRitual();
     setShowYantra(false);
 
+    const progress: RitualProgress = {
+      resonance: nextResonance,
+      nectar: nextNectar,
+      streak: nextStreak,
+      totalSessions: nextTotal,
+      lastDayKey: key,
+      history: nextHistory,
+    };
+
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(storageKey, JSON.stringify(progress));
+      } catch (error) {
+        console.warn('Failed to persist ritual progress:', error);
+      }
+    }
+
     onRitualComplete?.({
       resonance: resonanceGain,
       nectar: nectarGain,
       energy: yantraEnergy ?? 0,
       stage: stageCandidate.id,
+      progress,
     });
   }, [
     deriveStage,
@@ -283,12 +373,15 @@ export function RitualLoop({ onRitualComplete, jewbleDigits }: RitualLoopProps) 
     inputType,
     inputValue,
     lastDay,
+    nectar,
     onRitualComplete,
     resetRitual,
+    resonance,
     ritualReady,
     ritualType,
     stage.id,
     streak,
+    storageKey,
     totalSessions,
   ]);
 
@@ -368,7 +461,7 @@ export function RitualLoop({ onRitualComplete, jewbleDigits }: RitualLoopProps) 
       {/* Input Selection - horizontal scrollable on mobile */}
       <div className="mb-4">
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap scrollbar-hide">
-          {(['mood', 'intention', 'element'] as InputType[]).map(type => (
+          {(['mood', 'intention', 'element'] as RitualInputType[]).map(type => (
             <button
               key={type}
               onClick={() => {
@@ -424,6 +517,9 @@ export function RitualLoop({ onRitualComplete, jewbleDigits }: RitualLoopProps) 
           >
             <span className="text-xl sm:text-2xl mb-1">{RITUALS[rt].icon}</span>
             <span className="text-[10px] sm:text-xs font-medium">{RITUALS[rt].label}</span>
+            <span className="text-[9px] sm:text-[10px] text-zinc-400 text-center leading-tight mt-1">
+              {RITUALS[rt].description}
+            </span>
           </button>
         ))}
       </div>

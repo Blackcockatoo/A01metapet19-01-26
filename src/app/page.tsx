@@ -43,6 +43,7 @@ import {
   createDefaultMiniGameProgress,
   createDefaultVimanaState,
 } from '@/lib/progression/types';
+import { createDefaultRitualProgress } from '@/lib/ritual/types';
 import {
   Sparkles,
   Shield,
@@ -160,6 +161,8 @@ export default function Home() {
   const genome = useStore(s => s.genome);
   const traits = useStore(s => s.traits);
   const evolution = useStore(s => s.evolution);
+  const ritualProgress = useStore(s => s.ritualProgress);
+  const addRitualRewards = useStore(s => s.addRitualRewards);
   const [crest, setCrest] = useState<PrimeTailId | null>(null);
   const [heptaCode, setHeptaCode] = useState<HeptaDigits | null>(null);
   const [loading, setLoading] = useState(true);
@@ -341,6 +344,7 @@ export default function Home() {
       genomeHash: genomeHashRef.current,
       traits: state.traits,
       evolution: state.evolution,
+      ritualProgress: state.ritualProgress,
       achievements: state.achievements.map(entry => ({ ...entry })),
       battle: { ...state.battle },
       miniGames: { ...state.miniGames },
@@ -374,6 +378,7 @@ export default function Home() {
           genomeHash: genomeHashRef.current,
           traits: state.traits,
           evolution: state.evolution,
+          ritualProgress: state.ritualProgress,
           achievements: state.achievements.map(entry => ({ ...entry })),
           battle: { ...state.battle },
           miniGames: { ...state.miniGames },
@@ -430,6 +435,7 @@ export default function Home() {
       },
       traits: pet.traits,
       evolution: { ...pet.evolution },
+      ritualProgress: pet.ritualProgress ?? createDefaultRitualProgress(),
       achievements: pet.achievements?.map(entry => ({ ...entry })) ?? [],
       battle: pet.battle ? { ...pet.battle } : createDefaultBattleStats(),
       miniGames: pet.miniGames ? { ...pet.miniGames } : createDefaultMiniGameProgress(),
@@ -545,6 +551,7 @@ export default function Home() {
       genomeHash: genomeHashValue,
       traits,
       evolution: initializeEvolution(),
+      ritualProgress: createDefaultRitualProgress(),
       achievements: [],
       battle: createDefaultBattleStats(),
       miniGames: createDefaultMiniGameProgress(),
@@ -614,6 +621,7 @@ export default function Home() {
         genomeHash: genomeHashValue,
         traits: result.traits,
         evolution: initializeEvolution(),
+        ritualProgress: createDefaultRitualProgress(),
         achievements: [],
         battle: createDefaultBattleStats(),
         miniGames: createDefaultMiniGameProgress(),
@@ -1028,7 +1036,21 @@ export default function Home() {
 
           {/* Identity & Persistence */}
           <div className="lg:col-span-2 space-y-6">
-            <RitualLoop />
+            <RitualLoop
+              petId={currentPetId ?? PET_ID}
+              initialProgress={ritualProgress}
+              onRitualComplete={data => {
+                addRitualRewards({
+                  resonance: data.resonance,
+                  nectar: data.nectar,
+                  streak: data.progress.streak,
+                  totalSessions: data.progress.totalSessions,
+                  lastDayKey: data.progress.lastDayKey,
+                  history: data.progress.history,
+                });
+              }}
+              jewbleDigits={heptaCode ?? undefined}
+            />
 
             {/* Crest */}
             {crest && (
