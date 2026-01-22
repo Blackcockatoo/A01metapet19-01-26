@@ -40,6 +40,14 @@ import {
 
 export type { Vitals };
 export type PetType = 'geometric' | 'auralia';
+export type RewardSource =
+  | 'battle'
+  | 'exploration'
+  | 'minigame'
+  | 'mirror'
+  | 'ritual'
+  | 'system'
+  | 'vimana';
 
 export interface MetaPetState {
   vitals: Vitals;
@@ -47,6 +55,9 @@ export interface MetaPetState {
   traits: DerivedTraits | null;
   evolution: EvolutionData;
   ritualProgress: RitualProgress;
+  essence: number;
+  lastRewardSource: string | null;
+  lastRewardAmount: number;
   achievements: Achievement[];
   battle: BattleStats;
   miniGames: MiniGameProgress;
@@ -55,6 +66,8 @@ export interface MetaPetState {
   mirrorMode: MirrorModeState;
   lastAction: null | 'feed' | 'clean' | 'play' | 'sleep';
   lastActionAt: number;
+  essence: number;
+  lastRewardSource: RewardSource | null;
   tickId?: ReturnType<typeof setInterval>;
   setGenome: (genome: Genome, traits: DerivedTraits) => void;
   setPetType: (petType: PetType) => void;
@@ -64,12 +77,17 @@ export interface MetaPetState {
     traits: DerivedTraits;
     evolution: EvolutionData;
     ritualProgress?: RitualProgress;
+    essence?: number;
+    lastRewardSource?: string | null;
+    lastRewardAmount?: number;
     achievements?: Achievement[];
     battle?: BattleStats;
     miniGames?: MiniGameProgress;
     vimana?: VimanaState;
     petType?: PetType;
     mirrorMode?: MirrorModeState;
+    essence?: number;
+    lastRewardSource?: RewardSource | null;
   }) => void;
   startTick: () => void;
   stopTick: () => void;
@@ -78,6 +96,7 @@ export interface MetaPetState {
   play: () => void;
   sleep: () => void;
   setLastAction: (action: 'feed' | 'clean' | 'play' | 'sleep') => void;
+  addEssence: (payload: { amount: number; source: RewardSource }) => void;
   tryEvolve: () => boolean;
   recordBattle: (result: 'win' | 'loss', opponent: string) => void;
   updateMiniGameScore: (game: 'memory' | 'rhythm', score: number) => void;
@@ -85,12 +104,12 @@ export interface MetaPetState {
   exploreCell: (cellId: string) => void;
   resolveAnomaly: (cellId: string) => void;
   addRitualRewards: (payload: {
-    resonance: number;
-    nectar: number;
-    streak: number;
-    totalSessions: number;
-    lastDayKey: number | null;
-    history: RitualProgress['history'];
+    resonanceDelta: number;
+    reward: {
+      essenceDelta: number;
+      source: 'ritual';
+    };
+    progress: RitualProgress;
   }) => void;
   beginMirrorMode: (preset: MirrorPrivacyPreset, durationMinutes?: number) => void;
   confirmMirrorCross: () => void;
@@ -193,6 +212,9 @@ export function createMetaPetWebStore(
     traits: null,
     evolution: initializeEvolution(),
     ritualProgress: createDefaultRitualProgress(),
+    essence: 0,
+    lastRewardSource: null,
+    lastRewardAmount: 0,
     achievements: [],
     battle: createDefaultBattleStats(),
     miniGames: createDefaultMiniGameProgress(),
@@ -201,6 +223,8 @@ export function createMetaPetWebStore(
     mirrorMode: { ...DEFAULT_MIRROR_MODE },
     lastAction: null,
     lastActionAt: 0,
+    essence: 0,
+    lastRewardSource: null,
 
     setGenome(genome, traits) {
       set({ genome, traits: normalizeTraits(genome, traits) });
@@ -210,19 +234,40 @@ export function createMetaPetWebStore(
       set({ petType });
     },
 
-    hydrate({ vitals, genome, traits, evolution, ritualProgress, achievements, battle, miniGames, vimana, petType, mirrorMode }) {
+    hydrate({
+      vitals,
+      genome,
+      traits,
+      evolution,
+      ritualProgress,
+      achievements,
+      battle,
+      miniGames,
+      vimana,
+      petType,
+      mirrorMode,
+      essence,
+      lastRewardSource,
+    }) {
       set(state => ({
         vitals: { ...vitals },
         genome,
         traits: normalizeTraits(genome, traits),
         evolution: { ...evolution },
         ritualProgress: ritualProgress ? { ...ritualProgress, history: [...ritualProgress.history] } : state.ritualProgress,
+        essence: typeof essence === 'number' ? essence : state.essence,
+        lastRewardSource: typeof lastRewardSource === 'string' || lastRewardSource === null
+          ? lastRewardSource
+          : state.lastRewardSource,
+        lastRewardAmount: typeof lastRewardAmount === 'number' ? lastRewardAmount : state.lastRewardAmount,
         achievements: achievements ? achievements.map(entry => ({ ...entry })) : state.achievements,
         battle: battle ? { ...battle } : state.battle,
         miniGames: miniGames ? { ...miniGames } : state.miniGames,
         vimana: vimana ? cloneVimanaState(vimana) : state.vimana,
         petType: petType ?? state.petType,
         mirrorMode: mirrorMode ? { ...mirrorMode } : state.mirrorMode,
+        essence: essence ?? state.essence,
+        lastRewardSource: lastRewardSource ?? state.lastRewardSource,
         tickId: state.tickId,
       }));
     },
@@ -249,6 +294,13 @@ export function createMetaPetWebStore(
 
     setLastAction(action) {
       set({ lastAction: action, lastActionAt: Date.now() });
+    },
+
+    addEssence({ amount, source }) {
+      set(state => ({
+        essence: state.essence + amount,
+        lastRewardSource: source,
+      }));
     },
 
     feed() {
@@ -502,22 +554,25 @@ export function createMetaPetWebStore(
       });
     },
 
-    addRitualRewards({ resonance, nectar, streak, totalSessions, lastDayKey, history }) {
+    addRitualRewards({ resonanceDelta, reward, progress }) {
       set(state => {
-        const moodBoost = Math.min(8, Math.floor(resonance / 4));
-        const energyBoost = Math.min(6, Math.floor(nectar / 2));
-        const xpGain = Math.min(12, 4 + Math.floor(resonance / 3) + nectar);
+        const moodBoost = Math.min(8, Math.floor(resonanceDelta / 4));
+        const energyBoost = Math.min(6, Math.floor(reward.essenceDelta / 2));
+        const xpGain = Math.min(12, 4 + Math.floor(resonanceDelta / 3) + reward.essenceDelta);
 
         return {
           ritualProgress: {
             ...state.ritualProgress,
-            resonance: state.ritualProgress.resonance + resonance,
-            nectar: state.ritualProgress.nectar + nectar,
-            streak,
-            totalSessions,
-            lastDayKey,
-            history: [...history],
+            resonance: progress.resonance,
+            nectar: progress.nectar,
+            streak: progress.streak,
+            totalSessions: progress.totalSessions,
+            lastDayKey: progress.lastDayKey,
+            history: [...progress.history],
           },
+          essence: state.essence + essenceDelta,
+          lastRewardSource: 'Ritual',
+          lastRewardAmount: essenceDelta,
           vitals: {
             ...state.vitals,
             mood: clamp(state.vitals.mood + moodBoost),

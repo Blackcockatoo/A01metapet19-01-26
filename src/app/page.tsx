@@ -154,6 +154,7 @@ function createDebouncedSave(delay: number) {
 }
 
 const PET_ID = 'metapet-primary';
+const SESSION_ANALYTICS_KEY = 'metapet-analytics';
 
 export default function Home() {
   const startTick = useStore(s => s.startTick);
@@ -202,6 +203,54 @@ export default function Home() {
 
   const crestRef = useRef<PrimeTailId | null>(null);
   const heptaRef = useRef<HeptaDigits | null>(null);
+  const sessionStartRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const recordSessionDuration = (startTime: number, endTime: number) => {
+      const durationMs = Math.max(0, endTime - startTime);
+
+      try {
+        const stored = window.localStorage.getItem(SESSION_ANALYTICS_KEY);
+        const parsed = stored ? (JSON.parse(stored) as { sessions?: Array<Record<string, number>> }) : {};
+        const sessions = Array.isArray(parsed.sessions) ? parsed.sessions : [];
+
+        sessions.push({ startTime, endTime, durationMs });
+
+        window.localStorage.setItem(
+          SESSION_ANALYTICS_KEY,
+          JSON.stringify({
+            ...parsed,
+            lastDurationMs: durationMs,
+            sessions,
+          }),
+        );
+      } catch (error) {
+        console.warn('Failed to persist session analytics:', error);
+      }
+    };
+
+    const startTime = Date.now();
+    sessionStartRef.current = startTime;
+    console.info('session_start', { timestamp: startTime });
+
+    const handleSessionEnd = () => {
+      const endTime = Date.now();
+      const sessionStart = sessionStartRef.current ?? endTime;
+      console.info('session_end', { timestamp: endTime, durationMs: endTime - sessionStart });
+      recordSessionDuration(sessionStart, endTime);
+    };
+
+    window.addEventListener('pagehide', handleSessionEnd);
+
+    return () => {
+      window.removeEventListener('pagehide', handleSessionEnd);
+      handleSessionEnd();
+    };
+  }, []);
   const genomeHashRef = useRef<GenomeHash | null>(null);
   const createdAtRef = useRef<number | null>(null);
   const petIdRef = useRef<string | null>(null);
@@ -350,6 +399,9 @@ export default function Home() {
       traits: state.traits,
       evolution: state.evolution,
       ritualProgress: state.ritualProgress,
+      essence: state.essence,
+      lastRewardSource: state.lastRewardSource,
+      lastRewardAmount: state.lastRewardAmount,
       achievements: state.achievements.map(entry => ({ ...entry })),
       battle: { ...state.battle },
       miniGames: { ...state.miniGames },
@@ -384,6 +436,9 @@ export default function Home() {
           traits: state.traits,
           evolution: state.evolution,
           ritualProgress: state.ritualProgress,
+          essence: state.essence,
+          lastRewardSource: state.lastRewardSource,
+          lastRewardAmount: state.lastRewardAmount,
           achievements: state.achievements.map(entry => ({ ...entry })),
           battle: { ...state.battle },
           miniGames: { ...state.miniGames },
@@ -441,6 +496,9 @@ export default function Home() {
       traits: pet.traits,
       evolution: { ...pet.evolution },
       ritualProgress: pet.ritualProgress ?? createDefaultRitualProgress(),
+      essence: pet.essence ?? 0,
+      lastRewardSource: pet.lastRewardSource ?? null,
+      lastRewardAmount: pet.lastRewardAmount ?? 0,
       achievements: pet.achievements?.map(entry => ({ ...entry })) ?? [],
       battle: pet.battle ? { ...pet.battle } : createDefaultBattleStats(),
       miniGames: pet.miniGames ? { ...pet.miniGames } : createDefaultMiniGameProgress(),
@@ -554,6 +612,9 @@ export default function Home() {
       traits,
       evolution: initializeEvolution(),
       ritualProgress: createDefaultRitualProgress(),
+      essence: 0,
+      lastRewardSource: null,
+      lastRewardAmount: 0,
       achievements: [],
       battle: createDefaultBattleStats(),
       miniGames: createDefaultMiniGameProgress(),
@@ -625,6 +686,9 @@ export default function Home() {
         traits: result.traits,
         evolution: initializeEvolution(),
         ritualProgress: createDefaultRitualProgress(),
+        essence: 0,
+        lastRewardSource: null,
+        lastRewardAmount: 0,
         achievements: [],
         battle: createDefaultBattleStats(),
         miniGames: createDefaultMiniGameProgress(),
@@ -943,6 +1007,28 @@ export default function Home() {
   const canBreedNow = Boolean(
     genome && breedingPartner && evolution && canBreed(evolution.state, breedingPartner.evolution.state)
   );
+  const isBreedingDisabled = !canBreedNow || breedingBusy;
+  const breedingHint = (() => {
+    if (!isBreedingDisabled) return null;
+    if (breedingBusy) return 'Prerequisite: wait for the current breeding cycle to finish.';
+    if (!breedingPartner) return 'Prerequisite: select a companion from the archives to breed.';
+    if (!evolution) return 'Prerequisite: load your active companion to continue.';
+    if (evolution.state !== 'SPECIATION') {
+      return 'Prerequisite: reach SPECIATION stage with your active companion.';
+    }
+    if (breedingPartner.evolution.state !== 'SPECIATION') {
+      return 'Prerequisite: your partner must reach SPECIATION stage.';
+    }
+    return 'Prerequisite: meet all breeding requirements to unlock this.';
+  })();
+  const mintDisabled = !persistenceSupported && petSummaries.length > 0;
+  const mintHint = mintDisabled
+    ? 'Prerequisite: enable IndexedDB persistence to mint additional companions.'
+    : null;
+  const importDisabled = !persistenceSupported;
+  const importHint = importDisabled
+    ? 'Prerequisite: enable IndexedDB persistence to import archived companions.'
+    : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 p-6 pb-24 sm:pb-6">
@@ -978,7 +1064,7 @@ export default function Home() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Pet Card */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-6 order-2 lg:order-1">
             <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -1028,7 +1114,7 @@ export default function Home() {
             </div>
 
             {/* Genome Traits */}
-            <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800 max-h-[calc(100vh-8rem)] overflow-y-auto">
+            <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800 max-h-[calc(100vh-12rem)] sm:max-h-[calc(100vh-8rem)] overflow-y-auto">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2 sticky top-0 bg-slate-900/50 backdrop-blur-sm -mx-6 px-6 py-3 z-10">
                 <Dna className="w-5 h-5 text-purple-400" />
                 Genome Traits
@@ -1039,31 +1125,29 @@ export default function Home() {
 
           {/* Identity & Persistence */}
           <div className="lg:col-span-2 space-y-6">
-            <div id="ritual" className="scroll-mt-20">
-              <RitualLoop
-                petId={currentPetId ?? PET_ID}
-                initialProgress={ritualProgress}
-                onRitualComplete={data => {
-                  addRitualRewards({
-                    resonance: data.resonance,
-                    nectar: data.nectar,
-                    streak: data.progress.streak,
-                    totalSessions: data.progress.totalSessions,
-                    lastDayKey: data.progress.lastDayKey,
-                    history: data.progress.history,
-                  });
-                }}
-                jewbleDigits={
-                  genome
-                    ? {
-                        red: genome.red60,
-                        blue: genome.blue60,
-                        black: genome.black60,
-                      }
-                    : undefined
-                }
-              />
-            </div>
+            <RitualLoop
+              petId={currentPetId ?? PET_ID}
+              initialProgress={ritualProgress}
+              onRitualComplete={data => {
+                addRitualRewards({
+                  resonanceDelta: data.resonance,
+                  reward: {
+                    essenceDelta: data.nectar,
+                    source: 'ritual',
+                  },
+                  progress: data.progress,
+                });
+              }}
+              jewbleDigits={
+                genome
+                  ? {
+                      red: genome.red60,
+                      blue: genome.blue60,
+                      black: genome.black60,
+                    }
+                  : undefined
+              }
+            />
 
             {/* Crest */}
             {crest && (
@@ -1203,12 +1287,15 @@ export default function Home() {
                 {/* Breed Button */}
                 <Button
                   onClick={() => void handleBreedWithPartner()}
-                  disabled={!canBreedNow || breedingBusy}
+                  disabled={isBreedingDisabled}
                   className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 disabled:opacity-50"
                 >
                   <Baby className="w-4 h-4 mr-2" />
                   {breedingBusy ? 'Breeding...' : 'Breed Companions'}
                 </Button>
+                {breedingHint && (
+                  <p className="text-xs text-zinc-400">{breedingHint}</p>
+                )}
 
                 {breedingError && (
                   <p className="text-xs text-rose-400">{breedingError}</p>
@@ -1314,7 +1401,7 @@ export default function Home() {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  <Button onClick={() => void handleCreateNewPet()} disabled={!persistenceSupported && petSummaries.length > 0}>
+                  <Button onClick={() => void handleCreateNewPet()} disabled={mintDisabled}>
                     <Plus className="w-4 h-4 mr-2" />
                     Mint New Companion
                   </Button>
@@ -1322,7 +1409,7 @@ export default function Home() {
                     type="button"
                     variant="outline"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={!persistenceSupported}
+                    disabled={importDisabled}
                     className="border-slate-700"
                   >
                     <Upload className="w-4 h-4 mr-2" />
@@ -1336,6 +1423,12 @@ export default function Home() {
                     onChange={handleImportInput}
                   />
                 </div>
+                {(mintHint || importHint) && (
+                  <div className="space-y-1">
+                    {mintHint && <p className="text-xs text-zinc-500">{mintHint}</p>}
+                    {importHint && <p className="text-xs text-zinc-500">{importHint}</p>}
+                  </div>
+                )}
 
                 {importError && (
                   <p className="text-xs text-rose-400">{importError}</p>
@@ -1395,6 +1488,11 @@ export default function Home() {
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
+                            {isActive && (
+                              <p className="text-[11px] text-zinc-500">
+                                Prerequisite: this companion is already active.
+                              </p>
+                            )}
                           </div>
                         </div>
                       );
