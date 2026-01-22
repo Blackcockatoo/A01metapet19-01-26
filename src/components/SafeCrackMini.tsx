@@ -497,6 +497,100 @@ export function SafeCrackMini({
     };
   }, [gameState, currentTarget, requiredDirection, velocityHistory]);
 
+  // Commit function for mobile button - must be before early return to follow React rules of hooks
+  const handleCommit = useCallback(() => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      if (prev.state === 'UNLOCK' || prev.state === 'FAIL') return prev;
+
+      // Check if in decoy zone
+      const inDecoyZone = prev.decoys.some(decoy => {
+        const distance = circularDistance(prev.currentTick, decoy.tick);
+        const tolerance = effectiveTolerance(prev.band, Math.abs(prev.angularVelocity));
+        return distance <= tolerance;
+      });
+
+      if (inDecoyZone) {
+        const nextStrikes = prev.strikes + 1;
+        if (nextStrikes >= MAX_STRIKES) {
+          onGameOver?.(false, 0, nextStrikes);
+          return { ...prev, state: 'FAIL', strikes: nextStrikes };
+        }
+        return {
+          ...prev,
+          strikes: nextStrikes,
+          dwellStart: null,
+          readyToCommit: false,
+        };
+      }
+
+      if (prev.readyToCommit) {
+        if (prev.step === 3) {
+          const totalTime = (performance.now() - prev.startTime) / 1000;
+          const avgDistance =
+            prev.distanceLog.length > 0
+              ? prev.distanceLog.reduce((a, b) => a + b, 0) / prev.distanceLog.length
+              : 0;
+          const score = calculateScore(prev.band, avgDistance, totalTime);
+          onGameOver?.(true, score, prev.strikes);
+          return { ...prev, state: 'UNLOCK' };
+        } else {
+          const nextStep = (prev.step + 1) as 1 | 2 | 3;
+          let nextState: GameState = 'IDLE';
+          if (nextStep === 2) nextState = 'S2_L';
+          if (nextStep === 3) nextState = 'S3_R';
+
+          return {
+            ...prev,
+            state: nextState,
+            step: nextStep,
+            crossedZero: false,
+            dwellStart: null,
+            readyToCommit: false,
+            distanceLog: [],
+          };
+        }
+      } else {
+        const nextStrikes = prev.strikes + 1;
+        if (nextStrikes >= MAX_STRIKES) {
+          onGameOver?.(false, 0, nextStrikes);
+          return { ...prev, state: 'FAIL', strikes: nextStrikes };
+        }
+        return {
+          ...prev,
+          strikes: nextStrikes,
+          dwellStart: null,
+          readyToCommit: false,
+        };
+      }
+    });
+  }, [onGameOver]);
+
+  // Nudge functions for mobile - must be before early return
+  const nudgeLeft = useCallback(() => {
+    setGameState(prev => {
+      if (!prev || prev.state === 'UNLOCK' || prev.state === 'FAIL') return prev;
+      const nextAngle = (prev.currentAngle - DEGREES_PER_TICK + 360) % 360;
+      const prevTick = prev.currentTick;
+      const nextTick = Math.floor(nextAngle / DEGREES_PER_TICK);
+      let crossedZero = prev.crossedZero;
+      if (prevTick === 0 && nextTick === TICKS - 1) crossedZero = true;
+      return { ...prev, currentAngle: nextAngle, currentTick: nextTick, crossedZero };
+    });
+  }, []);
+
+  const nudgeRight = useCallback(() => {
+    setGameState(prev => {
+      if (!prev || prev.state === 'UNLOCK' || prev.state === 'FAIL') return prev;
+      const nextAngle = (prev.currentAngle + DEGREES_PER_TICK) % 360;
+      const prevTick = prev.currentTick;
+      const nextTick = Math.floor(nextAngle / DEGREES_PER_TICK);
+      let crossedZero = prev.crossedZero;
+      if (prevTick === TICKS - 1 && nextTick === 0) crossedZero = true;
+      return { ...prev, currentAngle: nextAngle, currentTick: nextTick, crossedZero };
+    });
+  }, []);
+
   if (!gameState) {
     return (
       <div className="w-full h-full flex items-center justify-center">
@@ -506,7 +600,7 @@ export function SafeCrackMini({
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50 rounded-2xl border border-slate-800/80 shadow-xl overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50 rounded-2xl border border-slate-800/80 shadow-xl overflow-hidden touch-none">
       {/* Header */}
       <header className="px-4 py-2 flex items-center justify-between text-xs sm:text-sm border-b border-slate-800/80 bg-slate-950/70 backdrop-blur">
         <div className="flex flex-col">
@@ -540,8 +634,8 @@ export function SafeCrackMini({
       </header>
 
       {/* Main content */}
-      <div className="flex-1 flex gap-3 px-3 pb-3 pt-2">
-        <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3 px-2 sm:px-3 pb-2 sm:pb-3 pt-2 overflow-hidden">
+        <div className="flex-1 flex items-center justify-center min-h-0">
           {/* Dial */}
           <div
             className="relative aspect-square max-h-full w-full max-w-[400px] cursor-pointer"
@@ -668,9 +762,12 @@ export function SafeCrackMini({
                   <div className="mt-2 text-xs text-slate-400">
                     Combo: {gameState.combo.n1} → {gameState.combo.n2} → {gameState.combo.n3}
                   </div>
-                  <div className="mt-3 text-[11px] text-slate-300">
-                    Press <span className="font-mono">Enter</span> or <span className="font-mono">R</span> to try again
-                  </div>
+                  <button
+                    onClick={resetGame}
+                    className="mt-3 px-4 py-2 bg-green-500 text-slate-900 rounded-lg font-semibold text-sm active:bg-green-400"
+                  >
+                    Play Again
+                  </button>
                 </div>
               </div>
             )}
@@ -683,17 +780,20 @@ export function SafeCrackMini({
                   <div className="mt-2 text-xs text-slate-400">
                     Too many strikes: {gameState.strikes}/{MAX_STRIKES}
                   </div>
-                  <div className="mt-3 text-[11px] text-slate-300">
-                    Press <span className="font-mono">Enter</span> or <span className="font-mono">R</span> to try again
-                  </div>
+                  <button
+                    onClick={resetGame}
+                    className="mt-3 px-4 py-2 bg-red-500 text-white rounded-lg font-semibold text-sm active:bg-red-400"
+                  >
+                    Try Again
+                  </button>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Sidebar */}
-        <aside className="w-32 flex flex-col gap-3 text-xs">
+        {/* Sidebar - hidden on mobile */}
+        <aside className="hidden sm:flex w-32 flex-col gap-3 text-xs">
           <div className="rounded-xl border border-slate-800/80 bg-slate-950/70 px-3 py-2">
             <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">Instructions</div>
             <div className="space-y-1 text-[11px]">
@@ -719,6 +819,56 @@ export function SafeCrackMini({
             <div>Esc — exit</div>
           </div>
         </aside>
+
+        {/* Mobile touch controls */}
+        <div className="sm:hidden flex flex-col gap-2">
+          {/* Status row */}
+          <div className="flex items-center justify-between gap-2 px-2 text-xs">
+            <div className="flex items-center gap-3">
+              <span className="text-slate-400">
+                Step {gameState.step}: {requiredDirection === 'R' ? '→ CW' : '← CCW'}
+              </span>
+              <span className={gameState.crossedZero ? 'text-green-400' : 'text-slate-500'}>
+                0-cross: {gameState.crossedZero ? '✓' : '✗'}
+              </span>
+            </div>
+            <button
+              onClick={onExit}
+              className="px-3 py-1 rounded-lg bg-slate-800 text-slate-300 text-xs active:bg-slate-700"
+            >
+              Exit
+            </button>
+          </div>
+
+          {/* Touch control buttons */}
+          <div className="flex justify-center items-center gap-3">
+            <button
+              onTouchStart={(e) => { e.stopPropagation(); nudgeLeft(); }}
+              onClick={nudgeLeft}
+              className="w-16 h-16 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-2xl active:bg-slate-700 select-none"
+            >
+              ◀
+            </button>
+            <button
+              onTouchStart={(e) => { e.stopPropagation(); handleCommit(); }}
+              onClick={handleCommit}
+              className={`w-20 h-16 rounded-xl border flex items-center justify-center text-sm font-bold select-none ${
+                gameState.readyToCommit
+                  ? 'bg-green-600/90 border-green-500 text-white active:bg-green-500'
+                  : 'bg-amber-600/90 border-amber-500 text-slate-900 active:bg-amber-500'
+              }`}
+            >
+              {gameState.readyToCommit ? 'COMMIT' : 'TRY'}
+            </button>
+            <button
+              onTouchStart={(e) => { e.stopPropagation(); nudgeRight(); }}
+              onClick={nudgeRight}
+              className="w-16 h-16 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-2xl active:bg-slate-700 select-none"
+            >
+              ▶
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
