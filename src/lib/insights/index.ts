@@ -40,7 +40,7 @@ export function generateInsights(
   memoryState: MemoryState
 ): Insight[] {
   const insights: Insight[] = [];
-  const { patterns, moodHistory, habits, currentStreak, bondLevel } = bondState;
+  const { patterns, moodHistory, habits, bondLevel } = bondState;
 
   // Pattern insights
   const patternInsights = generatePatternInsights(patterns);
