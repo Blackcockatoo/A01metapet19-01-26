@@ -6,6 +6,7 @@ import { Button } from './ui/button';
 
 export function HUD() {
   const vitals = useStore(s => s.vitals);
+  const ritualProgress = useStore(s => s.ritualProgress);
   const feed = useStore(s => s.feed);
   const clean = useStore(s => s.clean);
   const play = useStore(s => s.play);
@@ -38,6 +39,17 @@ export function HUD() {
           icon={<Zap className="w-4 h-4" />}
           color="from-yellow-500 to-amber-500"
         />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2">
+        <div className="space-y-1">
+          <div className="text-[10px] uppercase tracking-wide text-zinc-500">Resonance</div>
+          <div className="text-cyan-300 font-mono text-sm">{ritualProgress.resonance}</div>
+        </div>
+        <div className="space-y-1 text-right">
+          <div className="text-[10px] uppercase tracking-wide text-zinc-500">Nectar</div>
+          <div className="text-amber-300 font-mono text-sm">{ritualProgress.nectar}</div>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2">

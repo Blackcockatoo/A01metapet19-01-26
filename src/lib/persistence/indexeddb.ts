@@ -8,6 +8,7 @@ import type { PetType, Vitals, MirrorModeState } from '@/lib/store';
 import type { Genome, DerivedTraits, GenomeHash } from '@/lib/genome';
 import type { EvolutionData } from '@/lib/evolution';
 import type { HeptaDigits, PrimeTailId, Rotation, Vault } from '@/lib/identity/types';
+import { createDefaultRitualProgress, type RitualProgress } from '@/lib/ritual/types';
 import {
   type Achievement,
   type BattleStats,
@@ -34,6 +35,7 @@ export interface PetSaveData {
   genomeHash: GenomeHash;
   traits: DerivedTraits;
   evolution: EvolutionData;
+  ritualProgress: RitualProgress;
   achievements: Achievement[];
   battle: BattleStats;
   miniGames: MiniGameProgress;
@@ -211,6 +213,10 @@ export function exportPetToJSON(data: PetSaveData): string {
     miniGames: { ...data.miniGames },
     vimana: cloneVimana(data.vimana),
     mirrorMode: { ...data.mirrorMode },
+    ritualProgress: {
+      ...data.ritualProgress,
+      history: data.ritualProgress.history.map(entry => ({ ...entry })),
+    },
     traits: JSON.parse(JSON.stringify(data.traits)),
     crest: { ...data.crest, tail: [...data.crest.tail] as [number, number, number, number] },
     heptaDigits: Array.from(data.heptaDigits) as HeptaDigits,
@@ -322,6 +328,9 @@ export function importPetFromJSON(json: string, options?: { skipGenomeValidation
     genomeHash: parsed.genomeHash,
     traits: parsed.traits as DerivedTraits,
     evolution: parsed.evolution,
+    ritualProgress: isValidRitualProgress(parsed.ritualProgress)
+      ? normalizeRitualProgress(parsed.ritualProgress)
+      : createDefaultRitualProgress(),
     achievements,
     battle,
     miniGames,
@@ -361,6 +370,9 @@ function normalizePetData(raw: unknown): PetSaveData {
   const mirrorMode = isValidMirrorMode(typed.mirrorMode)
     ? { ...typed.mirrorMode }
     : createDefaultMirrorMode();
+  const ritualProgress = isValidRitualProgress(typed.ritualProgress)
+    ? normalizeRitualProgress(typed.ritualProgress)
+    : createDefaultRitualProgress();
 
   return {
     ...(typed as PetSaveData),
@@ -369,6 +381,7 @@ function normalizePetData(raw: unknown): PetSaveData {
     miniGames,
     vimana,
     mirrorMode,
+    ritualProgress,
     petType: isValidPetType(typed.petType) ? typed.petType : 'geometric',
   } as PetSaveData;
 }
@@ -516,6 +529,48 @@ function isValidVimanaCell(value: unknown): value is VimanaState['cells'][number
     rewardValid &&
     (cell.visitedAt === undefined || typeof cell.visitedAt === 'number')
   );
+}
+
+function isValidRitualProgress(value: unknown): value is RitualProgress {
+  if (!value || typeof value !== 'object') return false;
+  const progress = value as RitualProgress;
+  const historyValid = Array.isArray(progress.history) && progress.history.every(isValidRitualHistoryEntry);
+  return (
+    typeof progress.resonance === 'number' &&
+    typeof progress.nectar === 'number' &&
+    typeof progress.streak === 'number' &&
+    typeof progress.totalSessions === 'number' &&
+    (progress.lastDayKey === null || typeof progress.lastDayKey === 'number') &&
+    historyValid
+  );
+}
+
+function isValidRitualHistoryEntry(value: unknown): value is RitualProgress['history'][number] {
+  if (!value || typeof value !== 'object') return false;
+  const entry = value as RitualProgress['history'][number];
+  const validInputType = entry.inputType === 'mood' || entry.inputType === 'intention' || entry.inputType === 'element';
+  const validRitual =
+    entry.ritual === 'tap' ||
+    entry.ritual === 'hold' ||
+    entry.ritual === 'breath' ||
+    entry.ritual === 'yantra';
+  return (
+    validInputType &&
+    validRitual &&
+    typeof entry.inputValue === 'string' &&
+    typeof entry.timestamp === 'number'
+  );
+}
+
+function normalizeRitualProgress(value: RitualProgress): RitualProgress {
+  return {
+    resonance: Number.isFinite(value.resonance) ? value.resonance : 0,
+    nectar: Number.isFinite(value.nectar) ? value.nectar : 0,
+    streak: Number.isFinite(value.streak) ? value.streak : 0,
+    totalSessions: Number.isFinite(value.totalSessions) ? value.totalSessions : 0,
+    lastDayKey: value.lastDayKey ?? null,
+    history: Array.isArray(value.history) ? value.history.map(entry => ({ ...entry })) : [],
+  };
 }
 
 function isValidCrest(value: unknown): value is PrimeTailId {

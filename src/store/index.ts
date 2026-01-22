@@ -30,6 +30,10 @@ import {
   getVitalsAverage,
   tick as runTick,
 } from '../vitals/index';
+import {
+  createDefaultRitualProgress,
+  type RitualProgress,
+} from '../lib/ritual/types';
 
 export type { Vitals };
 export type PetType = 'geometric' | 'auralia';
@@ -39,6 +43,7 @@ export interface MetaPetState {
   genome: Genome | null;
   traits: DerivedTraits | null;
   evolution: EvolutionData;
+  ritualProgress: RitualProgress;
   achievements: Achievement[];
   battle: BattleStats;
   miniGames: MiniGameProgress;
@@ -55,6 +60,7 @@ export interface MetaPetState {
     genome: Genome;
     traits: DerivedTraits;
     evolution: EvolutionData;
+    ritualProgress?: RitualProgress;
     achievements?: Achievement[];
     battle?: BattleStats;
     miniGames?: MiniGameProgress;
@@ -75,6 +81,14 @@ export interface MetaPetState {
   recordVimanaRun: (score: number, lines: number, level: number) => void;
   exploreCell: (cellId: string) => void;
   resolveAnomaly: (cellId: string) => void;
+  addRitualRewards: (payload: {
+    resonance: number;
+    nectar: number;
+    streak: number;
+    totalSessions: number;
+    lastDayKey: number | null;
+    history: RitualProgress['history'];
+  }) => void;
   beginMirrorMode: (preset: MirrorPrivacyPreset, durationMinutes?: number) => void;
   confirmMirrorCross: () => void;
   completeMirrorMode: (outcome: MirrorOutcome, note?: string) => void;
@@ -175,6 +189,7 @@ export function createMetaPetWebStore(
     genome: null,
     traits: null,
     evolution: initializeEvolution(),
+    ritualProgress: createDefaultRitualProgress(),
     achievements: [],
     battle: createDefaultBattleStats(),
     miniGames: createDefaultMiniGameProgress(),
@@ -192,12 +207,13 @@ export function createMetaPetWebStore(
       set({ petType });
     },
 
-    hydrate({ vitals, genome, traits, evolution, achievements, battle, miniGames, vimana, petType, mirrorMode }) {
+    hydrate({ vitals, genome, traits, evolution, ritualProgress, achievements, battle, miniGames, vimana, petType, mirrorMode }) {
       set(state => ({
         vitals: { ...vitals },
         genome,
         traits: normalizeTraits(genome, traits),
         evolution: { ...evolution },
+        ritualProgress: ritualProgress ? { ...ritualProgress, history: [...ritualProgress.history] } : state.ritualProgress,
         achievements: achievements ? achievements.map(entry => ({ ...entry })) : state.achievements,
         battle: battle ? { ...battle } : state.battle,
         miniGames: miniGames ? { ...miniGames } : state.miniGames,
@@ -480,6 +496,32 @@ export function createMetaPetWebStore(
         }
 
         return update;
+      });
+    },
+
+    addRitualRewards({ resonance, nectar, streak, totalSessions, lastDayKey, history }) {
+      set(state => {
+        const moodBoost = Math.min(8, Math.floor(resonance / 4));
+        const energyBoost = Math.min(6, Math.floor(nectar / 2));
+        const xpGain = Math.min(12, 4 + Math.floor(resonance / 3) + nectar);
+
+        return {
+          ritualProgress: {
+            ...state.ritualProgress,
+            resonance: state.ritualProgress.resonance + resonance,
+            nectar: state.ritualProgress.nectar + nectar,
+            streak,
+            totalSessions,
+            lastDayKey,
+            history: [...history],
+          },
+          vitals: {
+            ...state.vitals,
+            mood: clamp(state.vitals.mood + moodBoost),
+            energy: clamp(state.vitals.energy + energyBoost),
+          },
+          evolution: gainExperience(state.evolution, xpGain),
+        };
       });
     },
 
