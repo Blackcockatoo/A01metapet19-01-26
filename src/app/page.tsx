@@ -151,6 +151,7 @@ function createDebouncedSave(delay: number) {
 }
 
 const PET_ID = 'metapet-primary';
+const SESSION_ANALYTICS_KEY = 'metapet-analytics';
 
 export default function Home() {
   const startTick = useStore(s => s.startTick);
@@ -198,6 +199,54 @@ export default function Home() {
 
   const crestRef = useRef<PrimeTailId | null>(null);
   const heptaRef = useRef<HeptaDigits | null>(null);
+  const sessionStartRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const recordSessionDuration = (startTime: number, endTime: number) => {
+      const durationMs = Math.max(0, endTime - startTime);
+
+      try {
+        const stored = window.localStorage.getItem(SESSION_ANALYTICS_KEY);
+        const parsed = stored ? (JSON.parse(stored) as { sessions?: Array<Record<string, number>> }) : {};
+        const sessions = Array.isArray(parsed.sessions) ? parsed.sessions : [];
+
+        sessions.push({ startTime, endTime, durationMs });
+
+        window.localStorage.setItem(
+          SESSION_ANALYTICS_KEY,
+          JSON.stringify({
+            ...parsed,
+            lastDurationMs: durationMs,
+            sessions,
+          }),
+        );
+      } catch (error) {
+        console.warn('Failed to persist session analytics:', error);
+      }
+    };
+
+    const startTime = Date.now();
+    sessionStartRef.current = startTime;
+    console.info('session_start', { timestamp: startTime });
+
+    const handleSessionEnd = () => {
+      const endTime = Date.now();
+      const sessionStart = sessionStartRef.current ?? endTime;
+      console.info('session_end', { timestamp: endTime, durationMs: endTime - sessionStart });
+      recordSessionDuration(sessionStart, endTime);
+    };
+
+    window.addEventListener('pagehide', handleSessionEnd);
+
+    return () => {
+      window.removeEventListener('pagehide', handleSessionEnd);
+      handleSessionEnd();
+    };
+  }, []);
   const genomeHashRef = useRef<GenomeHash | null>(null);
   const createdAtRef = useRef<number | null>(null);
   const petIdRef = useRef<string | null>(null);
@@ -1034,32 +1083,30 @@ export default function Home() {
           </div>
 
           {/* Identity & Persistence */}
-          <div className="lg:col-span-2 space-y-6 order-1 lg:order-2">
-            <div className="max-h-[calc(100vh-12rem)] sm:max-h-[calc(100vh-8rem)] overflow-y-auto">
-              <RitualLoop
-                petId={currentPetId ?? PET_ID}
-                initialProgress={ritualProgress}
-                onRitualComplete={data => {
-                  addRitualRewards({
-                    resonance: data.resonance,
-                    nectar: data.nectar,
-                    streak: data.progress.streak,
-                    totalSessions: data.progress.totalSessions,
-                    lastDayKey: data.progress.lastDayKey,
-                    history: data.progress.history,
-                  });
-                }}
-                jewbleDigits={
-                  genome
-                    ? {
-                        red: genome.red60,
-                        blue: genome.blue60,
-                        black: genome.black60,
-                      }
-                    : undefined
-                }
-              />
-            </div>
+          <div className="lg:col-span-2 space-y-6">
+            <RitualLoop
+              petId={currentPetId ?? PET_ID}
+              initialProgress={ritualProgress}
+              onRitualComplete={data => {
+                addRitualRewards({
+                  resonanceDelta: data.resonance,
+                  reward: {
+                    essenceDelta: data.nectar,
+                    source: 'ritual',
+                  },
+                  progress: data.progress,
+                });
+              }}
+              jewbleDigits={
+                genome
+                  ? {
+                      red: genome.red60,
+                      blue: genome.blue60,
+                      black: genome.black60,
+                    }
+                  : undefined
+              }
+            />
 
             {/* Crest */}
             {crest && (
