@@ -4,6 +4,9 @@
  * Saves pet state, vitals, genome, and evolution offline
  */
 
+// Re-export bond/memory persistence
+export * from './bonddb';
+
 import type { Vitals } from '@/lib/store';
 import type { Genome, DerivedTraits } from '@/lib/genome';
 import type { EvolutionData } from '@/lib/evolution';

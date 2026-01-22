@@ -563,11 +563,11 @@ const MetaPetGenomeExplorer: React.FC = () => {
 
         {mode === 'genome' && (
           <section className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="space-y-6 rounded-2xl border border-emerald-500/40 bg-black/40 p-6">
+            <div className="space-y-6 rounded-2xl border border-emerald-500/40 bg-black/40 p-6 overflow-visible">
               <h2 className="text-center text-xl font-semibold text-cyan-200">
                 Activated Genome Wheel
               </h2>
-              <div className="flex justify-center">
+              <div className="flex justify-center overflow-visible min-h-[420px]">
                 <GenomeWheel
                   rotation={rotation}
                   size={400}
@@ -712,17 +712,19 @@ const MetaPetGenomeExplorer: React.FC = () => {
         )}
 
         {mode === 'breeding' && (
-          <section className="space-y-6 rounded-2xl border border-emerald-500/40 bg-black/40 p-6">
+          <section className="space-y-6 rounded-2xl border border-emerald-500/40 bg-black/40 p-6 overflow-visible">
             <h2 className="text-center text-xl font-semibold text-cyan-200">Harmonic Breeding Laboratory</h2>
             <p className="text-center text-xs uppercase tracking-[0.3em] text-emerald-100/70">
               Compatibility • Prime Attraction • Mutation Detection
             </p>
-            <div className="grid gap-6 lg:grid-cols-3">
-              <div className="space-y-4 rounded-xl border border-emerald-500/30 bg-black/40 p-4">
+            <div className="grid gap-6 lg:grid-cols-3 overflow-visible">
+              <div className="space-y-4 rounded-xl border border-emerald-500/30 bg-black/40 p-4 overflow-visible">
                 <h3 className="text-center text-sm font-semibold uppercase tracking-[0.3em] text-emerald-200">
                   Parent Genome α
                 </h3>
-                <GenomeWheel rotation={pet1Rotation} size={280} />
+                <div className="flex justify-center min-h-[300px] overflow-visible">
+                  <GenomeWheel rotation={pet1Rotation} size={280} />
+                </div>
                 <div className="space-y-3">
                   <input
                     type="range"
@@ -741,11 +743,13 @@ const MetaPetGenomeExplorer: React.FC = () => {
                 </div>
               </div>
 
-              <div className="space-y-4 rounded-xl border border-emerald-500/30 bg-black/40 p-4">
+              <div className="space-y-4 rounded-xl border border-emerald-500/30 bg-black/40 p-4 overflow-visible">
                 <h3 className="text-center text-sm font-semibold uppercase tracking-[0.3em] text-emerald-200">
                   Parent Genome β
                 </h3>
-                <GenomeWheel rotation={pet2Rotation} size={280} />
+                <div className="flex justify-center min-h-[300px] overflow-visible">
+                  <GenomeWheel rotation={pet2Rotation} size={280} />
+                </div>
                 <div className="space-y-3">
                   <input
                     type="range"
@@ -764,11 +768,13 @@ const MetaPetGenomeExplorer: React.FC = () => {
                 </div>
               </div>
 
-              <div className="space-y-4 rounded-xl border border-fuchsia-500/40 bg-black/50 p-4">
+              <div className="space-y-4 rounded-xl border border-fuchsia-500/40 bg-black/50 p-4 overflow-visible">
                 <h3 className="text-center text-sm font-semibold uppercase tracking-[0.3em] text-fuchsia-200">
                   Offspring Genome ω
                 </h3>
-                <GenomeWheel rotation={breedingResult.rotation} size={280} />
+                <div className="flex justify-center min-h-[300px] overflow-visible">
+                  <GenomeWheel rotation={breedingResult.rotation} size={280} />
+                </div>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between rounded-md border border-emerald-500/40 bg-black/60 p-3 text-xs uppercase tracking-[0.3em] text-emerald-100">
                     <span>Compatibility</span>

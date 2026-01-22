@@ -240,7 +240,7 @@ const AuraliaMetaPet: React.FC = () => {
   const [triviaQuestion, setTriviaQuestion] = useState<TriviaQuestion | null>(null);
   const [audioScale, setAudioScale] = useState<ScaleName>('harmonic');
   const [highContrast, setHighContrast] = useState<boolean>(false);
-  const [snakeState, setSnakeState] = useState<SnakeState>({ segments: [{x: 5, y: 5}], food: {x: 10, y: 10}, direction: 'right', score: 0, gameOver: false });
+  const [snakeState, setSnakeState] = useState<SnakeState>({ segments: [{x: 7, y: 7}, {x: 6, y: 7}, {x: 5, y: 7}], food: {x: 10, y: 10}, direction: 'right', score: 0, gameOver: false });
   const [tetrisState, setTetrisState] = useState<TetrisState>({ board: Array(20).fill(null).map(() => Array(10).fill(0)), currentPiece: null, score: 0, gameOver: false });
   const [offspring, setOffspring] = useState<Offspring[]>([]);
   const [breedingPartner, setBreedingPartner] = useState<string>('');
@@ -1260,8 +1260,15 @@ const AuraliaMetaPet: React.FC = () => {
 
   // ===== SNAKE GAME LOGIC =====
   const startSnakeGame = () => {
-    const initialFood = { x: Math.floor(field.prng() * 15), y: Math.floor(field.prng() * 15) };
-    setSnakeState({ segments: [{x: 5, y: 5}, {x: 4, y: 5}, {x: 3, y: 5}], food: initialFood, direction: 'right', score: 0, gameOver: false });
+    const initialSegments = [{x: 7, y: 7}, {x: 6, y: 7}, {x: 5, y: 7}];
+    // Generate food that doesn't overlap with snake
+    let initialFood = { x: Math.floor(field.prng() * 15), y: Math.floor(field.prng() * 15) };
+    for (let attempts = 0; attempts < 50; attempts++) {
+      const overlaps = initialSegments.some(seg => seg.x === initialFood.x && seg.y === initialFood.y);
+      if (!overlaps) break;
+      initialFood = { x: Math.floor(field.prng() * 15), y: Math.floor(field.prng() * 15) };
+    }
+    setSnakeState({ segments: initialSegments, food: initialFood, direction: 'right', score: 0, gameOver: false });
     setCurrentGame('snake');
     handleWhisper('Navigate the serpent through the grid!');
   };
@@ -1470,18 +1477,64 @@ const AuraliaMetaPet: React.FC = () => {
 
     const gameLoop = setInterval(() => {
       setTetrisState(prev => {
-        if (!prev.currentPiece) return prev;
+        if (!prev.currentPiece || prev.gameOver) return prev;
+
+        // Check if we can move down
         if (canPlacePiece(prev.currentPiece, prev.board, 0, 1)) {
           return { ...prev, currentPiece: { ...prev.currentPiece, y: prev.currentPiece.y + 1 } };
-        } else {
-          lockPiece();
-          return prev;
         }
+
+        // Lock the piece inline to avoid stale closure
+        const newBoard = prev.board.map(row => [...row]);
+        const piece = prev.currentPiece;
+
+        for (let y = 0; y < piece.shape.length; y++) {
+          for (let x = 0; x < piece.shape[y].length; x++) {
+            if (piece.shape[y][x] && piece.y + y >= 0) {
+              newBoard[piece.y + y][piece.x + x] = 1;
+            }
+          }
+        }
+
+        // Clear full rows
+        let linesCleared = 0;
+        for (let y = newBoard.length - 1; y >= 0; y--) {
+          if (newBoard[y].every(cell => cell === 1)) {
+            newBoard.splice(y, 1);
+            newBoard.unshift(Array(10).fill(0));
+            linesCleared++;
+            y++; // Re-check this row
+          }
+        }
+
+        const newScore = prev.score + linesCleared * 100;
+
+        // Create new piece
+        const nextPiece = TETRIS_PIECES[Math.floor(field.prng() * TETRIS_PIECES.length)];
+        const newPiece = { ...nextPiece, x: 4, y: 0 };
+
+        // Check if new piece can be placed (game over check)
+        if (!canPlacePiece(newPiece, newBoard)) {
+          handleWhisper(`Tetris complete! Score: ${newScore}`);
+          if (newScore >= 300) {
+            setBond(b => Math.min(100, b + 20));
+            setCuriosity(c => Math.min(100, c + 15));
+            setGamesWon(g => g + 1);
+            addToBondHistory(`Won Tetris with score ${newScore}!`);
+          }
+          return { ...prev, board: newBoard, score: newScore, gameOver: true, currentPiece: null };
+        }
+
+        if (linesCleared > 0 && audioEnabled) {
+          playNote(linesCleared % 7, 0.3);
+        }
+
+        return { ...prev, board: newBoard, currentPiece: newPiece, score: newScore };
       });
     }, 500);
 
     return () => clearInterval(gameLoop);
-  }, [currentGame, tetrisState.currentPiece, tetrisState.gameOver, lockPiece, canPlacePiece]);
+  }, [currentGame, tetrisState.currentPiece, tetrisState.gameOver, canPlacePiece, field, handleWhisper, audioEnabled, playNote, addToBondHistory]);
 
   // ===== BREEDING SYSTEM =====
   const breedGuardian = () => {
