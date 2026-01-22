@@ -36,6 +36,7 @@ export interface PetSaveData {
   traits: DerivedTraits;
   evolution: EvolutionData;
   ritualProgress: RitualProgress;
+  essence?: number;
   achievements: Achievement[];
   battle: BattleStats;
   miniGames: MiniGameProgress;
@@ -331,6 +332,7 @@ export function importPetFromJSON(json: string, options?: { skipGenomeValidation
     ritualProgress: isValidRitualProgress(parsed.ritualProgress)
       ? normalizeRitualProgress(parsed.ritualProgress)
       : createDefaultRitualProgress(),
+    essence: typeof parsed.essence === 'number' ? parsed.essence : 0,
     achievements,
     battle,
     miniGames,
@@ -382,6 +384,7 @@ function normalizePetData(raw: unknown): PetSaveData {
     vimana,
     mirrorMode,
     ritualProgress,
+    essence: typeof typed.essence === 'number' ? typed.essence : 0,
     petType: isValidPetType(typed.petType) ? typed.petType : 'geometric',
   } as PetSaveData;
 }

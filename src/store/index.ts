@@ -47,6 +47,7 @@ export interface MetaPetState {
   traits: DerivedTraits | null;
   evolution: EvolutionData;
   ritualProgress: RitualProgress;
+  essence: number;
   achievements: Achievement[];
   battle: BattleStats;
   miniGames: MiniGameProgress;
@@ -64,6 +65,7 @@ export interface MetaPetState {
     traits: DerivedTraits;
     evolution: EvolutionData;
     ritualProgress?: RitualProgress;
+    essence?: number;
     achievements?: Achievement[];
     battle?: BattleStats;
     miniGames?: MiniGameProgress;
@@ -92,6 +94,7 @@ export interface MetaPetState {
     lastDayKey: number | null;
     history: RitualProgress['history'];
   }) => void;
+  applyReward: (payload: { essenceDelta: number; source: 'achievement' | 'battle' | 'minigame' | 'ritual' | 'system' }) => void;
   beginMirrorMode: (preset: MirrorPrivacyPreset, durationMinutes?: number) => void;
   confirmMirrorCross: () => void;
   completeMirrorMode: (outcome: MirrorOutcome, note?: string) => void;
@@ -193,6 +196,7 @@ export function createMetaPetWebStore(
     traits: null,
     evolution: initializeEvolution(),
     ritualProgress: createDefaultRitualProgress(),
+    essence: 0,
     achievements: [],
     battle: createDefaultBattleStats(),
     miniGames: createDefaultMiniGameProgress(),
@@ -210,13 +214,14 @@ export function createMetaPetWebStore(
       set({ petType });
     },
 
-    hydrate({ vitals, genome, traits, evolution, ritualProgress, achievements, battle, miniGames, vimana, petType, mirrorMode }) {
+    hydrate({ vitals, genome, traits, evolution, ritualProgress, achievements, battle, miniGames, vimana, petType, mirrorMode, essence }) {
       set(state => ({
         vitals: { ...vitals },
         genome,
         traits: normalizeTraits(genome, traits),
         evolution: { ...evolution },
         ritualProgress: ritualProgress ? { ...ritualProgress, history: [...ritualProgress.history] } : state.ritualProgress,
+        essence: typeof essence === 'number' ? essence : state.essence,
         achievements: achievements ? achievements.map(entry => ({ ...entry })) : state.achievements,
         battle: battle ? { ...battle } : state.battle,
         miniGames: miniGames ? { ...miniGames } : state.miniGames,
@@ -526,6 +531,13 @@ export function createMetaPetWebStore(
           evolution: gainExperience(state.evolution, xpGain),
         };
       });
+    },
+
+    applyReward({ essenceDelta }) {
+      if (!Number.isFinite(essenceDelta) || essenceDelta === 0) return;
+      set(state => ({
+        essence: Math.max(0, state.essence + essenceDelta),
+      }));
     },
 
     beginMirrorMode(preset, durationMinutes = 15) {
