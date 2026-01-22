@@ -44,6 +44,7 @@ import {
   createDefaultVimanaState,
 } from '@/lib/progression/types';
 import { createDefaultRitualProgress } from '@/lib/ritual/types';
+import { DEFAULT_VITALS } from '@/vitals';
 import {
   Sparkles,
   Shield,
@@ -533,10 +534,7 @@ export default function Home() {
       id: `pet-${crestValue.signature.slice(0, 12)}`,
       name: undefined,
       vitals: {
-        hunger: 30,
-        hygiene: 70,
-        mood: 60,
-        energy: 80,
+        ...DEFAULT_VITALS,
       },
       petType: 'geometric',
       mirrorMode: {
@@ -603,6 +601,7 @@ export default function Home() {
         id: `pet-${crestValue.signature.slice(0, 12)}`,
         name: buildOffspringName(result.lineageKey, partnerName),
         vitals: {
+          ...DEFAULT_VITALS,
           hunger: 40,
           hygiene: 70,
           mood: 70,
@@ -1049,7 +1048,15 @@ export default function Home() {
                   history: data.progress.history,
                 });
               }}
-              jewbleDigits={heptaCode ?? undefined}
+              jewbleDigits={
+                genome
+                  ? {
+                      red: genome.red60,
+                      blue: genome.blue60,
+                      black: genome.black60,
+                    }
+                  : undefined
+              }
             />
 
             {/* Crest */}
