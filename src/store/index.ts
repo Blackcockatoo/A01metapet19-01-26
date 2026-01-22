@@ -111,6 +111,7 @@ export interface MetaPetState {
     };
     progress: RitualProgress;
   }) => void;
+  applyReward: (payload: { essenceDelta: number; source: 'achievement' | 'battle' | 'minigame' | 'ritual' | 'system' }) => void;
   beginMirrorMode: (preset: MirrorPrivacyPreset, durationMinutes?: number) => void;
   confirmMirrorCross: () => void;
   completeMirrorMode: (outcome: MirrorOutcome, note?: string) => void;
@@ -581,6 +582,13 @@ export function createMetaPetWebStore(
           evolution: gainExperience(state.evolution, xpGain),
         };
       });
+    },
+
+    applyReward({ essenceDelta }) {
+      if (!Number.isFinite(essenceDelta) || essenceDelta === 0) return;
+      set(state => ({
+        essence: Math.max(0, state.essence + essenceDelta),
+      }));
     },
 
     beginMirrorMode(preset, durationMinutes = 15) {

@@ -1,11 +1,34 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { ACHIEVEMENT_CATALOG } from '@/lib/progression/types';
 import { useStore } from '@/lib/store';
 import { Trophy, Lock } from 'lucide-react';
 
+const ESSENCE_REWARD_PER_ACHIEVEMENT = 25;
+// Achievement catalog entries here do not include points. When points are introduced, map points -> essence 1:1.
+
 export function AchievementShelf() {
   const achievements = useStore(s => s.achievements);
+  const applyReward = useStore(s => s.applyReward);
+  const awardedIdsRef = useRef<Set<string>>(new Set());
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    const awardedIds = awardedIdsRef.current;
+    if (!initializedRef.current) {
+      achievements.forEach(entry => awardedIds.add(entry.id));
+      initializedRef.current = true;
+      return;
+    }
+    const newlyUnlocked = achievements.filter(entry => !awardedIds.has(entry.id));
+
+    if (newlyUnlocked.length > 0) {
+      const essenceDelta = newlyUnlocked.length * ESSENCE_REWARD_PER_ACHIEVEMENT;
+      applyReward({ essenceDelta, source: 'achievement' });
+      newlyUnlocked.forEach(entry => awardedIds.add(entry.id));
+    }
+  }, [achievements, applyReward]);
 
   return (
     <div className="space-y-4">

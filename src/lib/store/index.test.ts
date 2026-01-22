@@ -91,6 +91,7 @@ describe('Store State Management', () => {
       genome: null,
       traits: null,
       evolution: initializeEvolution(),
+      essence: 0,
       achievements: [],
       battle: createDefaultBattleStats(),
       miniGames: createDefaultMiniGameProgress(),
