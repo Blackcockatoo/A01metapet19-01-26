@@ -61,6 +61,9 @@ import {
   HeartHandshake,
   Maximize2,
   Key,
+  UtensilsCrossed,
+  Gamepad2,
+  Save,
 } from 'lucide-react';
 import Link from 'next/link';
 import { PetResponseOverlay } from '@/components/PetResponseOverlay';
@@ -162,6 +165,7 @@ export default function Home() {
   const setPetType = useStore(s => s.setPetType);
   const genome = useStore(s => s.genome);
   const traits = useStore(s => s.traits);
+  const feed = useStore(s => s.feed);
   const evolution = useStore(s => s.evolution);
   const ritualProgress = useStore(s => s.ritualProgress);
   const addRitualRewards = useStore(s => s.addRitualRewards);
@@ -1027,7 +1031,7 @@ export default function Home() {
     : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 p-6 pb-24 sm:pb-6">
       {/* Real-time Response Overlay */}
       <PetResponseOverlay enableAudio={true} enableAnticipation={true} />
 
@@ -1517,7 +1521,9 @@ export default function Home() {
             </div>
 
             {/* Features Dashboard */}
-            <FeaturesDashboard />
+            <div id="mini-games" className="scroll-mt-20">
+              <FeaturesDashboard />
+            </div>
           </div>
         </div>
 
@@ -1534,6 +1540,42 @@ export default function Home() {
                 : 'Autosave paused — interact to resume saving'
               : 'Offline persistence unavailable in this environment'}
           </p>
+        </div>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-800 bg-slate-950/90 backdrop-blur sm:hidden">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3">
+          <Button
+            variant="ghost"
+            className="flex flex-1 flex-col gap-1 text-xs text-zinc-200"
+            onClick={feed}
+          >
+            <UtensilsCrossed className="h-4 w-4" />
+            Feed
+          </Button>
+          <Link
+            href="#ritual"
+            className="flex flex-1 flex-col items-center gap-1 text-xs text-zinc-200"
+          >
+            <Sparkles className="h-4 w-4" />
+            Ritual
+          </Link>
+          <Link
+            href="#mini-games"
+            className="flex flex-1 flex-col items-center gap-1 text-xs text-zinc-200"
+          >
+            <Gamepad2 className="h-4 w-4" />
+            Mini-Games
+          </Link>
+          <Button
+            variant="ghost"
+            className="flex flex-1 flex-col gap-1 text-xs text-zinc-200"
+            onClick={() => void handleNameBlur()}
+            disabled={!persistenceSupported}
+          >
+            <Save className="h-4 w-4" />
+            Save
+          </Button>
         </div>
       </div>
     </div>
