@@ -974,7 +974,7 @@ export default function Home() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Pet Card */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-6 order-2 lg:order-1">
             <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -1024,7 +1024,7 @@ export default function Home() {
             </div>
 
             {/* Genome Traits */}
-            <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800 max-h-[calc(100vh-8rem)] overflow-y-auto">
+            <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800 max-h-[calc(100vh-12rem)] sm:max-h-[calc(100vh-8rem)] overflow-y-auto">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2 sticky top-0 bg-slate-900/50 backdrop-blur-sm -mx-6 px-6 py-3 z-10">
                 <Dna className="w-5 h-5 text-purple-400" />
                 Genome Traits
@@ -1034,30 +1034,32 @@ export default function Home() {
           </div>
 
           {/* Identity & Persistence */}
-          <div className="lg:col-span-2 space-y-6">
-            <RitualLoop
-              petId={currentPetId ?? PET_ID}
-              initialProgress={ritualProgress}
-              onRitualComplete={data => {
-                addRitualRewards({
-                  resonance: data.resonance,
-                  nectar: data.nectar,
-                  streak: data.progress.streak,
-                  totalSessions: data.progress.totalSessions,
-                  lastDayKey: data.progress.lastDayKey,
-                  history: data.progress.history,
-                });
-              }}
-              jewbleDigits={
-                genome
-                  ? {
-                      red: genome.red60,
-                      blue: genome.blue60,
-                      black: genome.black60,
-                    }
-                  : undefined
-              }
-            />
+          <div className="lg:col-span-2 space-y-6 order-1 lg:order-2">
+            <div className="max-h-[calc(100vh-12rem)] sm:max-h-[calc(100vh-8rem)] overflow-y-auto">
+              <RitualLoop
+                petId={currentPetId ?? PET_ID}
+                initialProgress={ritualProgress}
+                onRitualComplete={data => {
+                  addRitualRewards({
+                    resonance: data.resonance,
+                    nectar: data.nectar,
+                    streak: data.progress.streak,
+                    totalSessions: data.progress.totalSessions,
+                    lastDayKey: data.progress.lastDayKey,
+                    history: data.progress.history,
+                  });
+                }}
+                jewbleDigits={
+                  genome
+                    ? {
+                        red: genome.red60,
+                        blue: genome.blue60,
+                        black: genome.black60,
+                      }
+                    : undefined
+                }
+              />
+            </div>
 
             {/* Crest */}
             {crest && (
