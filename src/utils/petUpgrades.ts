@@ -185,6 +185,10 @@ export function predictNextVitals(vitalsHistory: Vitals[]): Vitals | null {
     mood: Math.max(0, Math.min(100, current.mood + moodDelta)),
     hunger: Math.max(0, Math.min(100, current.hunger + hungerDelta)),
     hygiene: Math.max(0, Math.min(100, current.hygiene + hygieneDelta)),
+    isSick: current.isSick,
+    sicknessSeverity: current.sicknessSeverity,
+    sicknessType: current.sicknessType,
+    deathCount: current.deathCount,
   };
 }
 
