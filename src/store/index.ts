@@ -47,6 +47,9 @@ export interface MetaPetState {
   traits: DerivedTraits | null;
   evolution: EvolutionData;
   ritualProgress: RitualProgress;
+  essence: number;
+  lastRewardSource: string | null;
+  lastRewardAmount: number;
   achievements: Achievement[];
   battle: BattleStats;
   miniGames: MiniGameProgress;
@@ -64,6 +67,9 @@ export interface MetaPetState {
     traits: DerivedTraits;
     evolution: EvolutionData;
     ritualProgress?: RitualProgress;
+    essence?: number;
+    lastRewardSource?: string | null;
+    lastRewardAmount?: number;
     achievements?: Achievement[];
     battle?: BattleStats;
     miniGames?: MiniGameProgress;
@@ -193,6 +199,9 @@ export function createMetaPetWebStore(
     traits: null,
     evolution: initializeEvolution(),
     ritualProgress: createDefaultRitualProgress(),
+    essence: 0,
+    lastRewardSource: null,
+    lastRewardAmount: 0,
     achievements: [],
     battle: createDefaultBattleStats(),
     miniGames: createDefaultMiniGameProgress(),
@@ -210,13 +219,18 @@ export function createMetaPetWebStore(
       set({ petType });
     },
 
-    hydrate({ vitals, genome, traits, evolution, ritualProgress, achievements, battle, miniGames, vimana, petType, mirrorMode }) {
+    hydrate({ vitals, genome, traits, evolution, ritualProgress, essence, lastRewardSource, lastRewardAmount, achievements, battle, miniGames, vimana, petType, mirrorMode }) {
       set(state => ({
         vitals: { ...vitals },
         genome,
         traits: normalizeTraits(genome, traits),
         evolution: { ...evolution },
         ritualProgress: ritualProgress ? { ...ritualProgress, history: [...ritualProgress.history] } : state.ritualProgress,
+        essence: typeof essence === 'number' ? essence : state.essence,
+        lastRewardSource: typeof lastRewardSource === 'string' || lastRewardSource === null
+          ? lastRewardSource
+          : state.lastRewardSource,
+        lastRewardAmount: typeof lastRewardAmount === 'number' ? lastRewardAmount : state.lastRewardAmount,
         achievements: achievements ? achievements.map(entry => ({ ...entry })) : state.achievements,
         battle: battle ? { ...battle } : state.battle,
         miniGames: miniGames ? { ...miniGames } : state.miniGames,
@@ -507,6 +521,7 @@ export function createMetaPetWebStore(
         const moodBoost = Math.min(8, Math.floor(resonance / 4));
         const energyBoost = Math.min(6, Math.floor(nectar / 2));
         const xpGain = Math.min(12, 4 + Math.floor(resonance / 3) + nectar);
+        const essenceDelta = resonance + nectar;
 
         return {
           ritualProgress: {
@@ -518,6 +533,9 @@ export function createMetaPetWebStore(
             lastDayKey,
             history: [...history],
           },
+          essence: state.essence + essenceDelta,
+          lastRewardSource: 'Ritual',
+          lastRewardAmount: essenceDelta,
           vitals: {
             ...state.vitals,
             mood: clamp(state.vitals.mood + moodBoost),
