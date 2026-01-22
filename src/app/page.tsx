@@ -939,6 +939,28 @@ export default function Home() {
   const canBreedNow = Boolean(
     genome && breedingPartner && evolution && canBreed(evolution.state, breedingPartner.evolution.state)
   );
+  const isBreedingDisabled = !canBreedNow || breedingBusy;
+  const breedingHint = (() => {
+    if (!isBreedingDisabled) return null;
+    if (breedingBusy) return 'Prerequisite: wait for the current breeding cycle to finish.';
+    if (!breedingPartner) return 'Prerequisite: select a companion from the archives to breed.';
+    if (!evolution) return 'Prerequisite: load your active companion to continue.';
+    if (evolution.state !== 'SPECIATION') {
+      return 'Prerequisite: reach SPECIATION stage with your active companion.';
+    }
+    if (breedingPartner.evolution.state !== 'SPECIATION') {
+      return 'Prerequisite: your partner must reach SPECIATION stage.';
+    }
+    return 'Prerequisite: meet all breeding requirements to unlock this.';
+  })();
+  const mintDisabled = !persistenceSupported && petSummaries.length > 0;
+  const mintHint = mintDisabled
+    ? 'Prerequisite: enable IndexedDB persistence to mint additional companions.'
+    : null;
+  const importDisabled = !persistenceSupported;
+  const importHint = importDisabled
+    ? 'Prerequisite: enable IndexedDB persistence to import archived companions.'
+    : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 p-6">
@@ -1197,12 +1219,15 @@ export default function Home() {
                 {/* Breed Button */}
                 <Button
                   onClick={() => void handleBreedWithPartner()}
-                  disabled={!canBreedNow || breedingBusy}
+                  disabled={isBreedingDisabled}
                   className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 disabled:opacity-50"
                 >
                   <Baby className="w-4 h-4 mr-2" />
                   {breedingBusy ? 'Breeding...' : 'Breed Companions'}
                 </Button>
+                {breedingHint && (
+                  <p className="text-xs text-zinc-400">{breedingHint}</p>
+                )}
 
                 {breedingError && (
                   <p className="text-xs text-rose-400">{breedingError}</p>
@@ -1308,7 +1333,7 @@ export default function Home() {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  <Button onClick={() => void handleCreateNewPet()} disabled={!persistenceSupported && petSummaries.length > 0}>
+                  <Button onClick={() => void handleCreateNewPet()} disabled={mintDisabled}>
                     <Plus className="w-4 h-4 mr-2" />
                     Mint New Companion
                   </Button>
@@ -1316,7 +1341,7 @@ export default function Home() {
                     type="button"
                     variant="outline"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={!persistenceSupported}
+                    disabled={importDisabled}
                     className="border-slate-700"
                   >
                     <Upload className="w-4 h-4 mr-2" />
@@ -1330,6 +1355,12 @@ export default function Home() {
                     onChange={handleImportInput}
                   />
                 </div>
+                {(mintHint || importHint) && (
+                  <div className="space-y-1">
+                    {mintHint && <p className="text-xs text-zinc-500">{mintHint}</p>}
+                    {importHint && <p className="text-xs text-zinc-500">{importHint}</p>}
+                  </div>
+                )}
 
                 {importError && (
                   <p className="text-xs text-rose-400">{importError}</p>
@@ -1389,6 +1420,11 @@ export default function Home() {
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
+                            {isActive && (
+                              <p className="text-[11px] text-zinc-500">
+                                Prerequisite: this companion is already active.
+                              </p>
+                            )}
                           </div>
                         </div>
                       );
