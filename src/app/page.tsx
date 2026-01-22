@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import type { ChangeEvent } from 'react';
 
 import { useStore } from '@/lib/store';
-import type { PetType } from '@metapet/core/store';
+import type { PetType, RewardSource } from '@metapet/core/store';
 import { HUD } from '@/components/HUD';
 import { TraitPanel } from '@/components/TraitPanel';
 import { PetSprite } from '@/components/PetSprite';
@@ -69,6 +69,7 @@ import Link from 'next/link';
 import { PetResponseOverlay } from '@/components/PetResponseOverlay';
 import { DigitalKeyPanel } from '@/components/DigitalKeyPanel';
 import RitualLoop from '@/components/RitualLoop';
+import { OnboardingTutorial } from '@/components/OnboardingTutorial';
 
 interface PetSummary {
   id: string;
@@ -497,7 +498,7 @@ export default function Home() {
       evolution: { ...pet.evolution },
       ritualProgress: pet.ritualProgress ?? createDefaultRitualProgress(),
       essence: pet.essence ?? 0,
-      lastRewardSource: pet.lastRewardSource ?? null,
+      lastRewardSource: (pet.lastRewardSource as RewardSource) ?? null,
       lastRewardAmount: pet.lastRewardAmount ?? 0,
       achievements: pet.achievements?.map(entry => ({ ...entry })) ?? [],
       battle: pet.battle ? { ...pet.battle } : createDefaultBattleStats(),
@@ -1032,6 +1033,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 p-6 pb-24 sm:pb-6">
+      {/* Onboarding Tutorial for new users */}
+      <OnboardingTutorial />
+
       {/* Real-time Response Overlay */}
       <PetResponseOverlay enableAudio={true} enableAnticipation={true} />
 

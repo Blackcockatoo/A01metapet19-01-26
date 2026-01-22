@@ -56,7 +56,7 @@ export interface MetaPetState {
   evolution: EvolutionData;
   ritualProgress: RitualProgress;
   essence: number;
-  lastRewardSource: string | null;
+  lastRewardSource: RewardSource | null;
   lastRewardAmount: number;
   achievements: Achievement[];
   battle: BattleStats;
@@ -68,8 +68,6 @@ export interface MetaPetState {
   mirrorMode: MirrorModeState;
   lastAction: null | 'feed' | 'clean' | 'play' | 'sleep';
   lastActionAt: number;
-  essence: number;
-  lastRewardSource: RewardSource | null;
   tickId?: ReturnType<typeof setInterval>;
   setGenome: (genome: Genome, traits: DerivedTraits) => void;
   setPetType: (petType: PetType) => void;
@@ -80,7 +78,7 @@ export interface MetaPetState {
     evolution: EvolutionData;
     ritualProgress?: RitualProgress;
     essence?: number;
-    lastRewardSource?: string | null;
+    lastRewardSource?: RewardSource | null;
     lastRewardAmount?: number;
     achievements?: Achievement[];
     battle?: BattleStats;
@@ -90,8 +88,6 @@ export interface MetaPetState {
     lastReward?: RewardPayload | null;
     petType?: PetType;
     mirrorMode?: MirrorModeState;
-    essence?: number;
-    lastRewardSource?: RewardSource | null;
   }) => void;
   startTick: () => void;
   stopTick: () => void;
@@ -293,8 +289,6 @@ export function createMetaPetWebStore(
     mirrorMode: { ...DEFAULT_MIRROR_MODE },
     lastAction: null,
     lastActionAt: 0,
-    essence: 0,
-    lastRewardSource: null,
 
     setGenome(genome, traits) {
       set({ genome, traits: normalizeTraits(genome, traits) });
@@ -314,10 +308,13 @@ export function createMetaPetWebStore(
       battle,
       miniGames,
       vimana,
+      rewardHistory,
+      lastReward,
       petType,
       mirrorMode,
       essence,
       lastRewardSource,
+      lastRewardAmount,
     }) {
       set(state => ({
         vitals: { ...vitals },
@@ -326,9 +323,7 @@ export function createMetaPetWebStore(
         evolution: { ...evolution },
         ritualProgress: ritualProgress ? { ...ritualProgress, history: [...ritualProgress.history] } : state.ritualProgress,
         essence: typeof essence === 'number' ? essence : state.essence,
-        lastRewardSource: typeof lastRewardSource === 'string' || lastRewardSource === null
-          ? lastRewardSource
-          : state.lastRewardSource,
+        lastRewardSource: lastRewardSource ?? state.lastRewardSource,
         lastRewardAmount: typeof lastRewardAmount === 'number' ? lastRewardAmount : state.lastRewardAmount,
         achievements: achievements ? achievements.map(entry => ({ ...entry })) : state.achievements,
         battle: battle ? { ...battle } : state.battle,
@@ -338,8 +333,6 @@ export function createMetaPetWebStore(
         lastReward: lastReward ?? state.lastReward,
         petType: petType ?? state.petType,
         mirrorMode: mirrorMode ? { ...mirrorMode } : state.mirrorMode,
-        essence: essence ?? state.essence,
-        lastRewardSource: lastRewardSource ?? state.lastRewardSource,
         tickId: state.tickId,
       }));
     },
@@ -717,9 +710,9 @@ export function createMetaPetWebStore(
             lastDayKey: progress.lastDayKey,
             history: [...progress.history],
           },
-          essence: state.essence + essenceDelta,
-          lastRewardSource: 'Ritual',
-          lastRewardAmount: essenceDelta,
+          essence: state.essence + reward.essenceDelta,
+          lastRewardSource: 'ritual' as RewardSource,
+          lastRewardAmount: reward.essenceDelta,
           vitals: {
             ...state.vitals,
             mood: clamp(state.vitals.mood + moodBoost),
@@ -732,10 +725,10 @@ export function createMetaPetWebStore(
       get().recordReward({
         source: 'ritual',
         title: 'Ritual Complete',
-        description: `Resonance +${resonance}, Nectar +${nectar}.`,
+        description: `Resonance +${resonanceDelta}, Essence +${reward.essenceDelta}.`,
         reward: {
           type: 'ritual',
-          value: { resonance, nectar },
+          value: { resonance: resonanceDelta, essence: reward.essenceDelta },
         },
       });
     },
