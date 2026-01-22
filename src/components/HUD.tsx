@@ -1,22 +1,19 @@
 'use client';
 
 import { useStore } from '@/lib/store';
-import { selectHudState } from '@/lib/store/selectors';
 import { UtensilsCrossed, Sparkles, Droplets, Zap } from 'lucide-react';
 import { Button } from './ui/button';
 
 export function HUD() {
-  const {
-    vitals,
-    ritualProgress,
-    essence,
-    lastRewardSource,
-    lastRewardAmount,
-    feed,
-    clean,
-    play,
-    sleep,
-  } = useStore(selectHudState);
+  const vitals = useStore(state => state.vitals);
+  const ritualProgress = useStore(state => state.ritualProgress);
+  const essence = useStore(state => state.essence);
+  const lastRewardSource = useStore(state => state.lastRewardSource);
+  const lastRewardAmount = useStore(state => state.lastRewardAmount);
+  const feed = useStore(state => state.feed);
+  const clean = useStore(state => state.clean);
+  const play = useStore(state => state.play);
+  const sleep = useStore(state => state.sleep);
 
   const rewardSourceLabel = lastRewardSource ?? '—';
   const rewardAmountLabel = `+${Math.max(0, Math.round(lastRewardAmount))}`;

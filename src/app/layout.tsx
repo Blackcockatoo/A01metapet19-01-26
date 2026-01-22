@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import ClientBody from "./ClientBody";
-import Script from "next/script";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -29,12 +28,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="font-sans">
-      <head>
-        <Script
-          crossOrigin="anonymous"
-          src="//unpkg.com/same-runtime/dist/index.global.js"
-        />
-      </head>
       <body suppressHydrationWarning className="antialiased">
         <ClientBody>{children}</ClientBody>
       </body>
