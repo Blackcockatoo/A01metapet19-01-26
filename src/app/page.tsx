@@ -488,7 +488,7 @@ export default function Home() {
 
   const applyPetData = useCallback((pet: PetSaveData) => {
     hydrate({
-      vitals: { ...pet.vitals },
+      vitals: { ...DEFAULT_VITALS, ...pet.vitals },
       genome: {
         red60: [...pet.genome.red60],
         blue60: [...pet.genome.blue60],

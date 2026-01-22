@@ -317,7 +317,7 @@ export function createMetaPetWebStore(
       lastRewardAmount,
     }) {
       set(state => ({
-        vitals: { ...vitals },
+        vitals: { ...DEFAULT_VITALS, ...vitals },
         genome,
         traits: normalizeTraits(genome, traits),
         evolution: { ...evolution },

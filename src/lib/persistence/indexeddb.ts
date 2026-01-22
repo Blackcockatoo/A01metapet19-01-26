@@ -330,7 +330,7 @@ export function importPetFromJSON(json: string, options?: { skipGenomeValidation
   return {
     id: parsed.id,
     name: typeof parsed.name === 'string' && parsed.name.trim() !== '' ? parsed.name.trim() : undefined,
-    vitals: parsed.vitals,
+    vitals: normalizeVitals(parsed.vitals),
     petType,
     genome,
     genomeHash: parsed.genomeHash,
@@ -389,8 +389,12 @@ function normalizePetData(raw: unknown): PetSaveData {
     typeof typed.lastRewardSource === 'string' ? typed.lastRewardSource : null;
   const lastRewardAmount = typeof typed.lastRewardAmount === 'number' ? typed.lastRewardAmount : 0;
 
+  // Normalize vitals to include new sickness properties with defaults
+  const vitals = normalizeVitals(typed.vitals);
+
   return {
     ...(typed as PetSaveData),
+    vitals,
     achievements,
     battle,
     miniGames,
@@ -402,6 +406,40 @@ function normalizePetData(raw: unknown): PetSaveData {
     lastRewardAmount,
     petType: isValidPetType(typed.petType) ? typed.petType : 'geometric',
   } as PetSaveData;
+}
+
+function normalizeVitals(value: unknown): Vitals {
+  const defaultVitals: Vitals = {
+    hunger: 30,
+    hygiene: 70,
+    mood: 60,
+    energy: 80,
+    isSick: false,
+    sicknessSeverity: 0,
+    sicknessType: 'none',
+    deathCount: 0,
+  };
+
+  if (!value || typeof value !== 'object') {
+    return defaultVitals;
+  }
+
+  const v = value as Partial<Vitals>;
+
+  return {
+    hunger: typeof v.hunger === 'number' && Number.isFinite(v.hunger) ? v.hunger : defaultVitals.hunger,
+    hygiene: typeof v.hygiene === 'number' && Number.isFinite(v.hygiene) ? v.hygiene : defaultVitals.hygiene,
+    mood: typeof v.mood === 'number' && Number.isFinite(v.mood) ? v.mood : defaultVitals.mood,
+    energy: typeof v.energy === 'number' && Number.isFinite(v.energy) ? v.energy : defaultVitals.energy,
+    isSick: typeof v.isSick === 'boolean' ? v.isSick : defaultVitals.isSick,
+    sicknessSeverity: typeof v.sicknessSeverity === 'number' && Number.isFinite(v.sicknessSeverity) ? v.sicknessSeverity : defaultVitals.sicknessSeverity,
+    sicknessType: isValidSicknessType(v.sicknessType) ? v.sicknessType : defaultVitals.sicknessType,
+    deathCount: typeof v.deathCount === 'number' && Number.isFinite(v.deathCount) ? v.deathCount : defaultVitals.deathCount,
+  };
+}
+
+function isValidSicknessType(value: unknown): value is Vitals['sicknessType'] {
+  return value === 'none' || value === 'hungry' || value === 'dirty' || value === 'exhausted' || value === 'depressed';
 }
 
 function isValidVitals(value: unknown): value is Vitals {
