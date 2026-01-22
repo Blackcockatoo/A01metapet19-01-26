@@ -32,6 +32,22 @@ export interface ScanResult {
   samples: number;
 }
 
+export const VIMANA_ESSENCE_REWARDS = {
+  discovery: 4,
+  anomalyResolved: 6,
+} as const;
+
+export type ExplorationRewardPayload = {
+  essenceDelta: number;
+  source: 'exploration';
+};
+
+export function createExplorationRewardPayload(
+  essenceDelta: number
+): ExplorationRewardPayload {
+  return { essenceDelta, source: 'exploration' };
+}
+
 /**
  * Generate initial Vimana grid based on genome
  */
@@ -88,6 +104,8 @@ export interface AnomalyReward {
   type: 'energy' | 'mood' | 'rare';
   value: number;
   message: string;
+  essenceDelta: number;
+  source: 'exploration';
 }
 
 export function resolveAnomaly(cell: VimanaCell): AnomalyReward | null {
@@ -95,21 +113,28 @@ export function resolveAnomaly(cell: VimanaCell): AnomalyReward | null {
     return null;
   }
   
+  const essenceDelta = VIMANA_ESSENCE_REWARDS.anomalyResolved;
   const rewards: Record<string, AnomalyReward> = {
     energy: {
       type: 'energy',
       value: 15,
       message: 'Energy surge detected! +15 Energy',
+      essenceDelta,
+      source: 'exploration',
     },
     mood: {
       type: 'mood',
       value: 12,
       message: 'Harmonic resonance found! +12 Mood',
+      essenceDelta,
+      source: 'exploration',
     },
     rare: {
       type: 'rare',
       value: 20,
       message: 'Rare quantum echo discovered! +20 Mood & Energy',
+      essenceDelta,
+      source: 'exploration',
     },
   };
   
