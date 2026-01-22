@@ -96,7 +96,7 @@ const AuraliaSprite: React.FC<AuraliaSpriteProps> = ({
 
   // Eye movement - follows curiosity
   useEffect(() => {
-    if (!interactive) return;
+    if (!interactive || hovered) return;
 
     const moveEyes = () => {
       if (aiMode === 'curious') {
@@ -120,7 +120,7 @@ const AuraliaSprite: React.FC<AuraliaSpriteProps> = ({
 
     const interval = setInterval(moveEyes, 50);
     return () => clearInterval(interval);
-  }, [interactive, aiMode, curiosity]);
+  }, [interactive, aiMode, curiosity, hovered]);
 
   // Blinking
   useEffect(() => {

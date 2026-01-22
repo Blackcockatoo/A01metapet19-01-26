@@ -997,13 +997,20 @@ export default function Home() {
               </div>
 
               {/* Pet sprite */}
-              <div className={`relative mb-6 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 rounded-xl overflow-hidden flex items-center justify-center ${companionExpanded ? 'h-[500px]' : 'h-48'}`}>
+              <div
+                className={`relative mb-6 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 rounded-xl overflow-hidden flex items-center justify-center ${companionExpanded ? 'h-[500px]' : 'h-48'}`}
+                onDoubleClick={() => setCompanionExpanded(e => !e)}
+                onKeyDown={event => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    setCompanionExpanded(e => !e);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label="Toggle companion expanded"
+              >
                 {petType === 'geometric' ? <PetSprite /> : <AuraliaSprite />}
-                <button
-                  aria-label="Toggle companion expanded"
-                  onDoubleClick={() => setCompanionExpanded(e => !e)}
-                  className="absolute inset-0 w-full h-full bg-transparent"
-                />
               </div>
 
               <HUD />
