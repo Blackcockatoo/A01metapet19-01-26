@@ -1,7 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+'use client';
 
-type InputType = 'mood' | 'pattern' | 'intention' | 'action';
-type RitualType = 'tap' | 'hold' | 'name';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { HeptaYantraCanvas } from './HeptaYantraCanvas';
+
+type InputType = 'mood' | 'intention' | 'element';
+type RitualType = 'tap' | 'hold' | 'breath' | 'yantra';
 
 type GeometryState = {
   points: number;
@@ -25,24 +28,30 @@ type Session = {
 };
 
 const INPUT_OPTIONS: Record<InputType, string[]> = {
-  mood: ['Calm', 'Curious', 'Stressed', 'Energized', 'Soft'],
-  pattern: ['Spiral', 'Lattice', 'Wave', 'Shadow', 'Pulse'],
-  intention: ['Focus', 'Calm', 'Courage', 'Joy', 'Clarity'],
-  action: ['Sent a message', 'Took a walk', 'Breathed deeply', 'Drank water', 'Rested 5 min'],
+  mood: ['Calm', 'Curious', 'Energized', 'Reflective', 'Grateful'],
+  intention: ['Focus', 'Healing', 'Courage', 'Joy', 'Clarity'],
+  element: ['Fire', 'Water', 'Earth', 'Air', 'Aether'],
 };
 
-const RITUALS: Record<RitualType, { label: string; description: string; taps?: number; holdMs?: number }> = {
-  tap: { label: 'Tap rhythm', description: 'Tap 5 times to offer cadence', taps: 5 },
-  hold: { label: 'Hold & breathe', description: 'Hold for 5 seconds to steady the field', holdMs: 5000 },
-  name: { label: 'Name the pattern', description: 'Type one word to anchor it' },
+const INPUT_ICONS: Record<InputType, string> = {
+  mood: '心',
+  intention: '意',
+  element: '素',
+};
+
+const RITUALS: Record<RitualType, { label: string; description: string; icon: string; taps?: number; holdMs?: number }> = {
+  tap: { label: 'Tap', description: 'Tap 7 times with rhythm', icon: '◉', taps: 7 },
+  hold: { label: 'Hold', description: 'Press & hold for 5 seconds', icon: '◎', holdMs: 5000 },
+  breath: { label: 'Breathe', description: '4s in, 4s hold, 4s out', icon: '◌', holdMs: 12000 },
+  yantra: { label: 'Draw', description: 'Draw a sacred pattern', icon: '✧' },
 };
 
 const STAGE_FLOW: Stage[] = [
-  { id: 'seed', label: 'Seed Sigil', note: 'Input makes offering' },
-  { id: 'resonant', label: 'Resonant Bloom', note: '3-day streak / 3 offerings' },
-  { id: 'aligned', label: 'Aligned Crest', note: '7-day alignment or 5 repeated intents' },
-  { id: 'shadow', label: 'Shadow Mirror', note: '3 shadow calls awaken contrast' },
-  { id: 'myth', label: 'Myth Gate', note: 'Evolution reveals a deeper page' },
+  { id: 'seed', label: 'Seed Sigil', note: 'Your journey begins' },
+  { id: 'resonant', label: 'Resonant Bloom', note: '3+ offerings' },
+  { id: 'aligned', label: 'Aligned Crest', note: '7-day streak' },
+  { id: 'shadow', label: 'Shadow Mirror', note: 'Deep reflection' },
+  { id: 'myth', label: 'Myth Gate', note: 'Transcendence' },
 ];
 
 const mythFragments = [
@@ -51,6 +60,8 @@ const mythFragments = [
   'The pet remembers a song from a mirror world.',
   'Seven points align; an unseen witness nods.',
   'Your intention etches a line into the hidden codex.',
+  'The yantra pulses with ancient memory.',
+  'Through sacred geometry, dimensions converge.',
 ];
 
 function hashString(value: string): number {
@@ -71,15 +82,26 @@ function clamp(value: number, min = 0, max = 1) {
   return Math.max(min, Math.min(max, value));
 }
 
-export function RitualLoop() {
+export interface RitualLoopProps {
+  onRitualComplete?: (data: {
+    resonance: number;
+    nectar: number;
+    energy: number;
+    stage: string;
+  }) => void;
+  jewbleDigits?: { red: number[]; blue: number[]; black: number[] };
+}
+
+export function RitualLoop({ onRitualComplete, jewbleDigits }: RitualLoopProps) {
   const [inputType, setInputType] = useState<InputType>('mood');
   const [inputValue, setInputValue] = useState<string>(INPUT_OPTIONS.mood[0]);
   const [ritualType, setRitualType] = useState<RitualType>('tap');
-  const [nameOffering, setNameOffering] = useState('');
 
   const [tapCount, setTapCount] = useState(0);
   const [holdProgress, setHoldProgress] = useState(0);
+  const [breathPhase, setBreathPhase] = useState<'inhale' | 'hold' | 'exhale' | 'idle'>('idle');
   const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const breathTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [geometry, setGeometry] = useState<GeometryState>({
     points: 5,
@@ -91,31 +113,32 @@ export function RitualLoop() {
 
   const [resonance, setResonance] = useState(12);
   const [nectar, setNectar] = useState(1);
-  const [oracle, setOracle] = useState('The field listens for your first signal.');
-  const [myth, setMyth] = useState('No reveal yet. Offer again when the pattern feels true.');
+  const [oracle, setOracle] = useState('Begin your ritual when ready.');
+  const [myth, setMyth] = useState('');
 
   const [streak, setStreak] = useState(0);
   const [lastDay, setLastDay] = useState<string | null>(null);
   const [totalSessions, setTotalSessions] = useState(0);
   const [stage, setStage] = useState<Stage>(STAGE_FLOW[0]);
   const [history, setHistory] = useState<Session[]>([]);
+  const [showYantra, setShowYantra] = useState(false);
 
   const ritualReady =
     (ritualType === 'tap' && tapCount >= (RITUALS.tap.taps ?? 0)) ||
     (ritualType === 'hold' && holdProgress >= 100) ||
-    (ritualType === 'name' && nameOffering.trim().length > 0);
+    (ritualType === 'breath' && holdProgress >= 100) ||
+    ritualType === 'yantra';
 
   useEffect(() => {
     return () => {
-      if (holdTimerRef.current) {
-        clearInterval(holdTimerRef.current);
-      }
+      if (holdTimerRef.current) clearInterval(holdTimerRef.current);
+      if (breathTimerRef.current) clearInterval(breathTimerRef.current);
     };
   }, []);
 
   const handleTap = useCallback(() => {
     if (ritualType !== 'tap') return;
-    setTapCount(prev => Math.min((RITUALS.tap.taps ?? 5), prev + 1));
+    setTapCount(prev => Math.min((RITUALS.tap.taps ?? 7), prev + 1));
   }, [ritualType]);
 
   const startHold = useCallback(() => {
@@ -129,7 +152,7 @@ export function RitualLoop() {
         clearInterval(holdTimerRef.current);
         holdTimerRef.current = null;
       }
-    }, 100);
+    }, 50);
   }, [ritualType]);
 
   const stopHold = useCallback(() => {
@@ -140,56 +163,68 @@ export function RitualLoop() {
     setHoldProgress(prev => (prev >= 100 ? prev : 0));
   }, []);
 
+  const startBreath = useCallback(() => {
+    if (ritualType !== 'breath' || breathTimerRef.current) return;
+    const cycleDuration = 12000; // 4s + 4s + 4s
+    const start = Date.now();
+    setBreathPhase('inhale');
+
+    breathTimerRef.current = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const percent = clamp(elapsed / cycleDuration, 0, 1);
+      setHoldProgress(Math.round(percent * 100));
+
+      // Determine phase
+      const phaseTime = elapsed % cycleDuration;
+      if (phaseTime < 4000) setBreathPhase('inhale');
+      else if (phaseTime < 8000) setBreathPhase('hold');
+      else setBreathPhase('exhale');
+
+      if (percent >= 1 && breathTimerRef.current) {
+        clearInterval(breathTimerRef.current);
+        breathTimerRef.current = null;
+        setBreathPhase('idle');
+      }
+    }, 50);
+  }, [ritualType]);
+
   const resetRitual = useCallback(() => {
     setTapCount(0);
     setHoldProgress(0);
-    setNameOffering('');
+    setBreathPhase('idle');
     if (holdTimerRef.current) {
       clearInterval(holdTimerRef.current);
       holdTimerRef.current = null;
+    }
+    if (breathTimerRef.current) {
+      clearInterval(breathTimerRef.current);
+      breathTimerRef.current = null;
     }
   }, []);
 
   const deriveStage = useCallback(
     (nextHistory: Session[], nextStreak: number): Stage => {
       const total = nextHistory.length;
-      const repeatedIntentCount = nextHistory.filter(
-        entry => entry.inputType === 'intention' && entry.inputValue.toLowerCase() === inputValue.toLowerCase()
-      ).length;
-      const shadowCount = nextHistory.filter(entry => entry.inputValue.toLowerCase().includes('shadow')).length;
-
-      if (shadowCount >= 3) return STAGE_FLOW[3];
-      if (nextStreak >= 7 || repeatedIntentCount >= 5) return STAGE_FLOW[2];
-      if (nextStreak >= 3 || total >= 3) return STAGE_FLOW[1];
+      if (nextStreak >= 7) return STAGE_FLOW[2];
+      if (nextStreak >= 3 || total >= 5) return STAGE_FLOW[1];
       return STAGE_FLOW[0];
     },
-    [inputValue]
+    []
   );
 
-  const oracleFor = useCallback(
-    (nextStage: Stage) => {
-      const starter = inputValue.toLowerCase();
-      const ritual = ritualType === 'tap' ? 'cadence' : ritualType === 'hold' ? 'breath' : 'word';
-      return `Your ${starter} offering lands as ${ritual}; the ${nextStage.label.toLowerCase()} hums back.`;
-    },
-    [inputValue, ritualType]
-  );
+  const completeRitual = useCallback((yantraEnergy?: number) => {
+    // For yantra, we pass energy; for other rituals, check ritualReady
+    const isYantraCompletion = yantraEnergy !== undefined;
+    if (!ritualReady && !isYantraCompletion) return;
 
-  const mythFor = useCallback(() => {
-    return mythFragments[(totalSessions + history.length) % mythFragments.length];
-  }, [history.length, totalSessions]);
-
-  const completeRitual = useCallback(() => {
-    if (!ritualReady) return;
     const now = Date.now();
     const key = dayKey(now);
-
-    const nextHistory = [...history.slice(-19), { inputType, inputValue, ritual: ritualType, timestamp: now }];
+    const nextHistory = [...history.slice(-29), { inputType, inputValue, ritual: ritualType, timestamp: now }];
     const nextTotal = totalSessions + 1;
 
     let nextStreak = 1;
     if (lastDay === key) {
-      nextStreak = streak; // same day, keep streak
+      nextStreak = streak;
     } else if (lastDay) {
       const prevDate = new Date(lastDay);
       const diffDays = Math.floor((now - prevDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -197,31 +232,34 @@ export function RitualLoop() {
     }
 
     const stageCandidate = deriveStage(nextHistory, nextStreak);
-    const stageChanged = stageCandidate.id !== stage.id;
 
-    // Geometry mutation driven by input/ritual
+    // Geometry mutation
     const seed = hashString(`${inputValue}-${ritualType}-${now}`);
-    const points = 3 + (seed % 5); // 3..7
-    const symmetry = 2 + (seed % 4); // 2..5
+    const points = 3 + (seed % 5);
+    const symmetry = 2 + (seed % 4);
     const rotation = geometry.rotation + ((seed % 360) * Math.PI) / 180;
     const thickness = 1 + ((seed % 6) * 0.2);
     const intensity = clamp(0.4 + ((seed % 40) / 100), 0, 1);
 
-    setGeometry({
-      points,
-      symmetry,
-      rotation,
-      thickness,
-      intensity,
-    });
+    setGeometry({ points, symmetry, rotation, thickness, intensity });
 
-    const resonanceGain = 6 + (seed % 5);
+    const resonanceGain = 5 + (seed % 8) + (yantraEnergy ?? 0);
+    const nectarGain = 1 + (yantraEnergy ? Math.floor(yantraEnergy / 5) : 0);
+
     setResonance(value => value + resonanceGain);
-    setNectar(value => value + 1);
-    setOracle(oracleFor(stageCandidate));
+    setNectar(value => value + nectarGain);
 
-    if (stageChanged || nextTotal % 5 === 0) {
-      setMyth(mythFor());
+    // Oracle message
+    const oracleMessages = [
+      `Your ${inputValue.toLowerCase()} offering resonates through the ${ritualType}.`,
+      `The ${inputType} of ${inputValue} anchors in sacred geometry.`,
+      `${stageCandidate.label} receives your ${inputValue.toLowerCase()} intention.`,
+    ];
+    setOracle(oracleMessages[seed % oracleMessages.length]);
+
+    // Myth fragment on milestones
+    if (nextTotal % 5 === 0 || stageCandidate.id !== stage.id) {
+      setMyth(mythFragments[(nextTotal + seed) % mythFragments.length]);
     }
 
     setHistory(nextHistory);
@@ -230,6 +268,14 @@ export function RitualLoop() {
     setLastDay(key);
     setStage(stageCandidate);
     resetRitual();
+    setShowYantra(false);
+
+    onRitualComplete?.({
+      resonance: resonanceGain,
+      nectar: nectarGain,
+      energy: yantraEnergy ?? 0,
+      stage: stageCandidate.id,
+    });
   }, [
     deriveStage,
     geometry.rotation,
@@ -237,8 +283,7 @@ export function RitualLoop() {
     inputType,
     inputValue,
     lastDay,
-    mythFor,
-    oracleFor,
+    onRitualComplete,
     resetRitual,
     ritualReady,
     ritualType,
@@ -247,125 +292,153 @@ export function RitualLoop() {
     totalSessions,
   ]);
 
-  const progressBars = useMemo(() => {
-    const resonanceLevel = Math.min(100, (resonance % 100));
-    const nectarLevel = Math.min(100, (nectar % 100));
-    return { resonanceLevel, nectarLevel };
-  }, [nectar, resonance]);
+  const handleYantraComplete = useCallback((result: { energy: number; pattern: string }) => {
+    completeRitual(result.energy);
+  }, [completeRitual]);
 
   const geometryPath = useMemo(() => {
-    const radius = 70;
-    const points: Array<{ x: number; y: number }> = [];
+    const radius = 45;
+    const pts: Array<{ x: number; y: number }> = [];
     for (let i = 0; i < geometry.points; i++) {
       const angle = geometry.rotation + (i / geometry.points) * Math.PI * 2;
       const r = radius * (0.8 + 0.2 * Math.sin(angle * geometry.symmetry + geometry.intensity));
-      points.push({
-        x: 100 + Math.cos(angle) * r,
-        y: 100 + Math.sin(angle) * r,
-      });
+      pts.push({ x: 60 + Math.cos(angle) * r, y: 60 + Math.sin(angle) * r });
     }
-    return points.map(p => `${p.x},${p.y}`).join(' ');
-  }, [geometry.intensity, geometry.points, geometry.rotation, geometry.symmetry]);
+    return pts.map(p => `${p.x},${p.y}`).join(' ');
+  }, [geometry]);
 
-  const ritualStatus = useMemo(() => {
-    if (ritualType === 'tap') {
-      const target = RITUALS.tap.taps ?? 5;
-      return `${tapCount}/${target} taps`;
-    }
-    if (ritualType === 'hold') {
-      return `${holdProgress}% breath`;
-    }
-    return nameOffering.trim() === '' ? 'Type one word' : 'Anchored';
-  }, [holdProgress, nameOffering, ritualType, tapCount]);
+  const ritualProgress = useMemo(() => {
+    if (ritualType === 'tap') return (tapCount / (RITUALS.tap.taps ?? 7)) * 100;
+    return holdProgress;
+  }, [holdProgress, ritualType, tapCount]);
 
   return (
-    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-cyan-700/30">
-      <div className="flex items-center justify-between gap-3 mb-4">
+    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-cyan-700/30">
+      {/* Header - compact on mobile */}
+      <div className="flex items-start justify-between gap-3 mb-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">Signal → Ritual → Geometry → Reward</p>
-          <h2 className="text-2xl font-bold text-white">Pattern Ritual Loop</h2>
-          <p className="text-zinc-400 text-sm">Input makes offering. Offering shapes geometry. Geometry feeds reward.</p>
+          <h2 className="text-lg sm:text-xl font-bold text-white">Sacred Ritual</h2>
+          <p className="text-zinc-400 text-xs sm:text-sm hidden sm:block">
+            Offer intention through ritual to nourish your companion
+          </p>
         </div>
         <div className="text-right text-xs text-zinc-400">
+          <p className="text-cyan-300 font-semibold">{stage.label}</p>
           <p>Streak: <span className="text-cyan-300 font-mono">{streak}d</span></p>
-          <p>Sessions: <span className="text-cyan-300 font-mono">{totalSessions}</span></p>
         </div>
       </div>
 
-      {/* Input */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-white">1) Signal from the Human</p>
-            <span className="text-xs text-zinc-500">≤10s input</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {(['mood', 'pattern', 'intention', 'action'] as InputType[]).map(type => (
-              <button
-                key={type}
-                onClick={() => {
-                  setInputType(type);
-                  setInputValue(INPUT_OPTIONS[type][0]);
-                }}
-                className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
-                  inputType === type
-                    ? 'bg-cyan-600/30 border-cyan-500 text-white'
-                    : 'border-slate-700 text-zinc-400 hover:border-cyan-600/60'
-                }`}
-              >
-                {type.toUpperCase()}
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {INPUT_OPTIONS[inputType].map(option => (
-              <button
-                key={option}
-                onClick={() => setInputValue(option)}
-                className={`px-3 py-2 rounded-lg text-sm border transition ${
-                  inputValue === option
-                    ? 'bg-cyan-600/30 border-cyan-400 text-white'
-                    : 'border-slate-800 bg-slate-900/70 text-zinc-300 hover:border-cyan-500/40'
-                }`}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
+      {/* Geometry visualization - centered, compact */}
+      <div className="flex justify-center mb-4">
+        <div className="relative w-28 h-28 sm:w-32 sm:h-32">
+          <svg viewBox="0 0 120 120" className="w-full h-full">
+            <defs>
+              <linearGradient id="ritual-stroke" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#67e8f9" />
+                <stop offset="100%" stopColor="#a855f7" />
+              </linearGradient>
+            </defs>
+            <circle cx="60" cy="60" r="55" fill="none" stroke="#0ea5e9" strokeOpacity="0.1" strokeWidth={1} />
+            <polyline
+              points={geometryPath}
+              fill="none"
+              stroke="url(#ritual-stroke)"
+              strokeWidth={geometry.thickness}
+              strokeOpacity={0.9}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            {/* Progress ring */}
+            <circle
+              cx="60"
+              cy="60"
+              r="55"
+              fill="none"
+              stroke="#22d3ee"
+              strokeWidth={2}
+              strokeDasharray={`${ritualProgress * 3.45} 345`}
+              strokeLinecap="round"
+              transform="rotate(-90 60 60)"
+              opacity={0.5}
+            />
+          </svg>
+        </div>
+      </div>
+
+      {/* Input Selection - horizontal scrollable on mobile */}
+      <div className="mb-4">
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap scrollbar-hide">
+          {(['mood', 'intention', 'element'] as InputType[]).map(type => (
+            <button
+              key={type}
+              onClick={() => {
+                setInputType(type);
+                setInputValue(INPUT_OPTIONS[type][0]);
+                resetRitual();
+              }}
+              className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium border transition flex items-center gap-2 ${
+                inputType === type
+                  ? 'bg-cyan-600/30 border-cyan-500 text-white'
+                  : 'border-slate-700 text-zinc-400 hover:border-cyan-600/60'
+              }`}
+            >
+              <span className="text-base">{INPUT_ICONS[type]}</span>
+              <span className="capitalize">{type}</span>
+            </button>
+          ))}
         </div>
 
-        {/* Ritual */}
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-white">2) Offering / Act</p>
-            <span className="text-xs text-zinc-500">≤15s ritual</span>
-          </div>
-          <div className="flex gap-2">
-            {(Object.keys(RITUALS) as RitualType[]).map(rt => (
-              <button
-                key={rt}
-                onClick={() => {
-                  setRitualType(rt);
-                  resetRitual();
-                }}
-                className={`px-3 py-1.5 rounded-full text-xs border transition ${
-                  ritualType === rt
-                    ? 'bg-purple-600/30 border-purple-400 text-white'
-                    : 'border-slate-800 text-zinc-400 hover:border-purple-500/40'
-                }`}
-              >
-                {RITUALS[rt].label}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-zinc-400">{RITUALS[ritualType].description}</p>
+        {/* Value chips */}
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap mt-2 scrollbar-hide">
+          {INPUT_OPTIONS[inputType].map(option => (
+            <button
+              key={option}
+              onClick={() => setInputValue(option)}
+              className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm border transition ${
+                inputValue === option
+                  ? 'bg-purple-600/30 border-purple-400 text-white'
+                  : 'border-slate-800 bg-slate-900/70 text-zinc-300 hover:border-purple-500/40'
+              }`}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      </div>
 
+      {/* Ritual Type Selection */}
+      <div className="grid grid-cols-4 gap-2 mb-4">
+        {(Object.keys(RITUALS) as RitualType[]).map(rt => (
+          <button
+            key={rt}
+            onClick={() => {
+              setRitualType(rt);
+              resetRitual();
+              setShowYantra(rt === 'yantra');
+            }}
+            className={`flex flex-col items-center justify-center p-2 sm:p-3 rounded-xl border transition ${
+              ritualType === rt
+                ? 'bg-gradient-to-br from-cyan-600/30 to-purple-600/30 border-cyan-400 text-white'
+                : 'border-slate-800 bg-slate-900/50 text-zinc-400 hover:border-cyan-500/40'
+            }`}
+          >
+            <span className="text-xl sm:text-2xl mb-1">{RITUALS[rt].icon}</span>
+            <span className="text-[10px] sm:text-xs font-medium">{RITUALS[rt].label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Ritual Interaction Area */}
+      {!showYantra ? (
+        <div className="space-y-3">
           {ritualType === 'tap' && (
             <button
               onClick={handleTap}
-              className="w-full py-3 rounded-lg bg-gradient-to-r from-purple-600 to-cyan-600 text-white font-semibold shadow-inner shadow-cyan-900/40 active:scale-[0.99]"
+              disabled={tapCount >= (RITUALS.tap.taps ?? 7)}
+              className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-600 text-white font-semibold text-lg shadow-lg active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Tap rhythm ({ritualStatus})
+              <span className="text-2xl">◉</span>
+              <span className="ml-2">{tapCount} / {RITUALS.tap.taps}</span>
             </button>
           )}
 
@@ -375,141 +448,66 @@ export function RitualLoop() {
               onTouchStart={startHold}
               onMouseUp={stopHold}
               onTouchEnd={stopHold}
-              className="w-full py-3 rounded-lg bg-gradient-to-r from-emerald-600 to-cyan-600 text-white font-semibold shadow-inner shadow-emerald-900/40 active:scale-[0.99]"
+              className="w-full py-4 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 text-white font-semibold text-lg shadow-lg active:scale-[0.98] transition select-none"
             >
-              Hold & breathe ({ritualStatus})
+              <span className="text-2xl">◎</span>
+              <span className="ml-2">{holdProgress}%</span>
             </button>
           )}
 
-          {ritualType === 'name' && (
-            <input
-              value={nameOffering}
-              onChange={event => setNameOffering(event.target.value.slice(0, 18))}
-              className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="One word pattern (e.g. 'Soothe')"
-            />
-          )}
-
-          <div className="flex items-center justify-between text-xs text-zinc-400">
-            <span>Offering status: <span className="text-white font-mono">{ritualStatus}</span></span>
+          {ritualType === 'breath' && (
             <button
-              onClick={completeRitual}
-              disabled={!ritualReady}
-              className={`px-3 py-1 rounded-md font-semibold ${
-                ritualReady
-                  ? 'bg-cyan-500/80 text-slate-950 hover:bg-cyan-400'
-                  : 'bg-slate-800 text-zinc-500 cursor-not-allowed'
-              }`}
+              onClick={startBreath}
+              disabled={breathTimerRef.current !== null}
+              className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold text-lg shadow-lg active:scale-[0.98] transition disabled:opacity-80"
             >
-              Send
+              <span className="text-2xl">◌</span>
+              <span className="ml-2 capitalize">
+                {breathPhase === 'idle' ? 'Begin Breath' : breathPhase} {holdProgress > 0 && `${holdProgress}%`}
+              </span>
             </button>
-          </div>
-        </div>
-      </div>
+          )}
 
-      {/* Geometry & Reward */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-          <p className="text-sm font-semibold text-white mb-2">3) Geometry Responds</p>
-          <div className="bg-slate-900/80 rounded-lg border border-cyan-800/50 p-3 flex flex-col items-center">
-            <svg viewBox="0 0 200 200" className="w-full max-w-[220px]">
-              <defs>
-                <linearGradient id="geom-stroke" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#67e8f9" stopOpacity={0.9} />
-                  <stop offset="100%" stopColor="#a855f7" stopOpacity={0.9} />
-                </linearGradient>
-              </defs>
-              <circle cx="100" cy="100" r="92" fill="none" stroke="#0ea5e9" strokeOpacity="0.1" strokeWidth={1} />
-              <polyline
-                points={geometryPath}
-                fill="none"
-                stroke="url(#geom-stroke)"
-                strokeWidth={geometry.thickness}
-                strokeOpacity={0.9}
-              />
-              <g>
-                {[...Array(geometry.symmetry)].map((_, idx) => {
-                  const angle = (idx / geometry.symmetry) * Math.PI * 2 + geometry.rotation;
-                  const x = 100 + Math.cos(angle) * 90;
-                  const y = 100 + Math.sin(angle) * 90;
-                  return (
-                    <line
-                      key={idx}
-                      x1="100"
-                      y1="100"
-                      x2={x}
-                      y2={y}
-                      stroke="#22d3ee"
-                      strokeOpacity="0.2"
-                      strokeWidth={1}
-                    />
-                  );
-                })}
-              </g>
-            </svg>
-            <div className="text-xs text-zinc-400 mt-2 space-y-1 text-center">
-              <p>Points: <span className="text-white font-mono">{geometry.points}</span> • Symmetry: <span className="text-white font-mono">{geometry.symmetry}</span></p>
-              <p>Rotation: <span className="text-white font-mono">{Math.round((geometry.rotation % (Math.PI * 2)) * 100) / 100}</span> • Intensity: <span className="text-white font-mono">{geometry.intensity.toFixed(2)}</span></p>
-            </div>
-          </div>
+          {ritualReady && ritualType !== 'yantra' && (
+            <button
+              onClick={() => completeRitual()}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-pink-500 text-white font-bold text-lg shadow-lg active:scale-[0.98] transition animate-pulse"
+            >
+              Complete Offering
+            </button>
+          )}
         </div>
-
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-3">
-          <p className="text-sm font-semibold text-white">4) Reward Feeds the Pattern</p>
-          <div className="space-y-2">
-            <div>
-              <div className="flex justify-between text-xs text-zinc-400">
-                <span>Resonance (XP)</span>
-                <span className="font-mono text-cyan-300">{resonance}</span>
-              </div>
-              <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-cyan-400 to-purple-500"
-                  style={{ width: `${progressBars.resonanceLevel}%` }}
-                />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-xs text-zinc-400">
-                <span>Nectar (Food)</span>
-                <span className="font-mono text-amber-300">{nectar}</span>
-              </div>
-              <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-amber-400 to-pink-500"
-                  style={{ width: `${progressBars.nectarLevel}%` }}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3">
-            <p className="text-xs uppercase tracking-wide text-zinc-500">Oracle</p>
-            <p className="text-sm text-cyan-100">{oracle}</p>
-          </div>
+      ) : (
+        <div className="flex justify-center">
+          <HeptaYantraCanvas
+            size={280}
+            onYantraComplete={handleYantraComplete}
+            jewbleDigits={jewbleDigits}
+          />
         </div>
+      )}
 
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-3">
-          <p className="text-sm font-semibold text-white">5) Evolution & Myth</p>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-zinc-500">Stage</p>
-              <p className="text-lg font-bold text-emerald-300">{stage.label}</p>
-              <p className="text-xs text-zinc-400">{stage.note}</p>
-            </div>
-            <div className="text-right text-xs text-zinc-400">
-              <p>Repeats & streaks unlock myth gates.</p>
-              <p className="text-emerald-300 font-mono">{streak >= 3 ? 'Evolution primed' : 'Keep offering'}</p>
-            </div>
-          </div>
-          <div className="rounded-lg border border-emerald-700/40 bg-emerald-500/5 p-3">
-            <p className="text-xs uppercase tracking-wide text-emerald-300">Myth scrap</p>
-            <p className="text-sm text-emerald-100">{myth}</p>
-          </div>
+      {/* Oracle Message */}
+      {oracle && (
+        <div className="mt-4 p-3 rounded-lg border border-cyan-700/30 bg-cyan-950/30">
+          <p className="text-sm text-cyan-100 text-center">{oracle}</p>
         </div>
-      </div>
+      )}
 
-      <div className="mt-4 text-xs text-zinc-500">
-        “Input makes offering. Offering shapes geometry. Geometry feeds reward. Reward evolves the pet. Evolution reveals myth.”
+      {/* Myth Fragment */}
+      {myth && (
+        <div className="mt-3 p-3 rounded-lg border border-purple-700/30 bg-purple-950/30">
+          <p className="text-xs text-purple-200 text-center italic">{myth}</p>
+        </div>
+      )}
+
+      {/* Stats bar - compact */}
+      <div className="mt-4 flex justify-between items-center text-xs text-zinc-400">
+        <div className="flex gap-3">
+          <span>Resonance: <span className="text-cyan-300 font-mono">{resonance}</span></span>
+          <span>Nectar: <span className="text-amber-300 font-mono">{nectar}</span></span>
+        </div>
+        <span>{totalSessions} rituals</span>
       </div>
     </div>
   );
