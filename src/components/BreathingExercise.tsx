@@ -58,7 +58,7 @@ export function BreathingExercise({ onComplete, className }: BreathingExercisePr
   React.useEffect(() => {
     if (!isRunning) return;
 
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
 
     if (phase === 'inhale') {
       timer = setTimeout(() => setPhase('hold'), PHASE_DURATIONS.inhale);

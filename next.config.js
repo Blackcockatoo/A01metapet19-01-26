@@ -1,11 +1,5 @@
-const path = require('path');
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  allowedDevOrigins: ["*.preview.same-app.com"],
-  turbopack: {
-    root: path.resolve(__dirname, '..'),
-  },
   images: {
     unoptimized: true,
     remotePatterns: [

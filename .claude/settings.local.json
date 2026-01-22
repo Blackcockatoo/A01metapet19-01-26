@@ -34,7 +34,11 @@
       "Bash(timeout:*)",
       "Bash(ping:*)",
       "Bash(grep:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(cd:*)",
+      "Bash(tree:*)",
+      "Bash(wc:*)",
+      "Bash(bun --version:*)"
     ],
     "deny": [],
     "ask": []
