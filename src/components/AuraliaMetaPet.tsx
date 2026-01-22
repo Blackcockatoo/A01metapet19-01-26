@@ -2390,30 +2390,61 @@ const AuraliaMetaPet: React.FC = () => {
                   {snakeState.gameOver ? (
                     <div className="text-center py-4">
                       <p className="text-sm text-red-400 mb-2">Game Over!</p>
-                      <button onClick={resetSnakeGame} className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded text-sm">
+                      <button onClick={resetSnakeGame} className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded text-sm active:bg-green-400">
                         Play Again
                       </button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-15 gap-0.5 bg-gray-950 p-2 rounded">
-                      {Array.from({ length: 15 }).map((_, y) => (
-                        <div key={y} className="flex gap-0.5">
-                          {Array.from({ length: 15 }).map((_, x) => {
-                            const isSnake = snakeState.segments.some(seg => seg.x === x && seg.y === y);
-                            const isHead = snakeState.segments[0].x === x && snakeState.segments[0].y === y;
-                            const isFood = snakeState.food.x === x && snakeState.food.y === y;
-                            return (
-                              <div
-                                key={x}
-                                className={`w-3 h-3 rounded-sm ${isHead ? 'bg-green-400' : isSnake ? 'bg-green-600' : isFood ? 'bg-red-500' : 'bg-gray-800'}`}
-                              />
-                            );
-                          })}
+                    <>
+                      <div className="grid grid-cols-15 gap-0.5 bg-gray-950 p-2 rounded mx-auto" style={{ maxWidth: 'fit-content' }}>
+                        {Array.from({ length: 15 }).map((_, y) => (
+                          <div key={y} className="flex gap-0.5">
+                            {Array.from({ length: 15 }).map((_, x) => {
+                              const isSnake = snakeState.segments.some(seg => seg.x === x && seg.y === y);
+                              const isHead = snakeState.segments[0].x === x && snakeState.segments[0].y === y;
+                              const isFood = snakeState.food.x === x && snakeState.food.y === y;
+                              return (
+                                <div
+                                  key={x}
+                                  className={`w-4 h-4 sm:w-3 sm:h-3 rounded-sm ${isHead ? 'bg-green-400' : isSnake ? 'bg-green-600' : isFood ? 'bg-red-500' : 'bg-gray-800'}`}
+                                />
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                      {/* Mobile touch controls for Snake */}
+                      <div className="flex flex-col items-center gap-2 mt-3">
+                        <button
+                          onClick={() => snakeState.direction !== 'down' && setSnakeState(s => ({ ...s, direction: 'up' }))}
+                          className="w-12 h-12 rounded-lg bg-green-800/80 border border-green-600 flex items-center justify-center text-xl active:bg-green-700 select-none"
+                        >
+                          ▲
+                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => snakeState.direction !== 'right' && setSnakeState(s => ({ ...s, direction: 'left' }))}
+                            className="w-12 h-12 rounded-lg bg-green-800/80 border border-green-600 flex items-center justify-center text-xl active:bg-green-700 select-none"
+                          >
+                            ◀
+                          </button>
+                          <button
+                            onClick={() => snakeState.direction !== 'up' && setSnakeState(s => ({ ...s, direction: 'down' }))}
+                            className="w-12 h-12 rounded-lg bg-green-800/80 border border-green-600 flex items-center justify-center text-xl active:bg-green-700 select-none"
+                          >
+                            ▼
+                          </button>
+                          <button
+                            onClick={() => snakeState.direction !== 'left' && setSnakeState(s => ({ ...s, direction: 'right' }))}
+                            className="w-12 h-12 rounded-lg bg-green-800/80 border border-green-600 flex items-center justify-center text-xl active:bg-green-700 select-none"
+                          >
+                            ▶
+                          </button>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    </>
                   )}
-                  <p className="text-xs text-gray-400 mt-2 text-center">Use arrow keys to control</p>
+                  <p className="text-xs text-gray-400 mt-2 text-center hidden sm:block">Use arrow keys or tap buttons to control</p>
                 </div>
               )}
 
@@ -2426,39 +2457,70 @@ const AuraliaMetaPet: React.FC = () => {
                   {tetrisState.gameOver ? (
                     <div className="text-center py-4">
                       <p className="text-sm text-red-400 mb-2">Game Over!</p>
-                      <button onClick={resetTetrisGame} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm">
+                      <button onClick={resetTetrisGame} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm active:bg-indigo-400">
                         Play Again
                       </button>
                     </div>
                   ) : (
-                    <div className="bg-gray-950 p-2 rounded inline-block">
-                      {tetrisState.board.map((row, y) => (
-                        <div key={y} className="flex gap-0.5">
-                          {row.map((cell, x) => {
-                            let cellColor = cell ? '#4B5563' : '#1F2937';
-                            if (tetrisState.currentPiece) {
-                              const piece = tetrisState.currentPiece;
-                              for (let py = 0; py < piece.shape.length; py++) {
-                                for (let px = 0; px < piece.shape[py].length; px++) {
-                                  if (piece.shape[py][px] && piece.x + px === x && piece.y + py === y) {
-                                    cellColor = piece.color;
+                    <>
+                      <div className="bg-gray-950 p-2 rounded mx-auto" style={{ maxWidth: 'fit-content' }}>
+                        {tetrisState.board.map((row, y) => (
+                          <div key={y} className="flex gap-0.5">
+                            {row.map((cell, x) => {
+                              let cellColor = cell ? '#4B5563' : '#1F2937';
+                              if (tetrisState.currentPiece) {
+                                const piece = tetrisState.currentPiece;
+                                for (let py = 0; py < piece.shape.length; py++) {
+                                  for (let px = 0; px < piece.shape[py].length; px++) {
+                                    if (piece.shape[py][px] && piece.x + px === x && piece.y + py === y) {
+                                      cellColor = piece.color;
+                                    }
                                   }
                                 }
                               }
-                            }
-                            return (
-                              <div
-                                key={x}
-                                className="w-4 h-4 rounded-sm"
-                                style={{ backgroundColor: cellColor }}
-                              />
-                            );
-                          })}
+                              return (
+                                <div
+                                  key={x}
+                                  className="w-4 h-4 sm:w-3 sm:h-3 rounded-sm"
+                                  style={{ backgroundColor: cellColor }}
+                                />
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                      {/* Mobile touch controls for Tetris */}
+                      <div className="flex justify-center items-center gap-2 mt-3">
+                        <button
+                          onClick={() => moveTetrisPiece(-1, 0)}
+                          className="w-12 h-12 rounded-lg bg-indigo-800/80 border border-indigo-600 flex items-center justify-center text-xl active:bg-indigo-700 select-none"
+                        >
+                          ◀
+                        </button>
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={() => rotateTetrisPiece()}
+                            className="w-12 h-12 rounded-lg bg-indigo-800/80 border border-indigo-600 flex items-center justify-center text-lg active:bg-indigo-700 select-none"
+                          >
+                            ↻
+                          </button>
+                          <button
+                            onClick={() => moveTetrisPiece(0, 1)}
+                            className="w-12 h-12 rounded-lg bg-indigo-800/80 border border-indigo-600 flex items-center justify-center text-xl active:bg-indigo-700 select-none"
+                          >
+                            ▼
+                          </button>
                         </div>
-                      ))}
-                    </div>
+                        <button
+                          onClick={() => moveTetrisPiece(1, 0)}
+                          className="w-12 h-12 rounded-lg bg-indigo-800/80 border border-indigo-600 flex items-center justify-center text-xl active:bg-indigo-700 select-none"
+                        >
+                          ▶
+                        </button>
+                      </div>
+                    </>
                   )}
-                  <p className="text-xs text-gray-400 mt-2 text-center">Arrows: move/rotate (↑), Drop: ↓</p>
+                  <p className="text-xs text-gray-400 mt-2 text-center hidden sm:block">Arrows: move/rotate (↑), Drop: ↓</p>
                 </div>
               )}
             </div>

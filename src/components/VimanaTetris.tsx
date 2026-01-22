@@ -320,6 +320,8 @@ export function VimanaTetris({
   const dropIntervalRef = useRef<number>(1000);
   const lastDropRef = useRef<number>(0);
   const frameRef = useRef<number | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const lastTapRef = useRef<number>(0);
 
   useEffect(() => {
     rngRef.current = createRng(genomeSeed ?? Date.now());
@@ -499,6 +501,79 @@ export function VimanaTetris({
     return () => window.removeEventListener('keydown', handleKey);
   }, [active, board, lockPiece, onExit, resetGame, state]);
 
+  // Touch controls - movement functions
+  const moveLeft = useCallback(() => {
+    if (state !== 'running' || !active) return;
+    const moved: ActivePiece = { ...active, pos: { x: active.pos.x - 1, y: active.pos.y } };
+    if (isValidPosition(moved, board)) setActive(moved);
+  }, [active, board, state]);
+
+  const moveRight = useCallback(() => {
+    if (state !== 'running' || !active) return;
+    const moved: ActivePiece = { ...active, pos: { x: active.pos.x + 1, y: active.pos.y } };
+    if (isValidPosition(moved, board)) setActive(moved);
+  }, [active, board, state]);
+
+  const moveDown = useCallback(() => {
+    if (state !== 'running' || !active) return;
+    const moved: ActivePiece = { ...active, pos: { x: active.pos.x, y: active.pos.y + 1 } };
+    if (isValidPosition(moved, board)) setActive(moved);
+  }, [active, board, state]);
+
+  const rotate = useCallback(() => {
+    if (state !== 'running' || !active) return;
+    const rotated: ActivePiece = { ...active, rotation: (active.rotation + 1) % 4 };
+    if (isValidPosition(rotated, board)) setActive(rotated);
+  }, [active, board, state]);
+
+  const hardDrop = useCallback(() => {
+    if (state !== 'running' || !active) return;
+    let ghost = active;
+    while (isValidPosition({ ...ghost, pos: { x: ghost.pos.x, y: ghost.pos.y + 1 } }, board)) {
+      ghost = { ...ghost, pos: { x: ghost.pos.x, y: ghost.pos.y + 1 } };
+    }
+    lockPiece(ghost);
+  }, [active, board, lockPiece, state]);
+
+  // Touch event handlers for swipe gestures
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - touchStartRef.current.x;
+    const dy = touch.clientY - touchStartRef.current.y;
+    const dt = Date.now() - touchStartRef.current.time;
+    const minSwipe = 30;
+
+    // Detect tap (double tap for hard drop)
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && dt < 200) {
+      const now = Date.now();
+      if (now - lastTapRef.current < 300) {
+        hardDrop();
+        lastTapRef.current = 0;
+      } else {
+        rotate();
+        lastTapRef.current = now;
+      }
+      touchStartRef.current = null;
+      return;
+    }
+
+    // Swipe detection
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > minSwipe) {
+      if (dx > 0) moveRight();
+      else moveLeft();
+    } else if (Math.abs(dy) > minSwipe) {
+      if (dy > 0) moveDown();
+      else rotate();
+    }
+    touchStartRef.current = null;
+  }, [hardDrop, moveDown, moveLeft, moveRight, rotate]);
+
   useEffect(() => {
     const step = (timestamp: number) => {
       if (state === 'running') {
@@ -621,7 +696,11 @@ export function VimanaTetris({
   }, [nextPiece]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50 rounded-2xl border border-slate-800/80 shadow-xl overflow-hidden">
+    <div
+      className="w-full h-full flex flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50 rounded-2xl border border-slate-800/80 shadow-xl overflow-hidden touch-none"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <header className="px-4 py-2 flex items-center justify-between text-xs sm:text-sm border-b border-slate-800/80 bg-slate-950/70 backdrop-blur">
         <div className="flex flex-col">
           <span className="font-semibold tracking-wide uppercase text-[10px] text-slate-400">
@@ -646,10 +725,10 @@ export function VimanaTetris({
           </div>
         </div>
       </header>
-      <div className="flex-1 flex gap-3 px-3 pb-3 pt-2">
-        <div className="flex-1 flex items-center justify-center">
-          <div className="relative aspect-[10/20] max-h-full w-full max-w-[360px]">
-            <div className="absolute inset-0 grid grid-cols-10 gap-[3px] p-[4px] bg-slate-950/80 rounded-xl border border-slate-800/80 shadow-inner shadow-black/60">
+      <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3 px-2 sm:px-3 pb-2 sm:pb-3 pt-2 overflow-hidden">
+        <div className="flex-1 flex items-center justify-center min-h-0">
+          <div className="relative aspect-[10/20] max-h-full w-full max-w-[280px] sm:max-w-[360px]">
+            <div className="absolute inset-0 grid grid-cols-10 gap-[2px] sm:gap-[3px] p-[3px] sm:p-[4px] bg-slate-950/80 rounded-xl border border-slate-800/80 shadow-inner shadow-black/60">
               {gridCells}
             </div>
             {state === 'gameover' && (
@@ -660,22 +739,32 @@ export function VimanaTetris({
                   <div className="mt-2 text-xs text-slate-400">
                     Score {score} • Lines {lines} • Level {level}
                   </div>
-                  <div className="mt-3 text-[11px] text-slate-300">
-                    Press <span className="font-mono">Enter</span> or <span className="font-mono">R</span> to restart
-                  </div>
+                  <button
+                    onClick={resetGame}
+                    className="mt-3 px-4 py-2 bg-amber-500 text-slate-900 rounded-lg font-semibold text-sm active:bg-amber-400"
+                  >
+                    Play Again
+                  </button>
                 </div>
               </div>
             )}
             {state === 'paused' && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-xs">
                 <div className="px-4 py-2 rounded-lg border border-slate-700 bg-slate-900/90 text-slate-100">
-                  Paused — press <span className="font-mono">P</span> to resume
+                  <button
+                    onClick={() => setState('running')}
+                    className="px-4 py-2 bg-slate-700 rounded-lg active:bg-slate-600"
+                  >
+                    Resume
+                  </button>
                 </div>
               </div>
             )}
           </div>
         </div>
-        <aside className="w-32 flex flex-col gap-3 text-xs">
+
+        {/* Side panel - hidden on mobile, shown on larger screens */}
+        <aside className="hidden sm:flex w-32 flex-col gap-3 text-xs">
           <div className="rounded-xl border border-slate-800/80 bg-slate-950/70 px-3 py-2">
             <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">Next piece</div>
             {nextPreview}
@@ -689,6 +778,70 @@ export function VimanaTetris({
             <div>P — pause • Esc — exit</div>
           </div>
         </aside>
+
+        {/* Mobile touch controls */}
+        <div className="sm:hidden flex flex-col gap-2">
+          {/* Next piece preview - compact */}
+          <div className="flex items-center justify-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase text-slate-500">Next:</span>
+              <div className="scale-75 origin-left">{nextPreview}</div>
+            </div>
+            <button
+              onClick={() => setState(s => s === 'paused' ? 'running' : 'paused')}
+              className="px-3 py-1 rounded-lg bg-slate-800 text-slate-300 text-xs active:bg-slate-700"
+            >
+              {state === 'paused' ? 'Resume' : 'Pause'}
+            </button>
+            <button
+              onClick={onExit}
+              className="px-3 py-1 rounded-lg bg-slate-800 text-slate-300 text-xs active:bg-slate-700"
+            >
+              Exit
+            </button>
+          </div>
+
+          {/* Touch control buttons */}
+          <div className="flex justify-center items-center gap-2">
+            <button
+              onTouchStart={(e) => { e.stopPropagation(); moveLeft(); }}
+              onClick={moveLeft}
+              className="w-14 h-14 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-2xl active:bg-slate-700 select-none"
+            >
+              ◀
+            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                onTouchStart={(e) => { e.stopPropagation(); rotate(); }}
+                onClick={rotate}
+                className="w-14 h-14 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-xl active:bg-slate-700 select-none"
+              >
+                ↻
+              </button>
+              <button
+                onTouchStart={(e) => { e.stopPropagation(); moveDown(); }}
+                onClick={moveDown}
+                className="w-14 h-14 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-2xl active:bg-slate-700 select-none"
+              >
+                ▼
+              </button>
+            </div>
+            <button
+              onTouchStart={(e) => { e.stopPropagation(); moveRight(); }}
+              onClick={moveRight}
+              className="w-14 h-14 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-2xl active:bg-slate-700 select-none"
+            >
+              ▶
+            </button>
+            <button
+              onTouchStart={(e) => { e.stopPropagation(); hardDrop(); }}
+              onClick={hardDrop}
+              className="w-14 h-14 rounded-xl bg-amber-600/90 border border-amber-500 flex items-center justify-center text-lg font-bold active:bg-amber-500 select-none ml-2"
+            >
+              ⬇
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
