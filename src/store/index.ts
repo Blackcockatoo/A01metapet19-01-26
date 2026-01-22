@@ -40,6 +40,12 @@ import {
 
 export type { Vitals };
 export type PetType = 'geometric' | 'auralia';
+export type RewardSource = 'battle' | 'care' | 'exploration' | 'minigame' | 'ritual' | 'other';
+
+export interface EssenceRewardPayload {
+  essenceDelta: number;
+  source: RewardSource;
+}
 
 export interface MetaPetState {
   vitals: Vitals;
@@ -84,6 +90,7 @@ export interface MetaPetState {
   recordVimanaRun: (score: number, lines: number, level: number) => void;
   exploreCell: (cellId: string) => void;
   resolveAnomaly: (cellId: string) => void;
+  awardEssence: (payload: EssenceRewardPayload) => void;
   addRitualRewards: (payload: {
     resonance: number;
     nectar: number;
@@ -500,6 +507,14 @@ export function createMetaPetWebStore(
 
         return update;
       });
+    },
+
+    awardEssence({ essenceDelta }) {
+      if (essenceDelta <= 0) return;
+
+      set(state => ({
+        evolution: gainExperience(state.evolution, essenceDelta),
+      }));
     },
 
     addRitualRewards({ resonance, nectar, streak, totalSessions, lastDayKey, history }) {

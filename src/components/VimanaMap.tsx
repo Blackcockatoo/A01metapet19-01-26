@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useStore } from '@/lib/store';
+import { createExplorationRewardPayload, VIMANA_ESSENCE_REWARDS } from '@/lib/vimana';
 import { Button } from './ui/button';
 import { MapPin, AlertTriangle, Radar } from 'lucide-react';
 
@@ -17,6 +18,7 @@ export function VimanaMap() {
   const vitals = useStore(s => s.vitals);
   const exploreCell = useStore(s => s.exploreCell);
   const resolveAnomaly = useStore(s => s.resolveAnomaly);
+  const awardEssence = useStore(s => s.awardEssence);
 
   const [selectedId, setSelectedId] = useState<string>(vimana.activeCellId ?? vimana.cells[0]?.id ?? '');
 
@@ -30,11 +32,19 @@ export function VimanaMap() {
   };
 
   const handleExplore = () => {
+    const shouldRewardDiscovery = !selectedCell?.discovered;
     exploreCell(selectedCell.id);
+    if (shouldRewardDiscovery) {
+      awardEssence(createExplorationRewardPayload(VIMANA_ESSENCE_REWARDS.discovery));
+    }
   };
 
   const handleResolve = () => {
+    const shouldRewardResolution = selectedCell?.anomaly && selectedCell?.discovered;
     resolveAnomaly(selectedCell.id);
+    if (shouldRewardResolution) {
+      awardEssence(createExplorationRewardPayload(VIMANA_ESSENCE_REWARDS.anomalyResolved));
+    }
   };
 
   return (
