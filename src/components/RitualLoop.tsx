@@ -528,14 +528,21 @@ export function RitualLoop({ onRitualComplete, jewbleDigits, initialProgress, pe
       {!showYantra ? (
         <div className="space-y-3">
           {ritualType === 'tap' && (
-            <button
-              onClick={handleTap}
-              disabled={tapCount >= (RITUALS.tap.taps ?? 7)}
-              className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-600 text-white font-semibold text-lg shadow-lg active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span className="text-2xl">◉</span>
-              <span className="ml-2">{tapCount} / {RITUALS.tap.taps}</span>
-            </button>
+            <>
+              <button
+                onClick={handleTap}
+                disabled={tapCount >= (RITUALS.tap.taps ?? 7)}
+                className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-600 text-white font-semibold text-lg shadow-lg active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="text-2xl">◉</span>
+                <span className="ml-2">{tapCount} / {RITUALS.tap.taps}</span>
+              </button>
+              {tapCount >= (RITUALS.tap.taps ?? 7) && (
+                <p className="text-xs text-zinc-400 text-center">
+                  Prerequisite: complete the offering to reset the tap sequence.
+                </p>
+              )}
+            </>
           )}
 
           {ritualType === 'hold' && (
@@ -552,16 +559,23 @@ export function RitualLoop({ onRitualComplete, jewbleDigits, initialProgress, pe
           )}
 
           {ritualType === 'breath' && (
-            <button
-              onClick={startBreath}
-              disabled={breathTimerRef.current !== null}
-              className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold text-lg shadow-lg active:scale-[0.98] transition disabled:opacity-80"
-            >
-              <span className="text-2xl">◌</span>
-              <span className="ml-2 capitalize">
-                {breathPhase === 'idle' ? 'Begin Breath' : breathPhase} {holdProgress > 0 && `${holdProgress}%`}
-              </span>
-            </button>
+            <>
+              <button
+                onClick={startBreath}
+                disabled={breathTimerRef.current !== null}
+                className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold text-lg shadow-lg active:scale-[0.98] transition disabled:opacity-80"
+              >
+                <span className="text-2xl">◌</span>
+                <span className="ml-2 capitalize">
+                  {breathPhase === 'idle' ? 'Begin Breath' : breathPhase} {holdProgress > 0 && `${holdProgress}%`}
+                </span>
+              </button>
+              {breathTimerRef.current !== null && (
+                <p className="text-xs text-zinc-400 text-center">
+                  Prerequisite: finish the current breath cycle to begin again.
+                </p>
+              )}
+            </>
           )}
 
           {ritualReady && ritualType !== 'yantra' && (

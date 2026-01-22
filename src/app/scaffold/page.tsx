@@ -36,6 +36,13 @@ interface MockConfig {
   mockVitalsDecay: boolean;
 }
 
+interface SessionMetrics {
+  totalSessions: number;
+  averageLengthMs: number | null;
+  d1ReturnRate: number | null;
+  d7ReturnRate: number | null;
+}
+
 const DEFAULT_MOCK_CONFIG: MockConfig = {
   enabled: true,
   autoPlay: false,
@@ -53,6 +60,9 @@ const SAFETY_RAILS = {
   VITALS_MAX: 100,
   MOCK_DNA_LENGTH: 64,
 } as const;
+
+const ANALYTICS_STORAGE_KEY = 'metapet-analytics';
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * ScaffoldPage: Complete integration demo
@@ -81,6 +91,9 @@ export default function ScaffoldPage() {
    const [ritualOutcome, setRitualOutcome] = useState<MirrorOutcome>('anchor');
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sessionMetrics, setSessionMetrics] = useState<SessionMetrics | null>(null);
+
+  const showDevMetrics = process.env.NODE_ENV !== 'production';
 
   const generateMockDNA = useCallback((): string => {
     const chars = 'ACTG0123456789abcdef';
@@ -219,6 +232,22 @@ export default function ScaffoldPage() {
       handlePlayChime();
     }
   }, [handlePlayChime, heptaCode, isAudioPlaying, mockConfig.autoPlay]);
+
+  useEffect(() => {
+    if (!showDevMetrics || typeof window === 'undefined') return;
+
+    try {
+      const stored = window.localStorage.getItem(ANALYTICS_STORAGE_KEY);
+      setSessionMetrics(computeSessionMetrics(stored));
+    } catch {
+      setSessionMetrics({
+        totalSessions: 0,
+        averageLengthMs: null,
+        d1ReturnRate: null,
+        d7ReturnRate: null,
+      });
+    }
+  }, [showDevMetrics]);
 
   /**
    * Stop audio playback
@@ -645,6 +674,46 @@ export default function ScaffoldPage() {
               </div>
             </div>
 
+            {showDevMetrics && (
+              <div className="bg-zinc-800/40 backdrop-blur border border-zinc-700/60 rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-semibold text-zinc-200">Metrics (dev)</h2>
+                  <span className="text-[10px] uppercase tracking-wide text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 px-2 py-0.5 rounded-full">
+                    Dev only
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-xs text-zinc-300">
+                  <div>
+                    <div className="text-zinc-500 mb-1">Total sessions</div>
+                    <div className="font-semibold">
+                      {sessionMetrics?.totalSessions ?? 0}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-zinc-500 mb-1">Avg length</div>
+                    <div className="font-semibold">
+                      {formatDuration(sessionMetrics?.averageLengthMs ?? null)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-zinc-500 mb-1">D1 return</div>
+                    <div className="font-semibold">
+                      {formatReturnRate(sessionMetrics?.d1ReturnRate ?? null)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-zinc-500 mb-1">D7 return</div>
+                    <div className="font-semibold">
+                      {formatReturnRate(sessionMetrics?.d7ReturnRate ?? null)}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 text-[11px] text-zinc-500">
+                  Reads {ANALYTICS_STORAGE_KEY} from localStorage.
+                </div>
+              </div>
+            )}
+
             {/* Real-time Vitals HUD */}
             <div className="bg-zinc-800/50 backdrop-blur border border-zinc-700 rounded-2xl p-6">
               <h2 className="text-xl font-bold mb-4">Real-time Vitals</h2>
@@ -709,4 +778,120 @@ function InfoItem({ label, value }: { label: string; value: string }) {
       <div className="text-zinc-300 font-mono text-xs truncate">{value}</div>
     </div>
   );
+}
+
+function computeSessionMetrics(raw: string | null): SessionMetrics {
+  if (!raw) {
+    return {
+      totalSessions: 0,
+      averageLengthMs: null,
+      d1ReturnRate: null,
+      d7ReturnRate: null,
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    const sessions = normalizeSessions(parsed);
+    const starts = sessions
+      .map(session => session.start)
+      .filter((value): value is number => typeof value === 'number')
+      .sort((a, b) => a - b);
+    const durations = sessions
+      .map(session => session.durationMs)
+      .filter((value): value is number => typeof value === 'number' && value >= 0);
+    const averageLengthMs = durations.length
+      ? durations.reduce((sum, value) => sum + value, 0) / durations.length
+      : null;
+
+    return {
+      totalSessions: sessions.length,
+      averageLengthMs,
+      d1ReturnRate: computeReturnRate(starts, 1),
+      d7ReturnRate: computeReturnRate(starts, 7),
+    };
+  } catch {
+    return {
+      totalSessions: 0,
+      averageLengthMs: null,
+      d1ReturnRate: null,
+      d7ReturnRate: null,
+    };
+  }
+}
+
+function normalizeSessions(raw: unknown): Array<{ start: number; durationMs?: number }> {
+  const entries = Array.isArray(raw)
+    ? raw
+    : raw && typeof raw === 'object'
+      ? ((raw as { sessions?: unknown[]; events?: unknown[] }).sessions ??
+          (raw as { events?: unknown[] }).events ??
+          [])
+      : [];
+
+  return entries.flatMap(entry => {
+    if (typeof entry === 'number') {
+      return [{ start: entry }];
+    }
+
+    if (entry && typeof entry === 'object') {
+      const candidate = entry as {
+        start?: unknown;
+        startedAt?: unknown;
+        timestamp?: unknown;
+        end?: unknown;
+        endedAt?: unknown;
+        durationMs?: unknown;
+        lengthMs?: unknown;
+      };
+      const start =
+        typeof candidate.start === 'number'
+          ? candidate.start
+          : typeof candidate.startedAt === 'number'
+            ? candidate.startedAt
+            : typeof candidate.timestamp === 'number'
+              ? candidate.timestamp
+              : null;
+      const end =
+        typeof candidate.end === 'number'
+          ? candidate.end
+          : typeof candidate.endedAt === 'number'
+            ? candidate.endedAt
+            : null;
+      const explicitDuration =
+        typeof candidate.durationMs === 'number'
+          ? candidate.durationMs
+          : typeof candidate.lengthMs === 'number'
+            ? candidate.lengthMs
+            : null;
+      const durationMs =
+        explicitDuration ?? (start !== null && end !== null ? Math.max(0, end - start) : undefined);
+
+      if (start !== null) {
+        return [{ start, durationMs }];
+      }
+    }
+
+    return [];
+  });
+}
+
+function computeReturnRate(starts: number[], days: number): number | null {
+  if (starts.length < 2) return null;
+  const gapWindowStart = days * DAY_MS;
+  const gapWindowEnd = (days + 1) * DAY_MS;
+  const gaps = starts.slice(0, -1).map((start, index) => starts[index + 1] - start);
+  const returning = gaps.filter(gap => gap >= gapWindowStart && gap < gapWindowEnd).length;
+  return gaps.length ? returning / gaps.length : null;
+}
+
+function formatDuration(durationMs: number | null): string {
+  if (durationMs === null) return '—';
+  const minutes = durationMs / 60000;
+  return `${minutes.toFixed(1)}m`;
+}
+
+function formatReturnRate(rate: number | null): string {
+  if (rate === null) return '—';
+  return `${Math.round(rate * 100)}%`;
 }
