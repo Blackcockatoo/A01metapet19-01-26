@@ -40,6 +40,14 @@ import {
 
 export type { Vitals };
 export type PetType = 'geometric' | 'auralia';
+export type RewardSource =
+  | 'battle'
+  | 'exploration'
+  | 'minigame'
+  | 'mirror'
+  | 'ritual'
+  | 'system'
+  | 'vimana';
 
 export interface MetaPetState {
   vitals: Vitals;
@@ -55,6 +63,8 @@ export interface MetaPetState {
   mirrorMode: MirrorModeState;
   lastAction: null | 'feed' | 'clean' | 'play' | 'sleep';
   lastActionAt: number;
+  essence: number;
+  lastRewardSource: RewardSource | null;
   tickId?: ReturnType<typeof setInterval>;
   setGenome: (genome: Genome, traits: DerivedTraits) => void;
   setPetType: (petType: PetType) => void;
@@ -70,6 +80,8 @@ export interface MetaPetState {
     vimana?: VimanaState;
     petType?: PetType;
     mirrorMode?: MirrorModeState;
+    essence?: number;
+    lastRewardSource?: RewardSource | null;
   }) => void;
   startTick: () => void;
   stopTick: () => void;
@@ -78,6 +90,7 @@ export interface MetaPetState {
   play: () => void;
   sleep: () => void;
   setLastAction: (action: 'feed' | 'clean' | 'play' | 'sleep') => void;
+  addEssence: (payload: { amount: number; source: RewardSource }) => void;
   tryEvolve: () => boolean;
   recordBattle: (result: 'win' | 'loss', opponent: string) => void;
   updateMiniGameScore: (game: 'memory' | 'rhythm', score: number) => void;
@@ -201,6 +214,8 @@ export function createMetaPetWebStore(
     mirrorMode: { ...DEFAULT_MIRROR_MODE },
     lastAction: null,
     lastActionAt: 0,
+    essence: 0,
+    lastRewardSource: null,
 
     setGenome(genome, traits) {
       set({ genome, traits: normalizeTraits(genome, traits) });
@@ -210,7 +225,21 @@ export function createMetaPetWebStore(
       set({ petType });
     },
 
-    hydrate({ vitals, genome, traits, evolution, ritualProgress, achievements, battle, miniGames, vimana, petType, mirrorMode }) {
+    hydrate({
+      vitals,
+      genome,
+      traits,
+      evolution,
+      ritualProgress,
+      achievements,
+      battle,
+      miniGames,
+      vimana,
+      petType,
+      mirrorMode,
+      essence,
+      lastRewardSource,
+    }) {
       set(state => ({
         vitals: { ...vitals },
         genome,
@@ -223,6 +252,8 @@ export function createMetaPetWebStore(
         vimana: vimana ? cloneVimanaState(vimana) : state.vimana,
         petType: petType ?? state.petType,
         mirrorMode: mirrorMode ? { ...mirrorMode } : state.mirrorMode,
+        essence: essence ?? state.essence,
+        lastRewardSource: lastRewardSource ?? state.lastRewardSource,
         tickId: state.tickId,
       }));
     },
@@ -249,6 +280,13 @@ export function createMetaPetWebStore(
 
     setLastAction(action) {
       set({ lastAction: action, lastActionAt: Date.now() });
+    },
+
+    addEssence({ amount, source }) {
+      set(state => ({
+        essence: state.essence + amount,
+        lastRewardSource: source,
+      }));
     },
 
     feed() {
