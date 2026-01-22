@@ -22,6 +22,7 @@ export function MiniGamesPanel({ petName }: MiniGamesPanelProps) {
   const vitals = useStore(state => state.vitals);
   const updateScore = useStore(state => state.updateMiniGameScore);
   const recordVimanaRun = useStore(state => state.recordVimanaRun);
+  const recordReward = useStore(state => state.recordReward);
   const genome = useStore(state => state.genome);
 
   const genomeSeed = useMemo(() => {
@@ -47,18 +48,60 @@ export function MiniGamesPanel({ petName }: MiniGamesPanelProps) {
     const base = Math.round((vitals.mood + vitals.energy) / 20);
     const noise = Math.floor(Math.random() * 4);
     const score = base + noise;
+    const isNewBest = score > miniGames.memoryHighScore;
     updateScore('memory', score);
     const best = Math.max(score, miniGames.memoryHighScore);
     setMemoryLog(`Pattern recall score: ${score}. High score: ${best}.`);
+    recordReward({
+      source: 'minigame',
+      title: 'Memory Session Complete',
+      description: `Pattern recall score: ${score}.`,
+      reward: {
+        type: 'score',
+        value: score,
+      },
+    });
+    if (isNewBest) {
+      recordReward({
+        source: 'minigame',
+        title: 'New Memory High Score',
+        description: `New best score: ${score}.`,
+        reward: {
+          type: 'score',
+          value: score,
+        },
+      });
+    }
   };
 
   const playRhythm = () => {
     const base = Math.round((vitals.energy + vitals.hygiene) / 18);
     const noise = Math.floor(Math.random() * 5);
     const score = base + noise;
+    const isNewBest = score > miniGames.rhythmHighScore;
     updateScore('rhythm', score);
     const best = Math.max(score, miniGames.rhythmHighScore);
     setRhythmLog(`Rhythm alignment score: ${score}. High score: ${best}.`);
+    recordReward({
+      source: 'minigame',
+      title: 'Rhythm Session Complete',
+      description: `Rhythm alignment score: ${score}.`,
+      reward: {
+        type: 'score',
+        value: score,
+      },
+    });
+    if (isNewBest) {
+      recordReward({
+        source: 'minigame',
+        title: 'New Rhythm High Score',
+        description: `New best score: ${score}.`,
+        reward: {
+          type: 'score',
+          value: score,
+        },
+      });
+    }
   };
 
   const handleLaunchVimana = () => {
@@ -72,8 +115,29 @@ export function MiniGamesPanel({ petName }: MiniGamesPanelProps) {
   };
 
   const handleVimanaGameOver = (score: number, lines: number, level: number) => {
+    const isNewBest = score > miniGames.vimanaHighScore;
     recordVimanaRun(score, lines, level);
     setVimanaLog(`Run collapsed at level ${level}. Score ${score} with ${lines} lines cleared.`);
+    recordReward({
+      source: 'minigame',
+      title: 'Vimana Run Complete',
+      description: `Level ${level}, Score ${score}, Lines ${lines}.`,
+      reward: {
+        type: 'score',
+        value: { score, lines, level },
+      },
+    });
+    if (isNewBest) {
+      recordReward({
+        source: 'minigame',
+        title: 'New Vimana High Score',
+        description: `New best Vimana score: ${score}.`,
+        reward: {
+          type: 'score',
+          value: score,
+        },
+      });
+    }
   };
 
   const handleLaunchSafeCrack = () => {
@@ -87,11 +151,32 @@ export function MiniGamesPanel({ petName }: MiniGamesPanelProps) {
   };
 
   const handleSafeCrackGameOver = (success: boolean, score: number, attempts: number) => {
+    const isNewBest = success && score > safeCrackHighScore;
     setSafeCrackAttempts(prev => prev + 1);
     if (success) {
       const multiplier = score.toFixed(2);
       setSafeCrackHighScore(prev => Math.max(prev, score));
       setSafeCrackLog(`Vault cracked! Multiplier: ${multiplier}x. Attempts: ${safeCrackAttempts + 1}.`);
+      recordReward({
+        source: 'minigame',
+        title: 'Safe Crack Success',
+        description: `Multiplier ${multiplier}x after ${attempts} attempts.`,
+        reward: {
+          type: 'score',
+          value: score,
+        },
+      });
+      if (isNewBest) {
+        recordReward({
+          source: 'minigame',
+          title: 'New Safe Crack High Score',
+          description: `New best multiplier: ${multiplier}x.`,
+          reward: {
+            type: 'score',
+            value: score,
+          },
+        });
+      }
     } else {
       setSafeCrackLog(`Lock jammed after ${attempts} strikes. Try again with steadier hands.`);
     }
