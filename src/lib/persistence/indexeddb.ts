@@ -36,7 +36,9 @@ export interface PetSaveData {
   traits: DerivedTraits;
   evolution: EvolutionData;
   ritualProgress: RitualProgress;
-  essence?: number;
+  essence: number;
+  lastRewardSource: string | null;
+  lastRewardAmount: number;
   achievements: Achievement[];
   battle: BattleStats;
   miniGames: MiniGameProgress;
@@ -320,6 +322,11 @@ export function importPetFromJSON(json: string, options?: { skipGenomeValidation
   const createdAt = typeof parsed.createdAt === 'number' ? parsed.createdAt : Date.now();
   const lastSaved = typeof parsed.lastSaved === 'number' ? parsed.lastSaved : Date.now();
 
+  const essence = typeof parsed.essence === 'number' ? parsed.essence : 0;
+  const lastRewardSource =
+    typeof parsed.lastRewardSource === 'string' ? parsed.lastRewardSource : null;
+  const lastRewardAmount = typeof parsed.lastRewardAmount === 'number' ? parsed.lastRewardAmount : 0;
+
   return {
     id: parsed.id,
     name: typeof parsed.name === 'string' && parsed.name.trim() !== '' ? parsed.name.trim() : undefined,
@@ -332,7 +339,9 @@ export function importPetFromJSON(json: string, options?: { skipGenomeValidation
     ritualProgress: isValidRitualProgress(parsed.ritualProgress)
       ? normalizeRitualProgress(parsed.ritualProgress)
       : createDefaultRitualProgress(),
-    essence: typeof parsed.essence === 'number' ? parsed.essence : 0,
+    essence,
+    lastRewardSource,
+    lastRewardAmount,
     achievements,
     battle,
     miniGames,
@@ -375,6 +384,10 @@ function normalizePetData(raw: unknown): PetSaveData {
   const ritualProgress = isValidRitualProgress(typed.ritualProgress)
     ? normalizeRitualProgress(typed.ritualProgress)
     : createDefaultRitualProgress();
+  const essence = typeof typed.essence === 'number' ? typed.essence : 0;
+  const lastRewardSource =
+    typeof typed.lastRewardSource === 'string' ? typed.lastRewardSource : null;
+  const lastRewardAmount = typeof typed.lastRewardAmount === 'number' ? typed.lastRewardAmount : 0;
 
   return {
     ...(typed as PetSaveData),
@@ -384,7 +397,9 @@ function normalizePetData(raw: unknown): PetSaveData {
     vimana,
     mirrorMode,
     ritualProgress,
-    essence: typeof typed.essence === 'number' ? typed.essence : 0,
+    essence,
+    lastRewardSource,
+    lastRewardAmount,
     petType: isValidPetType(typed.petType) ? typed.petType : 'geometric',
   } as PetSaveData;
 }

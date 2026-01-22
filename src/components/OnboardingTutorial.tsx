@@ -4,13 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import {
   UtensilsCrossed,
-  Droplets,
-  Sparkles,
-  Zap,
   Heart,
-  AlertTriangle,
-  Trophy,
-  Dna,
+  ClipboardList,
+  Gamepad2,
+  Save,
   ChevronRight,
   X
 } from 'lucide-react';
@@ -25,55 +22,37 @@ interface OnboardingStep {
 const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     title: "Welcome to Meta-Pet!",
-    description: "You've hatched a digital companion with unique genetics. Your job is to keep them happy and healthy!",
+    description: "Meet your new digital companion. A few quick steps will help you keep them thriving.",
     icon: <Heart className="w-12 h-12 text-pink-400" />,
-    tip: "Your pet's personality is determined by their genome - each one is unique!"
+    tip: "Check in daily to keep your pet happy."
   },
   {
-    title: "Keep Them Fed",
-    description: "Watch the Hunger bar - when it gets low, tap Feed to give your pet food. A hungry pet gets grumpy!",
+    title: "Feed Your Pet",
+    description: "Use the Feed action whenever hunger dips. Keeping them fed maintains mood and growth.",
     icon: <UtensilsCrossed className="w-12 h-12 text-orange-400" />,
-    tip: "Feed when hunger drops below 50% for the best mood."
+    tip: "Feed before hunger gets too low to avoid penalties."
   },
   {
-    title: "Keep Them Clean",
-    description: "The Hygiene bar shows how clean your pet is. Tap Clean regularly to keep them fresh and happy.",
-    icon: <Droplets className="w-12 h-12 text-cyan-400" />,
-    tip: "Cleaning also gives a small mood boost!"
+    title: "Complete a Ritual",
+    description: "Rituals give your pet a daily boost. Pick one to keep their stats balanced.",
+    icon: <ClipboardList className="w-12 h-12 text-cyan-400" />,
+    tip: "Rituals are best done once per day."
   },
   {
-    title: "Play Together",
-    description: "Tap Play to have fun with your pet - this boosts their Mood but uses Energy. Balance is key!",
-    icon: <Sparkles className="w-12 h-12 text-purple-400" />,
-    tip: "Playing when energy is low will tire them out quickly."
+    title: "Play a Mini-Game",
+    description: "Mini-games add fun and rewards. Try one to keep your pet engaged.",
+    icon: <Gamepad2 className="w-12 h-12 text-purple-400" />,
+    tip: "Mini-games can boost mood or resources."
   },
   {
-    title: "Rest When Tired",
-    description: "When Energy gets low, let your pet Sleep to recover. A tired pet can't play well!",
-    icon: <Zap className="w-12 h-12 text-yellow-400" />,
-    tip: "Put them to sleep before energy hits zero to prevent sickness."
-  },
-  {
-    title: "Watch for Sickness",
-    description: "If any stat hits zero, your pet may get sick! Sick pets need extra care to recover.",
-    icon: <AlertTriangle className="w-12 h-12 text-red-400" />,
-    tip: "Check on your pet regularly - neglect has consequences!"
-  },
-  {
-    title: "Help Them Evolve",
-    description: "With good care, your pet will evolve through 4 stages: Genetics → Neuro → Quantum → Speciation.",
-    icon: <Dna className="w-12 h-12 text-green-400" />,
-    tip: "Evolution requires time, interactions, and keeping vitals healthy."
-  },
-  {
-    title: "Earn Achievements",
-    description: "Complete challenges to unlock achievements and deepen your bond. Some unlock special features!",
-    icon: <Trophy className="w-12 h-12 text-amber-400" />,
-    tip: "Check the Achievements section to see what you can unlock."
+    title: "Save or Export",
+    description: "Save your progress or export your pet to keep them safe across devices.",
+    icon: <Save className="w-12 h-12 text-emerald-400" />,
+    tip: "Exporting helps protect your pet's progress."
   }
 ];
 
-const STORAGE_KEY = 'metapet-onboarding-completed';
+const STORAGE_KEY = 'metapet-onboarding-complete';
 
 interface OnboardingTutorialProps {
   onComplete?: () => void;
@@ -89,7 +68,7 @@ export function OnboardingTutorial({ onComplete, forceShow = false }: Onboarding
     if (typeof window === 'undefined') return;
 
     const completed = localStorage.getItem(STORAGE_KEY);
-    if (forceShow || !completed) {
+    if (forceShow || completed !== 'true') {
       setIsVisible(true);
     }
     setHasChecked(true);
