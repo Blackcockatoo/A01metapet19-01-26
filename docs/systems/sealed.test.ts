@@ -7,6 +7,7 @@ import {
 } from '@/lib/persistence/sealed';
 import type { PetSaveData } from '@/lib/persistence/indexeddb';
 import { createDefaultBattleStats, createDefaultMiniGameProgress, createDefaultVimanaState } from '@/lib/progression/types';
+import { createDefaultRitualProgress } from '@/lib/ritual/types';
 
 describe('Sealed Export/Import', () => {
   let hmacKey: CryptoKey;
@@ -100,6 +101,7 @@ describe('Sealed Export/Import', () => {
         totalInteractions: 50,
         canEvolve: false,
       },
+      ritualProgress: createDefaultRitualProgress(),
       achievements: [],
       battle: createDefaultBattleStats(),
       miniGames: createDefaultMiniGameProgress(),
