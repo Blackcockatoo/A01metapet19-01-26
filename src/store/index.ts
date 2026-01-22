@@ -85,12 +85,12 @@ export interface MetaPetState {
   exploreCell: (cellId: string) => void;
   resolveAnomaly: (cellId: string) => void;
   addRitualRewards: (payload: {
-    resonance: number;
-    nectar: number;
-    streak: number;
-    totalSessions: number;
-    lastDayKey: number | null;
-    history: RitualProgress['history'];
+    resonanceDelta: number;
+    reward: {
+      essenceDelta: number;
+      source: 'ritual';
+    };
+    progress: RitualProgress;
   }) => void;
   beginMirrorMode: (preset: MirrorPrivacyPreset, durationMinutes?: number) => void;
   confirmMirrorCross: () => void;
@@ -502,21 +502,21 @@ export function createMetaPetWebStore(
       });
     },
 
-    addRitualRewards({ resonance, nectar, streak, totalSessions, lastDayKey, history }) {
+    addRitualRewards({ resonanceDelta, reward, progress }) {
       set(state => {
-        const moodBoost = Math.min(8, Math.floor(resonance / 4));
-        const energyBoost = Math.min(6, Math.floor(nectar / 2));
-        const xpGain = Math.min(12, 4 + Math.floor(resonance / 3) + nectar);
+        const moodBoost = Math.min(8, Math.floor(resonanceDelta / 4));
+        const energyBoost = Math.min(6, Math.floor(reward.essenceDelta / 2));
+        const xpGain = Math.min(12, 4 + Math.floor(resonanceDelta / 3) + reward.essenceDelta);
 
         return {
           ritualProgress: {
             ...state.ritualProgress,
-            resonance: state.ritualProgress.resonance + resonance,
-            nectar: state.ritualProgress.nectar + nectar,
-            streak,
-            totalSessions,
-            lastDayKey,
-            history: [...history],
+            resonance: progress.resonance,
+            nectar: progress.nectar,
+            streak: progress.streak,
+            totalSessions: progress.totalSessions,
+            lastDayKey: progress.lastDayKey,
+            history: [...progress.history],
           },
           vitals: {
             ...state.vitals,

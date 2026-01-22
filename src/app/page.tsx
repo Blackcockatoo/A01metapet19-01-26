@@ -1040,12 +1040,12 @@ export default function Home() {
               initialProgress={ritualProgress}
               onRitualComplete={data => {
                 addRitualRewards({
-                  resonance: data.resonance,
-                  nectar: data.nectar,
-                  streak: data.progress.streak,
-                  totalSessions: data.progress.totalSessions,
-                  lastDayKey: data.progress.lastDayKey,
-                  history: data.progress.history,
+                  resonanceDelta: data.resonance,
+                  reward: {
+                    essenceDelta: data.nectar,
+                    source: 'ritual',
+                  },
+                  progress: data.progress,
                 });
               }}
               jewbleDigits={
