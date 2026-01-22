@@ -1049,6 +1049,7 @@ export default function Home() {
                   history: data.progress.history,
                 });
               }}
+              jewbleDigits={heptaCode ?? undefined}
             />
 
             {/* Crest */}

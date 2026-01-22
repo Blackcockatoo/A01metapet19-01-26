@@ -29,6 +29,9 @@ import {
   clamp,
   getVitalsAverage,
   tick as runTick,
+  treatSickness,
+  checkDeath,
+  resetAfterDeath,
 } from '../vitals/index';
 import {
   createDefaultRitualProgress,
