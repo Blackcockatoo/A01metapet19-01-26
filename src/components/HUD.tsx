@@ -1,16 +1,26 @@
 'use client';
 
 import { useStore } from '@/lib/store';
+import { selectHudState } from '@/lib/store/selectors';
 import { UtensilsCrossed, Sparkles, Droplets, Zap } from 'lucide-react';
 import { Button } from './ui/button';
 
 export function HUD() {
-  const vitals = useStore(s => s.vitals);
-  const ritualProgress = useStore(s => s.ritualProgress);
-  const feed = useStore(s => s.feed);
-  const clean = useStore(s => s.clean);
-  const play = useStore(s => s.play);
-  const sleep = useStore(s => s.sleep);
+  const {
+    vitals,
+    ritualProgress,
+    essence,
+    lastRewardSource,
+    lastRewardAmount,
+    feed,
+    clean,
+    play,
+    sleep,
+  } = useStore(selectHudState);
+
+  const rewardSourceLabel = lastRewardSource ?? '—';
+  const rewardAmountLabel = `+${Math.max(0, Math.round(lastRewardAmount))}`;
+  const mobileRewardLabel = `Essence ${rewardAmountLabel} (${rewardSourceLabel})`;
 
   return (
     <div className="space-y-6">
@@ -49,6 +59,22 @@ export function HUD() {
         <div className="space-y-1 text-right">
           <div className="text-[10px] uppercase tracking-wide text-zinc-500">Nectar</div>
           <div className="text-amber-300 font-mono text-sm">{ritualProgress.nectar}</div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2">
+        <div className="flex items-center justify-between gap-3">
+          <div className="space-y-1">
+            <div className="text-[10px] uppercase tracking-wide text-zinc-500">Essence</div>
+            <div className="text-emerald-300 font-mono text-sm">{essence}</div>
+          </div>
+          <div className="hidden text-right sm:block">
+            <div className="text-[10px] uppercase tracking-wide text-zinc-500">Last reward</div>
+            <div className="text-xs font-medium text-zinc-300">
+              {rewardAmountLabel} ({rewardSourceLabel})
+            </div>
+          </div>
+          <div className="text-xs text-zinc-300 sm:hidden">{mobileRewardLabel}</div>
         </div>
       </div>
 

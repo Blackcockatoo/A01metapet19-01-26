@@ -55,6 +55,9 @@ export interface MetaPetState {
   traits: DerivedTraits | null;
   evolution: EvolutionData;
   ritualProgress: RitualProgress;
+  essence: number;
+  lastRewardSource: string | null;
+  lastRewardAmount: number;
   achievements: Achievement[];
   battle: BattleStats;
   miniGames: MiniGameProgress;
@@ -74,6 +77,9 @@ export interface MetaPetState {
     traits: DerivedTraits;
     evolution: EvolutionData;
     ritualProgress?: RitualProgress;
+    essence?: number;
+    lastRewardSource?: string | null;
+    lastRewardAmount?: number;
     achievements?: Achievement[];
     battle?: BattleStats;
     miniGames?: MiniGameProgress;
@@ -206,6 +212,9 @@ export function createMetaPetWebStore(
     traits: null,
     evolution: initializeEvolution(),
     ritualProgress: createDefaultRitualProgress(),
+    essence: 0,
+    lastRewardSource: null,
+    lastRewardAmount: 0,
     achievements: [],
     battle: createDefaultBattleStats(),
     miniGames: createDefaultMiniGameProgress(),
@@ -246,6 +255,11 @@ export function createMetaPetWebStore(
         traits: normalizeTraits(genome, traits),
         evolution: { ...evolution },
         ritualProgress: ritualProgress ? { ...ritualProgress, history: [...ritualProgress.history] } : state.ritualProgress,
+        essence: typeof essence === 'number' ? essence : state.essence,
+        lastRewardSource: typeof lastRewardSource === 'string' || lastRewardSource === null
+          ? lastRewardSource
+          : state.lastRewardSource,
+        lastRewardAmount: typeof lastRewardAmount === 'number' ? lastRewardAmount : state.lastRewardAmount,
         achievements: achievements ? achievements.map(entry => ({ ...entry })) : state.achievements,
         battle: battle ? { ...battle } : state.battle,
         miniGames: miniGames ? { ...miniGames } : state.miniGames,
@@ -556,6 +570,9 @@ export function createMetaPetWebStore(
             lastDayKey: progress.lastDayKey,
             history: [...progress.history],
           },
+          essence: state.essence + essenceDelta,
+          lastRewardSource: 'Ritual',
+          lastRewardAmount: essenceDelta,
           vitals: {
             ...state.vitals,
             mood: clamp(state.vitals.mood + moodBoost),
