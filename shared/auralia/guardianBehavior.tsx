@@ -122,9 +122,22 @@ export const DEFAULT_AUDIO_CONFIG: AudioConfig = {
 
 export interface InteractionResponse {
   reaction: {
-    type: 'delight' | 'excitement' | 'startle' | 'annoy' | 'fear';
+    type: 'delight' | 'excitement' | 'startle' | 'annoy' | 'fear' | 'joy' | 'curiosity' | 'affection';
     intensity: number;
-    visualEffect: 'glow' | 'bloom' | 'shimmer' | 'flicker' | 'spiral' | 'wave' | 'fragment' | 'contract';
+    visualEffect:
+      | 'glow'
+      | 'bloom'
+      | 'shimmer'
+      | 'flicker'
+      | 'spiral'
+      | 'wave'
+      | 'fragment'
+      | 'contract'
+      | 'ripple'
+      | 'burst'
+      | 'confetti'
+      | 'pulse'
+      | 'float';
   };
   timestamp: number;
 }
@@ -397,41 +410,70 @@ export function useGuardianInteraction(
 
   const handleGrab = useCallback((point?: { x: number; y: number }) => {
     setIsHeld(true);
-    sendReaction({ type: 'delight', intensity: 0.4, visualEffect: 'glow' });
-    if (point && callbacks.onWhisper) callbacks.onWhisper('You are seen.');
-  }, [callbacks, sendReaction]);
+    const bondLevel = normalizeStat(stats.bond);
+    const effect = bondLevel > 0.7 ? 'burst' : bondLevel > 0.4 ? 'ripple' : 'glow';
+    const reactionType = bondLevel > 0.7 ? 'affection' : 'delight';
+    sendReaction({ type: reactionType, intensity: 0.4 + bondLevel * 0.3, visualEffect: effect });
+    if (point && callbacks.onWhisper) {
+      const messages = ['You are seen.', 'Hello, friend.', 'I feel your presence.'];
+      callbacks.onWhisper(messages[Math.floor(prng() * messages.length)]);
+    }
+  }, [callbacks, sendReaction, stats, prng]);
 
   const handleRelease = useCallback((velocity?: { vx: number; vy: number }) => {
     setIsHeld(false);
-    if (velocity && (Math.abs(velocity.vx) + Math.abs(velocity.vy)) > 0.5) {
-      sendReaction({ type: 'startle', intensity: 0.6, visualEffect: 'fragment' });
+    const speed = velocity ? Math.abs(velocity.vx) + Math.abs(velocity.vy) : 0;
+    if (speed > 0.8) {
+      sendReaction({ type: 'startle', intensity: 0.8, visualEffect: 'fragment' });
+    } else if (speed > 0.5) {
+      sendReaction({ type: 'excitement', intensity: 0.5, visualEffect: 'spiral' });
     } else {
-      sendReaction({ type: 'delight', intensity: 0.2, visualEffect: 'bloom' });
+      sendReaction({ type: 'delight', intensity: 0.3, visualEffect: 'float' });
     }
   }, [sendReaction]);
 
   const handlePet = useCallback((point: { x: number; y: number }, intensity = 0.3) => {
-    sendReaction({ type: 'delight', intensity, visualEffect: 'glow' });
-    adjustStats({ bond: Math.round(intensity * 4) });
-  }, [adjustStats, sendReaction]);
+    const bondLevel = normalizeStat(stats.bond);
+    const effect = bondLevel > 0.6 ? 'confetti' : bondLevel > 0.3 ? 'burst' : 'pulse';
+    const reactionIntensity = intensity + bondLevel * 0.2;
+    sendReaction({ type: bondLevel > 0.7 ? 'joy' : 'delight', intensity: reactionIntensity, visualEffect: effect });
+    adjustStats({ bond: Math.round(intensity * 5), energy: 1 });
+    if (callbacks.onWhisper && prng() > 0.7) {
+      const messages = ['That feels wonderful!', 'More, please!', 'You brighten my field.'];
+      callbacks.onWhisper(messages[Math.floor(prng() * messages.length)]);
+    }
+  }, [adjustStats, sendReaction, stats, callbacks, prng]);
 
   const handleShake = useCallback((intensity = 0.5) => {
-    sendReaction({ type: 'startle', intensity, visualEffect: 'wave' });
-    adjustStats({ bond: -1 });
-  }, [adjustStats, sendReaction]);
+    sendReaction({ type: intensity > 0.6 ? 'fear' : 'startle', intensity, visualEffect: 'wave' });
+    adjustStats({ bond: -2, energy: -1 });
+    if (callbacks.onWhisper && prng() > 0.6) {
+      callbacks.onWhisper('Please, be gentle...');
+    }
+  }, [adjustStats, sendReaction, callbacks, prng]);
 
   const handleDrag = useCallback((point: { x: number; y: number }, velocity: { vx: number; vy: number }) => {
-    sendReaction({ type: 'excitement', intensity: clamp(Math.abs(velocity.vx) + Math.abs(velocity.vy), 0, 1), visualEffect: 'spiral' });
+    const speed = Math.abs(velocity.vx) + Math.abs(velocity.vy);
+    const effect = speed > 0.7 ? 'spiral' : speed > 0.3 ? 'ripple' : 'pulse';
+    sendReaction({ type: 'excitement', intensity: clamp(speed, 0.2, 1), visualEffect: effect });
   }, [sendReaction]);
 
   const handlePoke = useCallback((point: { x: number; y: number }) => {
-    sendReaction({ type: 'startle', intensity: 0.35, visualEffect: 'contract' });
-  }, [sendReaction]);
+    const curiosityLevel = normalizeStat(stats.curiosity);
+    const effect = curiosityLevel > 0.5 ? 'burst' : 'contract';
+    const reactionType = curiosityLevel > 0.6 ? 'curiosity' : 'startle';
+    sendReaction({ type: reactionType, intensity: 0.35 + curiosityLevel * 0.2, visualEffect: effect });
+    adjustStats({ curiosity: 1 });
+  }, [sendReaction, stats, adjustStats]);
 
   const handleTickle = useCallback((point: { x: number; y: number }) => {
-    sendReaction({ type: 'delight', intensity: 0.5, visualEffect: 'shimmer' });
-    if (callbacks.onWhisper && prng() > 0.5) callbacks.onWhisper('That tickles!');
-  }, [callbacks, prng, sendReaction]);
+    sendReaction({ type: 'joy', intensity: 0.6, visualEffect: 'confetti' });
+    adjustStats({ bond: 2, energy: -1 });
+    if (callbacks.onWhisper && prng() > 0.5) {
+      const messages = ['That tickles!', 'Hehe!', 'Stop, that tickles!', 'You make me giggle!'];
+      callbacks.onWhisper(messages[Math.floor(prng() * messages.length)]);
+    }
+  }, [callbacks, prng, sendReaction, adjustStats]);
 
   return useMemo(
     () => ({
