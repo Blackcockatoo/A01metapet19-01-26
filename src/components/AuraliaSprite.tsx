@@ -196,23 +196,36 @@ const AuraliaSprite: React.FC<AuraliaSpriteProps> = ({
     return () => cancelAnimationFrame(animationFrame);
   }, [energy, center, colors, prng]);
 
-  // Mouse tracking for interactive mode
+  // Mouse/Touch tracking for interactive mode
+  const handlePointerMove = useCallback(
+    (clientX: number, clientY: number) => {
+      if (!interactive || !svgRef.current) return;
+
+      const rect = svgRef.current.getBoundingClientRect();
+      const x = ((clientX - rect.left) / rect.width) * sizeConfig.viewBox;
+      const y = ((clientY - rect.top) / rect.height) * sizeConfig.viewBox;
+
+      const dx = x - center;
+      const dy = y - center;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const maxDist = 3;
+
+      setEyePos({
+        x: (dx / Math.max(dist, 1)) * Math.min(dist / 20, maxDist),
+        y: (dy / Math.max(dist, 1)) * Math.min(dist / 20, maxDist),
+      });
+    },
+    [interactive, svgRef, sizeConfig.viewBox, center]
+  );
+
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (!interactive || !svgRef.current) return;
+    handlePointerMove(e.clientX, e.clientY);
+  };
 
-    const rect = svgRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * sizeConfig.viewBox;
-    const y = ((e.clientY - rect.top) / rect.height) * sizeConfig.viewBox;
-
-    const dx = x - center;
-    const dy = y - center;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    const maxDist = 3;
-
-    setEyePos({
-      x: (dx / Math.max(dist, 1)) * Math.min(dist / 20, maxDist),
-      y: (dy / Math.max(dist, 1)) * Math.min(dist / 20, maxDist),
-    });
+  const handleTouchMove = (e: React.TouchEvent<SVGSVGElement>) => {
+    if (e.touches.length > 0) {
+      handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
+    }
   };
 
   // Breath scale
@@ -293,8 +306,9 @@ const AuraliaSprite: React.FC<AuraliaSpriteProps> = ({
         <svg
           ref={svgRef}
           viewBox={`0 0 ${sizeConfig.viewBox} ${sizeConfig.viewBox}`}
-          className="w-full h-full relative z-10"
+          className="w-full h-full relative z-10 touch-none"
           onMouseMove={handleMouseMove}
+          onTouchMove={handleTouchMove}
           style={{ cursor: interactive ? 'pointer' : 'default' }}
         >
           <defs>
