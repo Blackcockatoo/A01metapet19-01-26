@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { generateSigilPoints, type GuardianSigilPoint } from '../../shared/auralia/guardianBehavior';
 
 type Particle = {
