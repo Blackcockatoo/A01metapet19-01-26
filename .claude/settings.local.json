@@ -38,7 +38,9 @@
       "Bash(cd:*)",
       "Bash(tree:*)",
       "Bash(wc:*)",
-      "Bash(bun --version:*)"
+      "Bash(bun --version:*)",
+      "Bash(git fetch:*)",
+      "Bash(git stash:*)"
     ],
     "deny": [],
     "ask": []
