@@ -33,6 +33,8 @@ import { MechanicsShowcase } from './auralia/MechanicsShowcase';
 import { YantraTileGenomeVisualizer } from './auralia/YantraTileGenomeVisualizer';
 import { calculateEyeState, EyeRenderer, type EyeState } from './auralia/EyeSystem';
 import { EyeEmotionFilters } from './auralia/EyeFilters';
+import { AddonRenderer, AddonSVGDefs } from './addons/AddonRenderer';
+import { useAddonStore } from '@/lib/addons';
 
 // ===== TYPE DEFINITIONS =====
 type Bigish = bigint | number;
@@ -259,6 +261,11 @@ const AuraliaMetaPet: React.FC = () => {
   const [autoSelectScale, setAutoSelectScale] = useState<boolean>(true);
 
   const stats = useMemo(() => ({ energy, curiosity, bond }), [energy, curiosity, bond]);
+
+  // Addon system integration
+  const { getEquippedAddons } = useAddonStore();
+  const equippedAddons = getEquippedAddons();
+  const [addonAnimationPhase, setAddonAnimationPhase] = useState(0);
 
   // Auto-select scale based on stats
   const effectiveScale = useMemo(() => {
@@ -1682,6 +1689,26 @@ const AuraliaMetaPet: React.FC = () => {
     return () => cancelAnimationFrame(rafId);
   }, [eyeState.pupilSize, eyeState.emotion]);
 
+  // Addon animation loop
+  useEffect(() => {
+    if (!isVisible || reduceMotion) return;
+
+    let rafId: number;
+    let lastTime = Date.now();
+
+    const animateAddons = () => {
+      const now = Date.now();
+      const delta = now - lastTime;
+      lastTime = now;
+
+      setAddonAnimationPhase((prev) => prev + delta);
+      rafId = requestAnimationFrame(animateAddons);
+    };
+
+    rafId = requestAnimationFrame(animateAddons);
+    return () => cancelAnimationFrame(rafId);
+  }, [isVisible, reduceMotion]);
+
   // Calculate time in state for debug overlay
   const timeInState = Math.floor((Date.now() - aiState.since) / 1000);
 
@@ -1850,6 +1877,9 @@ const AuraliaMetaPet: React.FC = () => {
 
                   {/* Eye emotion filters and effects */}
                   <EyeEmotionFilters />
+
+                  {/* Addon filters and effects */}
+                  <AddonSVGDefs />
                   
                   <filter id="formTransitionFilter">
                     <feTurbulence type="fractalNoise" baseFrequency="0.1" numOctaves="3" result="turbulence">
@@ -2046,6 +2076,17 @@ const AuraliaMetaPet: React.FC = () => {
                     </>
                   )}
                 </g>
+
+                {/* Equipped addons */}
+                {equippedAddons.map((addon) => (
+                  <AddonRenderer
+                    key={addon.id}
+                    addon={addon}
+                    petSize={60}
+                    petPosition={{ x: 200, y: 180 }}
+                    animationPhase={addonAnimationPhase}
+                  />
+                ))}
 
                 {auraRipples.map(r => (
                   <g key={r.id} opacity={r.life}>

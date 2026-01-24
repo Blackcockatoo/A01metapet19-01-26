@@ -1,17 +1,19 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '@/lib/store';
 import { HUD } from '@/components/HUD';
 import AuraliaMetaPet from '@/components/AuraliaMetaPet';
 import { Button } from '@/components/ui/button';
 import { PetResponseOverlay } from '@/components/PetResponseOverlay';
-import { ArrowLeft } from 'lucide-react';
+import { AddonInventoryPanel } from '@/components/addons/AddonInventoryPanel';
+import { ArrowLeft, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PetPage() {
   const startTick = useStore(s => s.startTick);
   const stopTick = useStore(s => s.stopTick);
+  const [showAddonPanel, setShowAddonPanel] = useState(false);
 
   useEffect(() => {
     startTick();
@@ -36,6 +38,26 @@ export default function PetPage() {
           </Button>
         </Link>
       </div>
+
+      {/* Addons button */}
+      <div className="absolute top-4 right-4 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowAddonPanel(!showAddonPanel)}
+          className="gap-2 border-purple-700 bg-purple-900/80 text-purple-200 hover:bg-purple-800"
+        >
+          <Sparkles className="w-4 h-4" />
+          Addons
+        </Button>
+      </div>
+
+      {/* Addon Inventory Panel */}
+      {showAddonPanel && (
+        <div className="absolute top-16 right-4 z-50 max-w-2xl">
+          <AddonInventoryPanel />
+        </div>
+      )}
 
       {/* Main Pet Window - Full Screen */}
       <div className="flex-1 flex flex-col items-center justify-center p-4">
