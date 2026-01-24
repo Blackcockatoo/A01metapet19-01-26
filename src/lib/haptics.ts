@@ -6,7 +6,7 @@
 export type HapticPattern = 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' | 'selection';
 
 interface HapticConfig {
-  duration: number;
+  duration?: number;
   pattern?: number[];
 }
 
@@ -46,7 +46,7 @@ export function triggerHaptic(pattern: HapticPattern = 'light', force = false): 
   try {
     if (config.pattern) {
       navigator.vibrate(config.pattern);
-    } else {
+    } else if (config.duration) {
       navigator.vibrate(config.duration);
     }
   } catch (error) {
