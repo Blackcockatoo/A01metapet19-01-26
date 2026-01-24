@@ -7,6 +7,7 @@ import AuraliaMetaPet from '@/components/AuraliaMetaPet';
 import { Button } from '@/components/ui/button';
 import { PetResponseOverlay } from '@/components/PetResponseOverlay';
 import { AddonInventoryPanel } from '@/components/addons/AddonInventoryPanel';
+import { initializeStarterAddons } from '@/lib/addons/starter';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
@@ -14,11 +15,24 @@ export default function PetPage() {
   const startTick = useStore(s => s.startTick);
   const stopTick = useStore(s => s.stopTick);
   const [showAddonPanel, setShowAddonPanel] = useState(false);
+  const [addonsInitialized, setAddonsInitialized] = useState(false);
 
   useEffect(() => {
     startTick();
     return () => stopTick();
   }, [startTick, stopTick]);
+
+  // Initialize starter addons on first load
+  useEffect(() => {
+    if (!addonsInitialized) {
+      initializeStarterAddons().then((result) => {
+        if (result.success) {
+          console.log(`Addon system initialized! Created ${result.addonsCreated} starter addons.`);
+          setAddonsInitialized(true);
+        }
+      });
+    }
+  }, [addonsInitialized]);
 
   return (
     <div className="w-screen h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 flex flex-col overflow-auto">
