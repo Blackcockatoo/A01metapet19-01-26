@@ -31,23 +31,24 @@ export const AddonRenderer: React.FC<AddonRendererProps> = ({
     let anchorY = baseY;
 
     // Adjust anchor based on attachment point
+    // Auralia pet coordinates: body center (200, 210), head center (200, 145)
     switch (attachment.anchorPoint) {
       case 'head':
-        anchorY = baseY - petSize * 0.4;
+        anchorY = baseY - 65; // Head is 65px above body center
         break;
       case 'body':
         anchorY = baseY;
         break;
       case 'left-hand':
-        anchorX = baseX - petSize * 0.3;
-        anchorY = baseY + petSize * 0.2;
+        anchorX = baseX - 25;
+        anchorY = baseY + 20;
         break;
       case 'right-hand':
-        anchorX = baseX + petSize * 0.3;
-        anchorY = baseY + petSize * 0.2;
+        anchorX = baseX + 25;
+        anchorY = baseY + 20;
         break;
       case 'back':
-        anchorY = baseY + petSize * 0.1;
+        anchorY = baseY;
         break;
       case 'floating':
       case 'aura':

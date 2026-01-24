@@ -2082,8 +2082,8 @@ const AuraliaMetaPet: React.FC = () => {
                   <AddonRenderer
                     key={addon.id}
                     addon={addon}
-                    petSize={60}
-                    petPosition={{ x: 200, y: 180 }}
+                    petSize={80}
+                    petPosition={{ x: 200, y: 210 }}
                     animationPhase={addonAnimationPhase}
                   />
                 ))}
