@@ -28,7 +28,7 @@ export async function getHmacKey(): Promise<string> {
 }
 
 /**
- * Placeholder for the PrimeTailId minting process.
+ * Placeholder for the PrimeTail ID minting process.
  * @param dna The DNA string to mint the ID from.
  * @returns A promise that resolves to the PrimeTail ID string.
  */
@@ -51,7 +51,7 @@ export async function mintPrimeTailId(dna: string): Promise<string> {
 }
 
 /**
- * Placeholder for the PrimeTailId verification process.
+ * Placeholder for the PrimeTail ID verification process.
  * @param id The PrimeTail ID to verify.
  * @returns A promise that resolves to a boolean indicating verification success.
  */

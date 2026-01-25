@@ -1,4 +1,4 @@
-# PrimeTailId × HeptaCode v1 Scaffold
+# PrimeTail ID × HeptaCode v1 Scaffold
 
 Complete integration demo showcasing identity minting, error correction, MAC authentication, visual representation, audio chimes, and real-time vitals management.
 
@@ -26,11 +26,11 @@ Or click the "View Scaffold Demo" button on the home page.
 
 ## Features
 
-### ✅ **PrimeTailId Identity Minting**
+### ✅ **PrimeTail ID Identity Minting**
 - **HMAC-SHA256** cryptographic signing
 - **Device-bound keys** stored in localStorage
 - **DNA hash + mirror hash** (forward and reverse)
-- **Prime-Tail signature** (256-bit truncated HMAC)
+- **PrimeTail ID signature** (256-bit truncated HMAC)
 - **Vault, rotation, and tail** identity components
 - **Automatic verification** on mint
 
@@ -178,7 +178,7 @@ const SAFETY_RAILS = {
 ```
 1. Generate Mock DNA (64 chars)
    ↓
-2. Mint PrimeTailId (HMAC-SHA256)
+2. Mint PrimeTail ID (HMAC-SHA256)
    ↓
 3. Create HeptaPayload (vault, rotation, tail, epoch, nonce)
    ↓
@@ -195,7 +195,7 @@ const SAFETY_RAILS = {
 
 ```
 ScaffoldPage
-├── PrimeTailId Card (crest display)
+├── PrimeTail ID Card (crest display)
 ├── HeptaCode Card (visual + audio)
 │   ├── HeptaTag (3-ring visualization)
 │   └── Audio Controls (play/stop)
@@ -224,7 +224,7 @@ meta-pet/
 │       │   └── index.ts          # Zustand store (vitals)
 │       └── identity/
 │           ├── types.ts          # TypeScript interfaces
-│           ├── crest.ts          # PrimeTailId minting
+│           ├── crest.ts          # PrimeTail ID minting
 │           └── hepta/
 │               ├── index.ts      # Main API
 │               ├── codec.ts      # Pack/unpack with MAC
@@ -237,7 +237,7 @@ meta-pet/
 
 ## API Reference
 
-### **PrimeTailId**
+### **PrimeTail ID**
 
 ```typescript
 // Mint new identity
@@ -303,7 +303,7 @@ const vitals = useStore(s => s.vitals);
 ### **Manual Testing Checklist**
 
 - [ ] Navigate to `/scaffold`
-- [ ] Verify PrimeTailId displays with "Verified" badge
+- [ ] Verify PrimeTail ID displays with "Verified" badge
 - [ ] Check HeptaTag renders with 42 colored dots
 - [ ] Click "Play Chime" and hear audio (7-note sequence)
 - [ ] Toggle mock mode switches
@@ -423,7 +423,7 @@ pnpm dev
 
 ## Credits
 
-**Architecture**: PrimeTailId + HeptaCode v1
+**Architecture**: PrimeTail ID + HeptaCode v1
 **Tech Stack**: Next.js 15, React 18, Zustand, Web Audio API, Web Crypto API
 **Styling**: Tailwind CSS, shadcn/ui
 **Testing**: Vitest, React Testing Library
