@@ -9,7 +9,7 @@ import { PetResponseOverlay } from '@/components/PetResponseOverlay';
 import { AddonInventoryPanel } from '@/components/addons/AddonInventoryPanel';
 import { PetProfilePanel } from '@/components/addons/PetProfilePanel';
 import { initializeStarterAddons } from '@/lib/addons/starter';
-import { ArrowLeft, Sparkles, Shield, Move, UserCircle } from 'lucide-react';
+import { Sparkles, Shield, Move, UserCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PetPage() {
@@ -41,20 +41,6 @@ export default function PetPage() {
     <div className="w-screen h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 flex flex-col overflow-auto">
       {/* Real-time Response Overlay */}
       <PetResponseOverlay enableAudio={true} enableAnticipation={true} />
-
-      {/* Back button */}
-      <div className="absolute top-4 left-4 z-50">
-        <Link href="/">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 border-slate-700 bg-slate-900/80 text-zinc-300 hover:bg-slate-800"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </Button>
-        </Link>
-      </div>
 
       {/* Top right buttons */}
       <div className="absolute top-4 right-4 z-50 flex gap-2">
