@@ -1684,9 +1684,9 @@ const AuraliaMetaPet: React.FC<AuraliaMetaPetProps> = ({
     const targetSize = eyeState.pupilSize;
 
     let rafId: number;
-    let startTime = Date.now();
+    const startTime = Date.now();
     const duration = eyeState.emotion === 'surprised' || eyeState.emotion === 'scared' ? 200 : 500;
-    let startSize = pupilSize;
+    const startSize = pupilSize;
 
     const animate = () => {
       const elapsed = Date.now() - startTime;

@@ -53,7 +53,7 @@ export function calculateEyeState(
   const { activeForm, annoyanceLevel, transformationMode, aiState, currentGame, isBlinking, recentEvents = [] } = context;
 
   // Default state
-  let state: EyeState = {
+  const state: EyeState = {
     emotion: 'normal',
     shape: 'round',
     pupilSize: 8,

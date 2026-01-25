@@ -87,6 +87,10 @@ describe('Store State Management', () => {
         hygiene: 50,
         mood: 50,
         energy: 50,
+        isSick: false,
+        sicknessSeverity: 0,
+        sicknessType: 'none',
+        deathCount: 0,
       },
       genome: null,
       traits: null,
@@ -219,6 +223,10 @@ describe('Store State Management', () => {
           hygiene: 80,
           mood: 80,
           energy: 80,
+          isSick: false,
+          sicknessSeverity: 0,
+          sicknessType: 'none',
+          deathCount: 0,
         },
       });
 
@@ -373,6 +381,10 @@ describe('Store State Management', () => {
           hygiene: 85,
           mood: 90,
           energy: 65,
+          isSick: false,
+          sicknessSeverity: 0,
+          sicknessType: 'none' as const,
+          deathCount: 0,
         },
         genome: createMockGenome(2),
         traits: createMockTraits({
@@ -431,7 +443,7 @@ describe('Store State Management', () => {
       useStore.setState({ tickId: 12345 as unknown as ReturnType<typeof setInterval> });
 
       useStore.getState().hydrate({
-        vitals: { hunger: 50, hygiene: 50, mood: 50, energy: 50 },
+        vitals: { hunger: 50, hygiene: 50, mood: 50, energy: 50, isSick: false, sicknessSeverity: 0, sicknessType: 'none' as const, deathCount: 0 },
         genome: createMockGenome(5),
         traits: createMockTraits(),
         evolution: initializeEvolution(),
