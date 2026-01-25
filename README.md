@@ -71,16 +71,38 @@ meta-pet/
 │   │   │   ├── encoder.ts        # Red60/Blue60/Black60 encoding
 │   │   │   ├── decoder.ts        # Trait derivation logic
 │   │   │   └── index.ts          # Public API
+│   │   ├── addons/               # Crypto-secured addon system
+│   │   │   ├── types.ts          # Addon interfaces
+│   │   │   ├── crypto.ts         # ECDSA P-256 signing/verification
+│   │   │   ├── catalog.tsx       # 12 addon templates (6 standard + 6 premium)
+│   │   │   ├── mint.ts           # Addon minting with dual signatures
+│   │   │   ├── store.ts          # Zustand inventory management
+│   │   │   ├── starter.ts        # Demo starter addon setup
+│   │   │   └── index.ts          # Public API
+│   │   ├── lineage/              # Heraldic lineage system
+│   │   │   ├── types.ts          # Coat of arms types
+│   │   │   ├── generator.ts      # CoA generation, breeding, analysis
+│   │   │   └── index.ts          # Public API
 │   │   └── store/
 │   │       └── index.ts          # Zustand (vitals + genome + tick)
 │   ├── components/
 │   │   ├── HUD.tsx               # Vitals + actions
 │   │   ├── TraitPanel.tsx        # Genome trait display
-│   │   ├── PetSprite.tsx         # Visual pet (SVG + genome-driven)
+│   │   ├── AuraliaMetaPet.tsx    # Main pet component (3000+ lines)
+│   │   ├── AuraliaSprite.tsx     # Visual pet (SVG + genome-driven)
 │   │   ├── HeptaTag.tsx          # 7-sided visual
-│   │   └── SeedOfLifeGlyph.tsx   # Sacred geometry
+│   │   ├── SeedOfLifeGlyph.tsx   # Sacred geometry
+│   │   ├── addons/               # Addon UI components
+│   │   │   ├── AddonRenderer.tsx       # SVG addon rendering + drag
+│   │   │   ├── AddonInventoryPanel.tsx # Inventory management UI
+│   │   │   ├── PetProfilePanel.tsx     # Profile with CoA + addons
+│   │   │   └── CryptoKeyDisplay.tsx    # Key pair display
+│   │   └── lineage/              # Lineage UI components
+│   │       └── CoatOfArmsRenderer.tsx  # SVG coat of arms rendering
 │   └── app/
-│       └── page.tsx              # Main demo
+│       ├── page.tsx              # Main demo
+│       ├── pet/page.tsx          # Pet viewer with addons
+│       └── addons-demo/page.tsx  # Addon system demo
 ```
 
 ---
@@ -233,7 +255,72 @@ if (canBreed(pet1Evolution.state, pet2Evolution.state)) {
 }
 ```
 
-### 7. Privacy Presets
+### 7. Crypto-Secured Addon System
+```ts
+import { useAddonStore, mintAddon, WIZARD_HAT, generateAddonKeypair } from '@/lib/addons';
+
+// Generate cryptographic keypairs
+const userKeys = await generateAddonKeypair();
+const issuerKeys = await generateAddonKeypair();
+
+// Mint a new addon with dual signatures
+const addon = await mintAddon(
+  { addonTypeId: WIZARD_HAT.id, recipientPublicKey: userKeys.publicKey, edition: 1 },
+  issuerKeys.privateKey, issuerKeys.publicKey, userKeys.privateKey
+);
+
+// Add to inventory and equip
+const { addAddon, equipAddon } = useAddonStore();
+await addAddon(addon);
+equipAddon(addon.id);
+
+// Drag-position customization
+const { setAddonPosition, lockAddonPosition } = useAddonStore();
+setAddonPosition(addon.id, 220, 150); // Custom position
+lockAddonPosition(addon.id, true);     // Lock in place
+```
+
+**Available Addons (12 templates):**
+| Addon | Category | Rarity | Bonuses | Max Editions |
+|-------|----------|--------|---------|--------------|
+| Wizard Hat | Headwear | Epic | +15 Curiosity, +10 Bond | 100 |
+| Wizard Staff | Weapon | Legendary | +20 Energy/Curiosity, +15 Bond, +10 Luck | 50 |
+| Celestial Crown | Headwear | Mythic | +25 All Stats, +20 Luck | 10 |
+| Shadow Cloak | Accessory | Rare | +5 Energy, +10 Bond | 200 |
+| Prismatic Aura | Aura | Epic | +10 Energy/Curiosity/Bond | 150 |
+| Floating Familiar | Companion | Legendary | +20 Bond, +15 Luck | 75 |
+| **Holographic Vault** | Effect | Mythic | +25 Bond, +20 Luck | 25 |
+| **Ethereal Background** | Effect | Mythic | +30 Energy, +25 Curiosity | 25 |
+| **Quantum Data Flow** | Effect | Mythic | +25 Energy, +30 Curiosity, +15 Luck | 25 |
+| **Phoenix Wings** | Accessory | Legendary | +30 Energy, +15 Curiosity, +20 Luck | 30 |
+| **Crystal Heart** | Companion | Epic | +35 Bond, +10 Energy | 50 |
+| **Void Mask** | Headwear | Mythic | +40 Curiosity, +15 Bond, +25 Luck | 15 |
+
+### 8. Heraldic Lineage System
+```ts
+import { generateFounderCoatOfArms, breedCoatsOfArms, analyzeLineage, getBlason } from '@/lib/lineage';
+
+// Generate founder coat of arms
+const coa = generateFounderCoatOfArms(petId, seed);
+console.log(getBlason(coa)); // "Azure, bearing a star Or, a lion Gules"
+
+// Breed two coats of arms
+const { offspring, inheritance } = breedCoatsOfArms(parent1Coa, parent2Coa, offspringId, seed);
+console.log(`Generation ${offspring.generation} coat with ${offspring.charges.length} charges`);
+
+// Analyze lineage
+const analysis = analyzeLineage(offspring);
+console.log(`Dominant colors: ${analysis.dominantTinctures.join(', ')}`);
+console.log(`Inbreeding coefficient: ${analysis.inbreedingCoefficient}`);
+console.log(`Lineage purity: ${(analysis.purity * 100).toFixed(1)}%`);
+```
+
+**Heraldic Components:**
+- **8 Divisions**: plain, per-pale, per-fess, per-bend, per-saltire, quarterly, chevron, canton
+- **8 Tinctures**: Or (gold), Argent (silver), Azure (blue), Gules (red), Sable (black), Vert (green), Purpure (purple), Tenné (orange)
+- **14 Charges**: star, moon, sun, cross, chevron, lion, eagle, tree, flower, crown, key, sword, book, orb
+
+### 9. Privacy Presets
 
 The dashboard ships with three share-level presets that re-encode the 42-digit HeptaCode on demand:
 
@@ -305,7 +392,7 @@ Changing the preset regenerates the digits with a fresh nonce and stores the cho
 
 ## Current Status
 
-**Version 7 - Phase 3 & 4 Complete** ✅
+**Version 8 - Addon & Lineage Systems Complete** ✅
 - Identity core: **WORKING**
 - Genome system: **WORKING** (Red60/Blue60/Black60 encoding + trait derivation)
 - Visual pet sprite: **WORKING** (genome-driven SVG rendering)
@@ -318,6 +405,8 @@ Changing the preset regenerates the digits with a fresh nonce and stores the cho
 - **Mini-Games: WORKING** (memory, rhythm, pattern recognition)
 - **Cosmetics: WORKING** (10 items, 4 categories, unlock system)
 - **Achievements: WORKING** (17 achievements, 4 tiers, progress tracking)
+- **Addon System: WORKING** (crypto-secured, 12 addons, drag positioning)
+- **Lineage System: WORKING** (heraldic coat of arms, breeding inheritance)
 - HeptaCode: **PARTIAL** (needs ECC fix)
 - Visual components: **WORKING**
 
@@ -334,6 +423,9 @@ Changing the preset regenerates the digits with a fresh nonce and stores the cho
 - ✅ **10 cosmetic items across 4 categories**
 - ✅ **17 achievements with progress tracking**
 - ✅ **Unified features dashboard with tabbed interface**
+- ✅ **Crypto-secured addon system with ECDSA signatures**
+- ✅ **Heraldic lineage system with breeding inheritance**
+- ✅ **12 addon templates (6 standard + 6 premium)**
 
 **Known Issues:**
 - HeptaCode ECC needs to output 42 digits (currently variable)
@@ -341,13 +433,13 @@ Changing the preset regenerates the digits with a fresh nonce and stores the cho
 - Audio (playHepta) not implemented yet
 - Some pre-existing linting warnings (not in new features)
 
-**Recent Additions (v7):**
-- 🗺️ Vimana exploration system with deterministic grid generation
-- ⚔️ Consciousness-based battle system with energy shields
-- 🎮 Complete mini-games suite with pattern recognition
-- ✨ Cosmetics system with 10 unlockable items
-- 🏆 Achievement system with 17 milestones
-- 📊 Unified features dashboard with 5-tab interface
+**Recent Additions (v8):**
+- 🎭 Crypto-secured addon system with ECDSA P-256 signatures
+- 🛡️ Heraldic lineage system with coat of arms breeding
+- ✨ 12 addon templates including 6 premium mythic items
+- 🎯 Drag-to-position addon customization with lock/reset
+- 📜 Lineage analysis with inbreeding coefficient tracking
+- 🏰 8 heraldic divisions, 8 tinctures, 14 charges for coat of arms
 
 ---
 

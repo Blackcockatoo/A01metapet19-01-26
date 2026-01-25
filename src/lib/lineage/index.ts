@@ -18,4 +18,5 @@ export {
   generateFounderCoatOfArms,
   breedCoatsOfArms,
   getBlason,
+  analyzeLineage,
 } from './generator';

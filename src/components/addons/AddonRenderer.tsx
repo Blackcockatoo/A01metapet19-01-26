@@ -67,10 +67,17 @@ export const AddonRenderer: React.FC<AddonRendererProps> = ({
         break;
       case 'back':
         anchorY = baseY;
+        anchorX = baseX; // Center on body but rendered behind
         break;
       case 'floating':
+        // Floating items start from body center
+        anchorX = baseX;
+        anchorY = baseY - 30; // Slightly above body
+        break;
       case 'aura':
-        // Use offset directly
+        // Aura surrounds the body center
+        anchorX = baseX;
+        anchorY = baseY;
         break;
     }
 

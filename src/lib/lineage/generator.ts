@@ -324,3 +324,93 @@ function ordinal(n: number): string {
   const v = n % 100;
   return n + (suffix[(v - 20) % 10] || suffix[v] || suffix[0]);
 }
+
+/**
+ * Analyze lineage from a coat of arms and optional lineage record
+ */
+export function analyzeLineage(
+  coatOfArms: CoatOfArms,
+  lineageRecord?: {
+    parent1?: { coatOfArms: CoatOfArms };
+    parent2?: { coatOfArms: CoatOfArms };
+  }
+): {
+  generations: number;
+  uniqueAncestors: number;
+  founderCount: number;
+  dominantTinctures: HeraldTincture[];
+  dominantCharges: HeraldCharge[];
+  inbreedingCoefficient: number;
+  purity: number;
+} {
+  const tinctureCounts: Record<string, number> = {};
+  const chargeCounts: Record<string, number> = {};
+
+  // Count current coat of arms elements
+  tinctureCounts[coatOfArms.field] = (tinctureCounts[coatOfArms.field] || 0) + 1;
+  if (coatOfArms.fieldSecondary) {
+    tinctureCounts[coatOfArms.fieldSecondary] = (tinctureCounts[coatOfArms.fieldSecondary] || 0) + 1;
+  }
+
+  coatOfArms.charges.forEach(c => {
+    chargeCounts[c.charge] = (chargeCounts[c.charge] || 0) + 1;
+    tinctureCounts[c.tincture] = (tinctureCounts[c.tincture] || 0) + 1;
+  });
+
+  // Count lineage marker elements
+  coatOfArms.lineageMarkers.forEach(marker => {
+    tinctureCounts[marker.tincture] = (tinctureCounts[marker.tincture] || 0) + 1;
+    chargeCounts[marker.charge] = (chargeCounts[marker.charge] || 0) + 1;
+  });
+
+  // Find dominant tinctures and charges
+  const sortedTinctures = Object.entries(tinctureCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([t]) => t as HeraldTincture);
+
+  const sortedCharges = Object.entries(chargeCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([c]) => c as HeraldCharge);
+
+  // Calculate unique ancestors from lineage markers
+  const uniqueAncestorMarkers = new Set<string>();
+  coatOfArms.lineageMarkers.forEach(marker => {
+    uniqueAncestorMarkers.add(`${marker.generation}-${marker.side}-${marker.charge}-${marker.tincture}`);
+  });
+
+  // Calculate inbreeding coefficient (simplified)
+  // If the same charge+tincture combo appears multiple times in lineage, there's potential inbreeding
+  const markerCombos: Record<string, number> = {};
+  coatOfArms.lineageMarkers.forEach(marker => {
+    const combo = `${marker.charge}-${marker.tincture}`;
+    markerCombos[combo] = (markerCombos[combo] || 0) + 1;
+  });
+
+  const duplicateMarkers = Object.values(markerCombos).filter(count => count > 1).length;
+  const totalMarkerCombos = Object.keys(markerCombos).length;
+  const inbreedingCoefficient = totalMarkerCombos > 0
+    ? Math.min(1, duplicateMarkers / totalMarkerCombos)
+    : 0;
+
+  // Calculate purity (how consistent the lineage is in terms of colors/charges)
+  const topTinctureCount = sortedTinctures.length > 0 ? tinctureCounts[sortedTinctures[0]] : 0;
+  const totalTinctures = Object.values(tinctureCounts).reduce((a, b) => a + b, 0);
+  const purity = totalTinctures > 0 ? topTinctureCount / totalTinctures : 1;
+
+  // Calculate founder count (lineage markers at the highest generation)
+  const maxGen = coatOfArms.lineageMarkers.reduce((max, m) => Math.max(max, m.generation), 0);
+  const founderCount = coatOfArms.generation === 0 ? 1 :
+    coatOfArms.lineageMarkers.filter(m => m.generation === maxGen).length || 2;
+
+  return {
+    generations: coatOfArms.generation,
+    uniqueAncestors: uniqueAncestorMarkers.size + (coatOfArms.generation > 0 ? 2 : 0),
+    founderCount,
+    dominantTinctures: sortedTinctures,
+    dominantCharges: sortedCharges,
+    inbreedingCoefficient,
+    purity,
+  };
+}

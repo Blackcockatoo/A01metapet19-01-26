@@ -84,41 +84,83 @@ equipAddon(addon.id);
 
 ## 🎨 Available Addons
 
-### Wizard Hat (Epic)
+### Standard Addons
+
+#### Wizard Hat (Epic)
 - **Category**: Headwear
 - **Bonuses**: +15 Curiosity, +10 Bond
 - **Max Editions**: 100
 - **Visual**: Deep purple pointed hat with gold accents and floating particles
 
-### Wizard Staff (Legendary)
+#### Wizard Staff (Legendary)
 - **Category**: Weapon
 - **Bonuses**: +20 Energy, +20 Curiosity, +15 Bond, +10 Luck
 - **Max Editions**: 50
 - **Visual**: Ancient wooden staff with glowing cyan crystal
 
-### Celestial Crown (Mythic)
+#### Celestial Crown (Mythic)
 - **Category**: Headwear
 - **Bonuses**: +25 Energy, +25 Curiosity, +25 Bond, +20 Luck
 - **Max Editions**: 10
 - **Visual**: Radiant golden crown with shimmering effect
 
-### Shadow Cloak (Rare)
+#### Shadow Cloak (Rare)
 - **Category**: Accessory
 - **Bonuses**: +5 Energy, +10 Bond
 - **Max Editions**: 200
 - **Visual**: Mysterious dark cloak with flowing animation
 
-### Prismatic Aura (Epic)
+#### Prismatic Aura (Epic)
 - **Category**: Aura
 - **Bonuses**: +10 Energy, +10 Curiosity, +10 Bond
 - **Max Editions**: 150
 - **Visual**: Rainbow shimmer effect with particle ambient
 
-### Floating Familiar (Legendary)
+#### Floating Familiar (Legendary)
 - **Category**: Companion
 - **Bonuses**: +20 Bond, +15 Luck
 - **Max Editions**: 75
 - **Visual**: Small ethereal companion with trail particles
+
+---
+
+### Premium Addons ✨
+
+#### Holographic Vault (Mythic)
+- **Category**: Effect
+- **Bonuses**: +25 Bond, +20 Luck
+- **Max Editions**: 25
+- **Visual**: Floating 3D cube vault with holographic display panels and ambient particles
+
+#### Ethereal Background Engine (Mythic)
+- **Category**: Effect
+- **Bonuses**: +30 Energy, +25 Curiosity
+- **Max Editions**: 25
+- **Visual**: Flowing ethereal waves pattern with shimmer animation and 25 ambient particles
+
+#### Quantum Data Flow (Mythic)
+- **Category**: Effect
+- **Bonuses**: +25 Energy, +30 Curiosity, +15 Luck
+- **Max Editions**: 25
+- **Visual**: Orbiting data streams with quantum rings, nodes, and 16 orbiting particles
+
+#### Phoenix Wings (Legendary)
+- **Category**: Accessory
+- **Bonuses**: +30 Energy, +15 Curiosity, +20 Luck
+- **Max Editions**: 30
+- **Visual**: Majestic fiery wings with feather patterns and trailing ember particles
+
+#### Crystal Heart (Epic)
+- **Category**: Companion
+- **Bonuses**: +35 Bond, +10 Energy
+- **Max Editions**: 50
+- **Visual**: Floating crystalline heart with facets, pulse animation and ambient particles
+
+#### Mask of the Void (Mythic)
+- **Category**: Headwear
+- **Bonuses**: +40 Curiosity, +15 Bond, +25 Luck
+- **Max Editions**: 15
+- **Visual**: Ornate mysterious mask with eye holes, decorative patterns, and void particles
 
 ## 🔐 How Crypto Security Works
 

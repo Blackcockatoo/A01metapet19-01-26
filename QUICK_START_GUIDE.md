@@ -1,6 +1,57 @@
 # 🎮 New Features Quick Start Guide
 
-## What's New in Version 7
+## What's New in Version 8
+
+### 🎭 Crypto-Secured Addons
+Equip your pet with cryptographically-signed cosmetic items.
+
+**How to Use:**
+1. Click **Profile** button (top right) to open profile panel
+2. Navigate to the **Addons** tab
+3. Click **Addons** button to open inventory
+4. Click an addon to equip it
+5. Enable **Edit Mode** to drag and reposition addons
+6. Lock position when satisfied
+
+**Addon Categories:**
+- **Headwear**: Hats, crowns, masks
+- **Weapons**: Staffs, wands
+- **Accessories**: Cloaks, wings
+- **Auras**: Glowing effects
+- **Companions**: Floating familiars
+- **Effects**: Particle systems, data flows
+
+**Premium Addons (Limited Editions):**
+- Holographic Vault (25 editions)
+- Ethereal Background (25 editions)
+- Quantum Data Flow (25 editions)
+- Phoenix Wings (30 editions)
+- Crystal Heart (50 editions)
+- Mask of the Void (15 editions)
+
+### 🛡️ Heraldic Lineage
+Your pet has a unique coat of arms that tracks ancestry.
+
+**View Your Coat of Arms:**
+1. Click **Profile** button
+2. See your shield with its division, colors, and charges
+3. Click **Regenerate** for a new random design
+4. Breed pets to create offspring with inherited coats
+
+**Heraldic Elements:**
+- **8 Divisions**: How the shield is divided (quarterly, per-pale, etc.)
+- **8 Tinctures**: Colors (gold, silver, blue, red, black, green, purple, orange)
+- **14 Charges**: Symbols (lion, eagle, crown, star, sword, etc.)
+
+**Lineage Analysis:**
+- Generation tracking (how many ancestors)
+- Dominant colors in your lineage
+- Inbreeding coefficient detection
+- Lineage purity percentage
+
+---
+
+## What's in Version 7
 
 ### 🗺️ Vimana Exploration
 Navigate a 4×4 sacred field grid to discover anomalies and collect samples.
@@ -97,9 +148,18 @@ Track your progress and earn rewards.
 - Vitals boosts
 - Special badges
 
-## 📱 Navigating the Features Dashboard
+## 📱 Navigating the Pet Page
 
-The new dashboard has 5 tabs:
+### Top Right Controls
+| Button | Function |
+|--------|----------|
+| **Edit** | Toggle addon drag mode |
+| **Profile** | Open coat of arms & addon settings |
+| **Addons** | Open addon inventory |
+
+### Features Dashboard
+
+The features dashboard has 5 tabs:
 
 | Tab | Icon | Features |
 |-----|------|----------|
@@ -176,6 +236,47 @@ http://localhost:3000
 5. Unlock cosmetics and achievements
 ```
 
+## 🎭 Addon Tips
+
+### Position Customization
+1. Enable **Edit Mode** (top right button)
+2. Hover over an addon to see controls
+3. Drag to reposition
+4. Click 🔓 to lock in place
+5. Click ↺ to reset to default
+
+### Addon Bonuses
+Equipped addons provide stat bonuses:
+- **Energy**: Power for battles
+- **Curiosity**: Exploration bonuses
+- **Bond**: Connection strength
+- **Luck**: Better rewards
+
+### Premium Addons
+- Mythic and Legendary rarity
+- Limited edition counts
+- Unique particle effects
+- Higher stat bonuses
+
+## 🛡️ Lineage Tips
+
+### Coat of Arms Inheritance
+When breeding:
+- 45% chance from parent 1
+- 45% chance from parent 2
+- 10% mutation chance
+
+### Breeding Results
+- Division may combine (→ quarterly)
+- Colors inherit from both parents
+- Charges mix (1-2 from each parent)
+- 10% chance of new mutation charge
+
+### Lineage Tracking
+- Generation number shows ancestry depth
+- Lineage markers appear on shield border
+- Higher generations = more complex coats
+
 ## 🎉 Have Fun!
 
 All features are designed to work together:
@@ -184,5 +285,7 @@ All features are designed to work together:
 - **Mini-games** boost **Vitals**
 - **Evolution** opens new **Areas**
 - **Achievements** track **Progress**
+- **Addons** enhance **Appearance** + stats
+- **Breeding** creates **Lineage** history
 
-Enjoy your enhanced Meta-Pet experience! 🧬✨
+Enjoy your enhanced Meta-Pet experience! 🧬✨🛡️🎭

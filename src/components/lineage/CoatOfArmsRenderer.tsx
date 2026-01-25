@@ -159,12 +159,30 @@ const ShieldField: React.FC<ShieldFieldProps> = ({ division, field, fieldSeconda
         </g>
       );
 
-    case 'per-bend': // Diagonal
+    case 'per-bend': // Diagonal (top-left to bottom-right)
       return (
         <g>
-          <path d="M 12 12 L 88 12 L 12 98 Z" fill={fieldColor} />
-          <path d={clipPath} fill={fieldSecondaryColor} />
-          <path d="M 12 12 L 88 12 L 12 98 Z" fill={fieldColor} />
+          <clipPath id="shieldClip">
+            <path d={clipPath} />
+          </clipPath>
+          <g clipPath="url(#shieldClip)">
+            <path d="M 12 12 L 88 12 L 88 98 L 12 98 Z" fill={fieldSecondaryColor} />
+            <path d="M 12 12 L 88 12 L 12 98 Z" fill={fieldColor} />
+          </g>
+        </g>
+      );
+
+    case 'per-saltire': // X-shaped division
+      return (
+        <g>
+          <clipPath id="shieldClipSaltire">
+            <path d={clipPath} />
+          </clipPath>
+          <g clipPath="url(#shieldClipSaltire)">
+            <path d={clipPath} fill={fieldColor} />
+            <path d="M 50 55 L 12 12 L 88 12 Z" fill={fieldSecondaryColor} />
+            <path d="M 50 55 L 88 12 L 88 98 Z" fill={fieldSecondaryColor} />
+          </g>
         </g>
       );
 
@@ -172,7 +190,15 @@ const ShieldField: React.FC<ShieldFieldProps> = ({ division, field, fieldSeconda
       return (
         <g>
           <path d={clipPath} fill={fieldSecondaryColor} />
-          <path d="M 12 80 L 50 40 L 88 80 L 88 60 Q 88 84 50 98 Q 12 84 12 60 Z" fill={fieldColor} />
+          <path d="M 12 65 L 50 30 L 88 65 L 88 60 Q 88 84 50 98 Q 12 84 12 60 Z" fill={fieldColor} />
+        </g>
+      );
+
+    case 'canton': // Small square in top-left corner
+      return (
+        <g>
+          <path d={clipPath} fill={fieldColor} />
+          <rect x="12" y="12" width="30" height="30" fill={fieldSecondaryColor} />
         </g>
       );
 
