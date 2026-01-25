@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Image as ImageIcon, Save } from 'lucide-react';
+import { Image as ImageIcon, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   useIdentityProfileStore,
@@ -106,12 +105,7 @@ export default function IdentityPage() {
               Keep your contact details and avatar synced across QR messaging and pet profiles.
             </p>
           </div>
-          <Link href="/">
-            <Button variant="outline" size="sm" className="gap-2 border-slate-700 bg-slate-900/70 text-slate-200">
-              <ArrowLeft className="w-4 h-4" />
-              Back Home
-            </Button>
-          </Link>
+          <div className="text-xs uppercase tracking-[0.3em] text-slate-500">Quick Access</div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
