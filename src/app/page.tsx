@@ -65,6 +65,7 @@ import {
   Gamepad2,
   Save,
   QrCode,
+  UserCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { PetResponseOverlay } from '@/components/PetResponseOverlay';
@@ -1076,6 +1077,16 @@ export default function Home() {
               >
                 <QrCode className="w-4 h-4" />
                 QR Messaging
+              </Button>
+            </Link>
+            <Link href="/identity">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 border-purple-500/60 text-purple-300 hover:bg-purple-500/10"
+              >
+                <UserCircle className="w-4 h-4" />
+                Identity
               </Button>
             </Link>
           </div>
