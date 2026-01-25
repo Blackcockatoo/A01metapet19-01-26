@@ -9,6 +9,7 @@ import { CoatOfArmsRenderer } from '@/components/lineage/CoatOfArmsRenderer';
 import { CryptoKeyDisplay } from './CryptoKeyDisplay';
 import { generateFounderCoatOfArms, getBlason } from '@/lib/lineage';
 import type { CoatOfArms } from '@/lib/lineage';
+import { useIdentityProfileStore } from '@/lib/identity/profile';
 
 interface PetProfilePanelProps {
   petId?: string;
@@ -25,6 +26,10 @@ export const PetProfilePanel: React.FC<PetProfilePanelProps> = ({
 }) => {
   const [coatOfArms, setCoatOfArms] = useState<CoatOfArms | null>(null);
   const [activeTab, setActiveTab] = useState<'coat' | 'keys' | 'addons'>('coat');
+  const profile = useIdentityProfileStore(state => state.profile);
+
+  const identityLabel = profile.username.trim() || 'Unnamed Owner';
+  const identityEmail = profile.email.trim() || 'Add email on the Identity page';
 
   // Generate or load coat of arms
   useEffect(() => {
@@ -63,6 +68,30 @@ export const PetProfilePanel: React.FC<PetProfilePanelProps> = ({
           {petName} Profile
         </h2>
         <p className="text-xs text-slate-400 mt-1">Lineage, Identity & Customization</p>
+      </div>
+
+      {/* Owner Identity Summary */}
+      <div className="px-4 py-3 border-b border-slate-700 bg-slate-900/70">
+        <p className="text-[0.65rem] uppercase tracking-[0.2em] text-slate-400">
+          Owner Identity
+        </p>
+        <div className="mt-2 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-700">
+            {profile.avatarDataUrl ? (
+              <img
+                src={profile.avatarDataUrl}
+                alt="Owner avatar"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="text-xs text-slate-400">👤</span>
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm text-white truncate">{identityLabel}</p>
+            <p className="text-xs text-slate-400 truncate">{identityEmail}</p>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}

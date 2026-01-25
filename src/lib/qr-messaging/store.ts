@@ -26,10 +26,13 @@ import {
   generateMessageId,
   generateNonce,
 } from './crypto';
+import { getPreferredIdentity, loadIdentityProfile } from '@/lib/identity/profile';
 
 /** Initial state */
+const identityProfile = loadIdentityProfile();
+const initialLocalIdentity = getPreferredIdentity(identityProfile);
 const initialState: QRMessagingState = {
-  localIdentity: '',
+  localIdentity: initialLocalIdentity,
   localKeyPair: null,
   conversations: {},
   activeConversationId: null,

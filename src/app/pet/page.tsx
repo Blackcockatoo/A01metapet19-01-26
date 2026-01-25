@@ -9,7 +9,7 @@ import { PetResponseOverlay } from '@/components/PetResponseOverlay';
 import { AddonInventoryPanel } from '@/components/addons/AddonInventoryPanel';
 import { PetProfilePanel } from '@/components/addons/PetProfilePanel';
 import { initializeStarterAddons } from '@/lib/addons/starter';
-import { ArrowLeft, Sparkles, Shield, Move } from 'lucide-react';
+import { ArrowLeft, Sparkles, Shield, Move, UserCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PetPage() {
@@ -58,6 +58,16 @@ export default function PetPage() {
 
       {/* Top right buttons */}
       <div className="absolute top-4 right-4 z-50 flex gap-2">
+        <Link href="/identity">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-indigo-700 bg-indigo-900/80 text-indigo-200 hover:bg-indigo-800"
+          >
+            <UserCircle className="w-4 h-4" />
+            Identity
+          </Button>
+        </Link>
         {/* Edit Mode Toggle */}
         <Button
           variant="outline"
