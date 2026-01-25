@@ -2,6 +2,11 @@
 
 Complete integration demo showcasing identity minting, error correction, MAC authentication, visual representation, audio chimes, and real-time vitals management.
 
+## Identity Glossary
+
+For definitions of PrimeTail, HeptaCode, crest, and DNA hash relationships, see
+[`docs/identity-glossary.md`](docs/identity-glossary.md).
+
 ## Quick Start
 
 ```bash
