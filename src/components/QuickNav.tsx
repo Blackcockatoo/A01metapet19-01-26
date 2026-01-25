@@ -81,7 +81,7 @@ export function QuickNav() {
           variant="ghost"
           size="icon"
           onClick={handleBack}
-          className="h-11 w-11 rounded-full text-slate-200 hover:bg-slate-800/80 touch-manipulation"
+          className="h-14 w-14 rounded-full text-slate-200 hover:bg-slate-800/80 touch-manipulation"
           aria-label="Go back"
           title="Back"
         >
@@ -97,7 +97,7 @@ export function QuickNav() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-11 w-11 rounded-full text-slate-200 hover:bg-slate-800/80 data-[active=true]:bg-cyan-500/20 data-[active=true]:text-cyan-200 touch-manipulation"
+                className="h-14 w-14 rounded-full text-slate-200 hover:bg-slate-800/80 data-[active=true]:bg-cyan-500/20 data-[active=true]:text-cyan-200 touch-manipulation"
                 data-active={isActive}
                 aria-label={item.label}
                 title={item.label}
