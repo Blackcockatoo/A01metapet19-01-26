@@ -15,7 +15,7 @@ export default function ClientBody({
   }, []);
 
   return (
-    <div className="antialiased">
+    <div className="antialiased min-h-screen pb-[calc(6rem+env(safe-area-inset-bottom))]">
       {children}
       <QuickNav />
     </div>

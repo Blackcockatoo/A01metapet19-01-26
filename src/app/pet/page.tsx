@@ -37,8 +37,33 @@ export default function PetPage() {
     }
   }, [addonsInitialized]);
 
+  const handleToggleProfilePanel = () => {
+    setShowProfilePanel((prev) => {
+      const next = !prev;
+      if (next) {
+        setShowAddonPanel(false);
+      }
+      return next;
+    });
+  };
+
+  const handleToggleAddonPanel = () => {
+    setShowAddonPanel((prev) => {
+      const next = !prev;
+      if (next) {
+        setShowProfilePanel(false);
+      }
+      return next;
+    });
+  };
+
+  const closePanels = () => {
+    setShowAddonPanel(false);
+    setShowProfilePanel(false);
+  };
+
   return (
-    <div className="w-screen h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 flex flex-col overflow-auto">
+    <div className="w-screen min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 flex flex-col overflow-auto pb-[calc(6rem+env(safe-area-inset-bottom))]">
       {/* Real-time Response Overlay */}
       <PetResponseOverlay enableAudio={true} enableAnticipation={true} />
 
@@ -71,7 +96,7 @@ export default function PetPage() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setShowProfilePanel(!showProfilePanel)}
+          onClick={handleToggleProfilePanel}
           className={`gap-2 ${showProfilePanel
             ? 'border-amber-500 bg-amber-600 text-white hover:bg-amber-700'
             : 'border-amber-700 bg-amber-900/80 text-amber-200 hover:bg-amber-800'}`}
@@ -84,7 +109,7 @@ export default function PetPage() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setShowAddonPanel(!showAddonPanel)}
+          onClick={handleToggleAddonPanel}
           className={`gap-2 ${showAddonPanel
             ? 'border-purple-500 bg-purple-600 text-white hover:bg-purple-700'
             : 'border-purple-700 bg-purple-900/80 text-purple-200 hover:bg-purple-800'}`}
@@ -93,6 +118,15 @@ export default function PetPage() {
           Addons
         </Button>
       </div>
+
+      {(showProfilePanel || showAddonPanel) && (
+        <button
+          type="button"
+          aria-label="Close panels"
+          className="fixed inset-0 z-40 bg-black/50"
+          onClick={closePanels}
+        />
+      )}
 
       {/* Profile Panel (Coat of Arms, Keys, etc.) */}
       {showProfilePanel && (

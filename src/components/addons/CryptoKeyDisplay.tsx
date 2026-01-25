@@ -19,6 +19,7 @@ export const CryptoKeyDisplay: React.FC<CryptoKeyDisplayProps> = ({
   const [userKeys, setUserKeys] = useState<{ publicKey: string; privateKey: string } | null>(null);
   const [issuerKeys, setIssuerKeys] = useState<{ publicKey: string; privateKey: string } | null>(null);
   const [showKeys, setShowKeys] = useState(false);
+  const [privateConfirmed, setPrivateConfirmed] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [regenerating, setRegenerating] = useState(false);
 
@@ -107,7 +108,15 @@ export const CryptoKeyDisplay: React.FC<CryptoKeyDisplayProps> = ({
           <span className="text-xl">🔐</span> Your Crypto Keys
         </h3>
         <button
-          onClick={() => setShowKeys(!showKeys)}
+          onClick={() => {
+            setShowKeys((prev) => {
+              const next = !prev;
+              if (!next) {
+                setPrivateConfirmed(false);
+              }
+              return next;
+            });
+          }}
           className="text-sm text-slate-400 hover:text-white"
         >
           {showKeys ? 'Hide Keys' : 'Show Keys'}
@@ -116,6 +125,22 @@ export const CryptoKeyDisplay: React.FC<CryptoKeyDisplayProps> = ({
 
       {showKeys && (
         <div className="space-y-4">
+          {showPrivate && !privateConfirmed && (
+            <div className="bg-red-950/50 border border-red-800/60 rounded-lg p-3">
+              <p className="text-sm text-red-200 font-semibold mb-2">Private key hidden</p>
+              <p className="text-xs text-red-200/80">
+                Revealing your private key can expose control of your addons. Make sure you are in
+                a private space before continuing.
+              </p>
+              <button
+                onClick={() => setPrivateConfirmed(true)}
+                className="mt-3 text-xs bg-red-600 hover:bg-red-500 text-white px-3 py-2 rounded"
+              >
+                Reveal Private Key
+              </button>
+            </div>
+          )}
+
           {/* Public Key */}
           <div className="bg-slate-800/50 rounded-lg p-3">
             <div className="flex items-center justify-between mb-2">
@@ -133,7 +158,7 @@ export const CryptoKeyDisplay: React.FC<CryptoKeyDisplayProps> = ({
           </div>
 
           {/* Private Key */}
-          {showPrivate && (
+          {showPrivate && privateConfirmed && (
             <div className="bg-slate-800/50 rounded-lg p-3 border border-red-900/50">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-red-400">Private Key (Keep Secret!)</span>
