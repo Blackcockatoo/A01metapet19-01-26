@@ -1,17 +1,27 @@
 /**
- * AddonRenderer - Renders equipped addons on Auralia
+ * AddonRenderer - Renders equipped addons on Auralia with drag support
  */
 
 'use client';
 
-import React, { useMemo } from 'react';
-import type { Addon } from '@/lib/addons';
+import React, { useMemo, useState, useRef, useCallback } from 'react';
+import type { Addon, AddonPositionOverride } from '@/lib/addons';
 
 interface AddonRendererProps {
   addon: Addon;
   petSize?: number;
   petPosition?: { x: number; y: number };
   animationPhase?: number;
+  /** Custom position override from store */
+  positionOverride?: AddonPositionOverride;
+  /** Whether dragging is enabled */
+  draggable?: boolean;
+  /** Callback when position changes */
+  onPositionChange?: (x: number, y: number) => void;
+  /** Callback to toggle lock */
+  onToggleLock?: (locked: boolean) => void;
+  /** Callback to reset position */
+  onResetPosition?: () => void;
 }
 
 export const AddonRenderer: React.FC<AddonRendererProps> = ({
@@ -19,11 +29,19 @@ export const AddonRenderer: React.FC<AddonRendererProps> = ({
   petSize = 100,
   petPosition = { x: 0, y: 0 },
   animationPhase = 0,
+  positionOverride,
+  draggable = false,
+  onPositionChange,
+  onToggleLock,
+  onResetPosition,
 }) => {
   const { attachment, visual } = addon;
+  const [isDragging, setIsDragging] = useState(false);
+  const [showControls, setShowControls] = useState(false);
+  const dragStartRef = useRef<{ x: number; y: number; posX: number; posY: number } | null>(null);
 
-  // Calculate position based on attachment point
-  const position = useMemo(() => {
+  // Calculate default position based on attachment point
+  const defaultPosition = useMemo(() => {
     const baseX = petPosition.x;
     const baseY = petPosition.y;
 
@@ -60,7 +78,57 @@ export const AddonRenderer: React.FC<AddonRendererProps> = ({
       x: anchorX + attachment.offset.x,
       y: anchorY + attachment.offset.y,
     };
-  }, [petPosition, petSize, attachment]);
+  }, [petPosition, attachment]);
+
+  // Use custom position if available, otherwise use default
+  const position = useMemo(() => {
+    if (positionOverride) {
+      return { x: positionOverride.x, y: positionOverride.y };
+    }
+    return defaultPosition;
+  }, [positionOverride, defaultPosition]);
+
+  const isLocked = positionOverride?.locked ?? false;
+
+  // Handle mouse down for dragging
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!draggable || isLocked) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    setIsDragging(true);
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      posX: position.x,
+      posY: position.y,
+    };
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!dragStartRef.current) return;
+
+      const dx = moveEvent.clientX - dragStartRef.current.x;
+      const dy = moveEvent.clientY - dragStartRef.current.y;
+
+      // Scale the movement based on SVG viewBox vs actual size
+      const scaleFactor = 400 / (document.querySelector('.auralia-pet-svg')?.getBoundingClientRect().width || 400);
+
+      const newX = dragStartRef.current.posX + dx * scaleFactor;
+      const newY = dragStartRef.current.posY + dy * scaleFactor;
+
+      onPositionChange?.(newX, newY);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      dragStartRef.current = null;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [draggable, isLocked, position, onPositionChange]);
 
   // Animation transform
   const animationTransform = useMemo(() => {
@@ -105,7 +173,82 @@ export const AddonRenderer: React.FC<AddonRendererProps> = ({
     <g
       transform={`translate(${position.x}, ${position.y}) rotate(${attachment.rotation}) scale(${attachment.scale})`}
       opacity={opacity}
+      onMouseEnter={() => draggable && setShowControls(true)}
+      onMouseLeave={() => !isDragging && setShowControls(false)}
+      style={{ cursor: draggable && !isLocked ? 'grab' : 'default' }}
+      onMouseDown={handleMouseDown}
     >
+      {/* Drag indicator / selection highlight */}
+      {draggable && showControls && (
+        <g className="addon-controls">
+          {/* Selection outline */}
+          <circle
+            cx="0"
+            cy="0"
+            r="35"
+            fill="none"
+            stroke={isLocked ? '#22c55e' : '#3b82f6'}
+            strokeWidth="2"
+            strokeDasharray={isLocked ? 'none' : '4 2'}
+            opacity="0.7"
+          />
+
+          {/* Lock indicator */}
+          {isLocked && (
+            <g transform="translate(25, -25)">
+              <circle cx="0" cy="0" r="8" fill="#22c55e" />
+              <text x="0" y="4" textAnchor="middle" fontSize="10" fill="white">🔒</text>
+            </g>
+          )}
+
+          {/* Control buttons (when not locked) */}
+          {!isLocked && (
+            <>
+              {/* Lock button */}
+              <g
+                transform="translate(30, -20)"
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleLock?.(true);
+                }}
+              >
+                <circle cx="0" cy="0" r="10" fill="#22c55e" opacity="0.9" />
+                <text x="0" y="4" textAnchor="middle" fontSize="10" fill="white">🔓</text>
+              </g>
+
+              {/* Reset button */}
+              <g
+                transform="translate(30, 10)"
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onResetPosition?.();
+                }}
+              >
+                <circle cx="0" cy="0" r="10" fill="#f59e0b" opacity="0.9" />
+                <text x="0" y="4" textAnchor="middle" fontSize="9" fill="white">↺</text>
+              </g>
+            </>
+          )}
+
+          {/* Unlock button (when locked) */}
+          {isLocked && (
+            <g
+              transform="translate(30, 0)"
+              style={{ cursor: 'pointer' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleLock?.(false);
+              }}
+            >
+              <circle cx="0" cy="0" r="10" fill="#ef4444" opacity="0.9" />
+              <text x="0" y="4" textAnchor="middle" fontSize="9" fill="white">🔓</text>
+            </g>
+          )}
+        </g>
+      )}
+
       {/* Main addon visual */}
       {visual.svgPath && (
         <g transform={animationTransform}>

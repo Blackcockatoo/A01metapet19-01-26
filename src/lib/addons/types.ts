@@ -112,6 +112,15 @@ export interface Addon {
 }
 
 /**
+ * Custom position override for addon (user-defined via drag)
+ */
+export interface AddonPositionOverride {
+  x: number;
+  y: number;
+  locked: boolean;
+}
+
+/**
  * User's addon inventory
  */
 export interface AddonInventory {
@@ -128,6 +137,8 @@ export interface AddonInventory {
   };
   /** User's public key for ownership verification */
   ownerPublicKey: string;
+  /** Custom position overrides per addon (user-set via dragging) */
+  positionOverrides?: Record<string, AddonPositionOverride>;
 }
 
 /**

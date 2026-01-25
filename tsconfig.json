@@ -48,6 +48,7 @@
   ],
   "exclude": [
     "node_modules",
-    "archive"
+    "archive",
+    "premium_addon_library"
   ]
 }

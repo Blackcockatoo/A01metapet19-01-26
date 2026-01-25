@@ -333,6 +333,137 @@ export const FLOATING_FAMILIAR: AddonTemplate = {
   },
 };
 
+// ============================================
+// PREMIUM ADDONS
+// ============================================
+
+/**
+ * Holographic Vault - Mythic effect addon (Premium)
+ */
+export const HOLOGRAPHIC_VAULT: AddonTemplate = {
+  id: 'holographic-vault-001',
+  name: 'Holographic Vault',
+  description: 'A secure, gesture-controlled 3D storage interface with cryptographic authentication.',
+  category: 'effect',
+  rarity: 'mythic',
+  attachment: {
+    anchorPoint: 'floating',
+    offset: { x: 0, y: 0, z: 0 },
+    scale: 1.0,
+    rotation: 0,
+    followAnimation: false,
+  },
+  visual: {
+    colors: {
+      primary: '#4f46e5',
+      secondary: '#7c3aed',
+      accent: '#22d3ee',
+      glow: 'rgba(79, 70, 229, 0.5)',
+    },
+    animation: {
+      type: 'shimmer',
+      duration: 2000,
+      easing: 'ease-in-out',
+    },
+  },
+  modifiers: {
+    bond: 25,
+    luck: 20,
+  },
+  metadata: {
+    creator: 'Auralia Premium Workshop',
+    tags: ['premium', 'vault', 'holographic', '3d', 'secure'],
+    maxEditions: 25,
+  },
+};
+
+/**
+ * Ethereal Background - Mythic effect addon (Premium)
+ */
+export const ETHEREAL_BACKGROUND: AddonTemplate = {
+  id: 'ethereal-background-001',
+  name: 'Ethereal Background Engine',
+  description: 'Reactive, generative background patterns with mouse-tracking spring physics.',
+  category: 'effect',
+  rarity: 'mythic',
+  attachment: {
+    anchorPoint: 'aura',
+    offset: { x: 0, y: 0, z: 0 },
+    scale: 1.0,
+    rotation: 0,
+    followAnimation: false,
+  },
+  visual: {
+    colors: {
+      primary: '#d946ef',
+      secondary: '#3b82f6',
+      accent: '#06b6d4',
+      glow: 'rgba(217, 70, 239, 0.4)',
+    },
+    animation: {
+      type: 'shimmer',
+      duration: 3000,
+      easing: 'linear',
+    },
+  },
+  modifiers: {
+    energy: 30,
+    curiosity: 25,
+  },
+  metadata: {
+    creator: 'Auralia Premium Workshop',
+    tags: ['premium', 'background', 'ethereal', 'reactive', 'generative'],
+    maxEditions: 25,
+  },
+};
+
+/**
+ * Quantum Data Flow - Mythic effect addon (Premium)
+ */
+export const QUANTUM_DATA_FLOW: AddonTemplate = {
+  id: 'quantum-data-flow-001',
+  name: 'Quantum Data Flow',
+  description: 'Real-time multi-dimensional data stream visualization with particle-based flow.',
+  category: 'effect',
+  rarity: 'mythic',
+  attachment: {
+    anchorPoint: 'floating',
+    offset: { x: 0, y: 0, z: 0 },
+    scale: 1.0,
+    rotation: 0,
+    followAnimation: false,
+  },
+  visual: {
+    colors: {
+      primary: '#06b6d4',
+      secondary: '#3b82f6',
+      accent: '#22d3ee',
+      glow: 'rgba(6, 182, 212, 0.5)',
+    },
+    animation: {
+      type: 'pulse',
+      duration: 1500,
+      easing: 'ease-in-out',
+    },
+    particles: {
+      count: 20,
+      color: '#22d3ee',
+      size: 1,
+      behavior: 'ambient',
+    },
+  },
+  modifiers: {
+    energy: 25,
+    curiosity: 30,
+    luck: 15,
+  },
+  metadata: {
+    creator: 'Auralia Premium Workshop',
+    tags: ['premium', 'quantum', 'data', 'particles', 'visualization'],
+    maxEditions: 25,
+  },
+};
+
 /**
  * All available addon templates
  */
@@ -343,6 +474,10 @@ export const ADDON_CATALOG: Record<string, AddonTemplate> = {
   'shadow-cloak-001': SHADOW_CLOAK,
   'prismatic-aura-001': PRISMATIC_AURA,
   'floating-familiar-001': FLOATING_FAMILIAR,
+  // Premium addons
+  'holographic-vault-001': HOLOGRAPHIC_VAULT,
+  'ethereal-background-001': ETHEREAL_BACKGROUND,
+  'quantum-data-flow-001': QUANTUM_DATA_FLOW,
 };
 
 /**

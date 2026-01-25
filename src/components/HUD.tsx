@@ -75,20 +75,32 @@ export function HUD() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <Button onClick={feed} className="gap-2">
+      <div className="grid grid-cols-4 gap-2">
+        <Button
+          onClick={feed}
+          className="gap-1.5 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white border-0 shadow-lg"
+        >
           <UtensilsCrossed className="w-4 h-4" />
           Feed
         </Button>
-        <Button onClick={clean} variant="secondary" className="gap-2">
+        <Button
+          onClick={clean}
+          className="gap-1.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white border-0 shadow-lg"
+        >
           <Droplets className="w-4 h-4" />
           Clean
         </Button>
-        <Button onClick={play} variant="outline" className="gap-2">
+        <Button
+          onClick={play}
+          className="gap-1.5 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white border-0 shadow-lg"
+        >
           <Sparkles className="w-4 h-4" />
           Play
         </Button>
-        <Button onClick={sleep} variant="ghost" className="gap-2">
+        <Button
+          onClick={sleep}
+          className="gap-1.5 bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white border-0 shadow-lg"
+        >
           <Zap className="w-4 h-4" />
           Sleep
         </Button>

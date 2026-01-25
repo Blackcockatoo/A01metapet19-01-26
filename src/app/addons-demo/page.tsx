@@ -1,7 +1,8 @@
 /**
  * Addon System Demo Page
  *
- * Showcases the crypto-secured addon system with wizard hat and staff
+ * Showcases the crypto-secured addon system with wizard hat and staff,
+ * coat of arms, crypto keys, and draggable addon positioning
  */
 
 'use client';
@@ -9,6 +10,8 @@
 import React, { useState, useEffect } from 'react';
 import { AddonInventoryPanel } from '@/components/addons/AddonInventoryPanel';
 import { AddonRenderer, AddonSVGDefs } from '@/components/addons/AddonRenderer';
+import { PetProfilePanel } from '@/components/addons/PetProfilePanel';
+import { CryptoKeyDisplay } from '@/components/addons/CryptoKeyDisplay';
 import {
   generateAddonKeypair,
   mintAddon,
@@ -32,8 +35,9 @@ export default function AddonsDemoPage() {
   );
   const [loading, setLoading] = useState(false);
   const [animationPhase, setAnimationPhase] = useState(0);
+  const [addonEditMode, setAddonEditMode] = useState(false);
 
-  const { addAddon, getEquippedAddons } = useAddonStore();
+  const { addAddon, getEquippedAddons, getAddonPosition, setAddonPosition, lockAddonPosition, resetAddonPosition, positionOverrides } = useAddonStore();
 
   // Initialize keys
   useEffect(() => {
@@ -139,22 +143,34 @@ export default function AddonsDemoPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">Auralia Addon System</h1>
-          <p className="text-slate-300">Crypto-Secured Cosmetic Items</p>
-          {userKeys && (
-            <p className="text-xs text-slate-500 mt-2">
-              Your Key: {userKeys.publicKey.substring(0, 20)}...
-            </p>
-          )}
+          <p className="text-slate-300">Crypto-Secured Cosmetic Items with Heraldic Lineage</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left: Preview */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left: Profile Panel */}
+          <div className="space-y-6">
+            <PetProfilePanel
+              petId="demo-auralia"
+              petName="Demo Auralia"
+              editMode={addonEditMode}
+              onEditModeChange={setAddonEditMode}
+            />
+          </div>
+
+          {/* Center: Preview */}
           <div className="space-y-6">
             {/* Pet Preview with Addons */}
             <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-6">
-              <h2 className="text-xl font-bold text-white mb-4">Preview</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-white">Preview</h2>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-2 py-1 rounded ${addonEditMode ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400'}`}>
+                    {addonEditMode ? 'Edit Mode ON' : 'Edit Mode OFF'}
+                  </span>
+                </div>
+              </div>
               <div className="aspect-square bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg flex items-center justify-center">
-                <svg viewBox="0 0 200 200" className="w-full h-full">
+                <svg viewBox="0 0 200 200" className="auralia-pet-svg w-full h-full">
                   <AddonSVGDefs />
 
                   {/* Simple Auralia representation */}
@@ -206,10 +222,24 @@ export default function AddonsDemoPage() {
                       petSize={40}
                       petPosition={{ x: 100, y: 100 }}
                       animationPhase={animationPhase}
+                      positionOverride={positionOverrides?.[addon.id]}
+                      draggable={addonEditMode}
+                      onPositionChange={(x, y) => setAddonPosition(addon.id, x, y)}
+                      onToggleLock={(locked) => lockAddonPosition(addon.id, locked)}
+                      onResetPosition={() => resetAddonPosition(addon.id)}
                     />
                   ))}
                 </svg>
               </div>
+
+              {/* Edit Mode Instructions */}
+              {addonEditMode && (
+                <div className="mt-4 bg-blue-900/30 border border-blue-700/50 rounded-lg p-3">
+                  <p className="text-xs text-blue-200">
+                    <strong>Edit Mode Active:</strong> Drag addons to reposition. Hover for lock/reset controls.
+                  </p>
+                </div>
+              )}
 
               {/* Equipped Addons List */}
               <div className="mt-4">
@@ -221,9 +251,12 @@ export default function AddonsDemoPage() {
                     {equippedAddons.map((addon) => (
                       <div
                         key={addon.id}
-                        className="text-xs text-slate-300 bg-slate-800/50 rounded px-2 py-1"
+                        className="text-xs text-slate-300 bg-slate-800/50 rounded px-2 py-1 flex items-center justify-between"
                       >
-                        {addon.name} ({addon.category})
+                        <span>{addon.name} ({addon.category})</span>
+                        {positionOverrides?.[addon.id]?.locked && (
+                          <span className="text-green-400 text-xs">🔒 Locked</span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -283,15 +316,36 @@ export default function AddonsDemoPage() {
 
         {/* Info */}
         <div className="mt-8 bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 text-sm text-blue-200">
-          <h3 className="font-bold mb-2">🔐 How Crypto-Secured Addons Work:</h3>
-          <ul className="list-disc list-inside space-y-1 text-xs">
-            <li>Each addon is cryptographically signed with ECDSA (P-256)</li>
-            <li>Ownership is verified via dual signatures (owner + issuer)</li>
-            <li>Addons cannot be copied - the signature proves authenticity</li>
-            <li>Transfers require the owner's private key to sign</li>
-            <li>All addons are verified before being added to inventory</li>
-            <li>Your keys are stored locally and never leave your browser</li>
-          </ul>
+          <h3 className="font-bold mb-2">How the System Works:</h3>
+          <div className="grid md:grid-cols-3 gap-4 text-xs">
+            <div>
+              <h4 className="font-semibold text-blue-300 mb-1">🔐 Crypto Security</h4>
+              <ul className="list-disc list-inside space-y-1">
+                <li>ECDSA P-256 signatures</li>
+                <li>Dual signatures (owner + issuer)</li>
+                <li>Non-copyable ownership proof</li>
+                <li>Secure local key storage</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-amber-300 mb-1">🛡️ Coat of Arms</h4>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Unique heraldic identifier</li>
+                <li>Encodes pet lineage</li>
+                <li>Traditional heraldic symbols</li>
+                <li>Breeds combine parent coats</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-purple-300 mb-1">✨ Addon Positioning</h4>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Drag to reposition</li>
+                <li>Lock positions in place</li>
+                <li>Reset to defaults</li>
+                <li>Per-addon customization</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>

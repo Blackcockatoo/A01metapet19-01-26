@@ -14,6 +14,7 @@ export type {
   AddonVerificationResult,
   AddonMintRequest,
   AddonTransfer,
+  AddonPositionOverride,
 } from './types';
 
 export type { AddonTemplate } from './catalog';

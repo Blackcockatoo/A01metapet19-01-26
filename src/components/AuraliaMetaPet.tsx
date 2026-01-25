@@ -193,7 +193,17 @@ const rotatePiece = (shape: number[][]): number[][] => {
 };
 
 // ===== MAIN COMPONENT =====
-const AuraliaMetaPet: React.FC = () => {
+interface AuraliaMetaPetProps {
+  /** External control of addon edit mode */
+  addonEditMode?: boolean;
+  /** Callback when edit mode changes internally */
+  onAddonEditModeChange?: (enabled: boolean) => void;
+}
+
+const AuraliaMetaPet: React.FC<AuraliaMetaPetProps> = ({
+  addonEditMode: externalEditMode,
+  onAddonEditModeChange,
+}) => {
   const [seedName, setSeedName] = useState<string>("AURALIA");
   const [field, setField] = useState<Field>(() => initField("AURALIA"));
   const [energy, setEnergy] = useState<number>(50);
@@ -263,9 +273,17 @@ const AuraliaMetaPet: React.FC = () => {
   const stats = useMemo(() => ({ energy, curiosity, bond }), [energy, curiosity, bond]);
 
   // Addon system integration
-  const { getEquippedAddons } = useAddonStore();
+  const { getEquippedAddons, getAddonPosition, setAddonPosition, lockAddonPosition, resetAddonPosition, positionOverrides } = useAddonStore();
   const equippedAddons = getEquippedAddons();
   const [addonAnimationPhase, setAddonAnimationPhase] = useState(0);
+  const [internalEditMode, setInternalEditMode] = useState(false);
+
+  // Use external edit mode if provided, otherwise use internal state
+  const addonEditMode = externalEditMode !== undefined ? externalEditMode : internalEditMode;
+  const setAddonEditMode = (enabled: boolean) => {
+    setInternalEditMode(enabled);
+    onAddonEditModeChange?.(enabled);
+  };
 
   // Auto-select scale based on stats
   const effectiveScale = useMemo(() => {
@@ -1856,7 +1874,7 @@ const AuraliaMetaPet: React.FC = () => {
             <svg
               ref={svgRef}
               viewBox="0 0 400 400"
-              className="w-full h-full max-w-3xl relative z-10 cursor-pointer touch-none"
+              className="auralia-pet-svg w-full h-full max-w-3xl relative z-10 cursor-pointer touch-none"
               role="img"
               aria-label="Auralia guardian avatar - interact by petting, poking, or throwing"
               onMouseDown={handleOrbMouseDown}
@@ -2085,6 +2103,11 @@ const AuraliaMetaPet: React.FC = () => {
                     petSize={80}
                     petPosition={{ x: 200, y: 210 }}
                     animationPhase={addonAnimationPhase}
+                    positionOverride={positionOverrides?.[addon.id]}
+                    draggable={addonEditMode}
+                    onPositionChange={(x, y) => setAddonPosition(addon.id, x, y)}
+                    onToggleLock={(locked) => lockAddonPosition(addon.id, locked)}
+                    onResetPosition={() => resetAddonPosition(addon.id)}
                   />
                 ))}
 

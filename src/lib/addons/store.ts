@@ -4,7 +4,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Addon, AddonInventory, AddonTransfer } from './types';
+import type { Addon, AddonInventory, AddonTransfer, AddonPositionOverride } from './types';
 import { verifyAddon, verifyTransfer, generateNonce } from './crypto';
 import { signTransfer } from './crypto';
 
@@ -18,6 +18,12 @@ interface AddonStore extends AddonInventory {
   receiveAddon: (addon: Addon, transfer: AddonTransfer) => Promise<boolean>;
   verifyAllAddons: () => Promise<Record<string, boolean>>;
   setOwnerPublicKey: (publicKey: string) => void;
+
+  // Position management
+  setAddonPosition: (addonId: string, x: number, y: number) => void;
+  lockAddonPosition: (addonId: string, locked: boolean) => void;
+  resetAddonPosition: (addonId: string) => void;
+  getAddonPosition: (addonId: string) => AddonPositionOverride | undefined;
 
   // Getters
   getAddon: (addonId: string) => Addon | undefined;
@@ -33,6 +39,7 @@ export const useAddonStore = create<AddonStore>()(
       addons: {},
       equipped: {},
       ownerPublicKey: '',
+      positionOverrides: {},
 
       // Set owner public key
       setOwnerPublicKey: (publicKey: string) => {
@@ -113,6 +120,50 @@ export const useAddonStore = create<AddonStore>()(
           delete equipped[category];
           return { equipped };
         });
+      },
+
+      // Set custom position for an addon
+      setAddonPosition: (addonId: string, x: number, y: number) => {
+        set((state) => ({
+          positionOverrides: {
+            ...state.positionOverrides,
+            [addonId]: {
+              x,
+              y,
+              locked: state.positionOverrides?.[addonId]?.locked ?? false,
+            },
+          },
+        }));
+      },
+
+      // Lock/unlock addon position
+      lockAddonPosition: (addonId: string, locked: boolean) => {
+        set((state) => {
+          const existing = state.positionOverrides?.[addonId];
+          if (!existing) return state;
+          return {
+            positionOverrides: {
+              ...state.positionOverrides,
+              [addonId]: {
+                ...existing,
+                locked,
+              },
+            },
+          };
+        });
+      },
+
+      // Reset addon position to default
+      resetAddonPosition: (addonId: string) => {
+        set((state) => {
+          const { [addonId]: removed, ...rest } = state.positionOverrides || {};
+          return { positionOverrides: rest };
+        });
+      },
+
+      // Get custom position for an addon
+      getAddonPosition: (addonId: string) => {
+        return get().positionOverrides?.[addonId];
       },
 
       // Transfer an addon to another user
