@@ -147,7 +147,7 @@ const AddonCard: React.FC<AddonCardProps> = ({
         </div>
 
         {/* Name */}
-        <p className="text-xs text-white font-medium text-center line-clamp-2">
+        <p className="text-xs text-white font-medium text-center leading-snug break-words">
           {addon.name}
         </p>
       </div>

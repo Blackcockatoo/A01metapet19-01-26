@@ -98,7 +98,7 @@ export const PetProfilePanel: React.FC<PetProfilePanelProps> = ({
       <div className="flex border-b border-slate-700">
         <button
           onClick={() => setActiveTab('coat')}
-          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+          className={`flex-1 px-4 py-3 min-h-[44px] text-sm font-medium transition-colors ${
             activeTab === 'coat'
               ? 'bg-slate-800 text-white border-b-2 border-purple-500'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
@@ -108,7 +108,7 @@ export const PetProfilePanel: React.FC<PetProfilePanelProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('keys')}
-          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+          className={`flex-1 px-4 py-3 min-h-[44px] text-sm font-medium transition-colors ${
             activeTab === 'keys'
               ? 'bg-slate-800 text-white border-b-2 border-green-500'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
@@ -118,7 +118,7 @@ export const PetProfilePanel: React.FC<PetProfilePanelProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('addons')}
-          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+          className={`flex-1 px-4 py-3 min-h-[44px] text-sm font-medium transition-colors ${
             activeTab === 'addons'
               ? 'bg-slate-800 text-white border-b-2 border-blue-500'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
@@ -226,13 +226,14 @@ export const PetProfilePanel: React.FC<PetProfilePanelProps> = ({
                 </div>
                 <button
                   onClick={() => onEditModeChange?.(!editMode)}
-                  className={`relative w-14 h-7 rounded-full transition-colors ${
+                  className={`relative w-20 h-11 rounded-full transition-colors ${
                     editMode ? 'bg-blue-600' : 'bg-slate-600'
                   }`}
+                  aria-pressed={editMode}
                 >
                   <div
-                    className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-transform ${
-                      editMode ? 'translate-x-8' : 'translate-x-1'
+                    className={`absolute top-1 left-1 h-9 w-9 rounded-full bg-white transition-transform ${
+                      editMode ? 'translate-x-9' : 'translate-x-0'
                     }`}
                   />
                 </button>
