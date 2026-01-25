@@ -1,0 +1,90 @@
+\
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Meta-Pet Registration</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="wrap">
+    <header class="header">
+      <h1>Meta-Pet Registration Scroll</h1>
+      <p class="sub">Not a profile. A witness document.</p>
+    </header>
+
+    {% if errors %}
+      <section class="panel error">
+        <h2>Fix these and re-issue:</h2>
+        <ul>
+          {% for e in errors %}
+            <li>{{ e }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+
+    <form class="panel" method="post" action="{{ url_for('register') }}" enctype="multipart/form-data" novalidate>
+      <h2>Owner Link</h2>
+      <div class="grid">
+        <label>
+          <span>Email (private)</span>
+          <input name="owner_email" type="email" required placeholder="you@domain.com"
+                 value="{{ (form.get('owner_email') if form else '') | e }}">
+          <small>Used for recovery & bonding rituals. Never printed on the scroll.</small>
+        </label>
+
+        <label>
+          <span>Handle (public)</span>
+          <input name="owner_handle" type="text" placeholder="your_alias"
+                 value="{{ (form.get('owner_handle') if form else '') | e }}">
+          <small>3–20 chars. Letters/numbers/underscore/dot.</small>
+        </label>
+      </div>
+
+      <h2>Creature Record</h2>
+      <div class="grid">
+        <label>
+          <span>Pet name</span>
+          <input name="pet_name" type="text" required placeholder="Meta-Pet name"
+                 value="{{ (form.get('pet_name') if form else '') | e }}">
+          <small>2–24 chars. Keep it speakable.</small>
+        </label>
+
+        <label>
+          <span>Avatar / sigil</span>
+          <input name="avatar" type="file" accept=".png,.jpg,.jpeg,.webp" id="avatarInput">
+          <small>Optional. PNG/JPG/WEBP. Max 5MB.</small>
+        </label>
+      </div>
+
+      <div class="previewRow">
+        <div class="previewBox" id="previewBox" aria-label="avatar preview">
+          <span class="previewHint">Preview appears here.</span>
+          <img id="avatarPreview" alt="Avatar preview" />
+        </div>
+      </div>
+
+      <h2>Memory Seed</h2>
+      <label>
+        <span>Phrase (optional)</span>
+        <input name="memory_seed" type="text" maxlength="140" placeholder="a phrase to echo in the Care Loop"
+               value="{{ (form.get('memory_seed') if form else '') | e }}">
+        <small>Optional. Up to 140 characters.</small>
+      </label>
+
+      <div class="actions">
+        <button type="submit">Issue Scroll</button>
+        <p class="fine">By issuing, you confirm you have consent to use this email.</p>
+      </div>
+    </form>
+
+    <footer class="footer">
+      <p>Design note: This page is intentionally calm. The magic should happen after the papers are filed.</p>
+    </footer>
+  </main>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
