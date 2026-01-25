@@ -2,7 +2,7 @@ export type Vault = 'red' | 'blue' | 'black';
 export type Rotation = 'CW' | 'CCW';
 export type PrivacyPreset = 'stealth' | 'standard' | 'radiant';
 
-export interface PrimeTailId {
+export interface PrimeTailID {
   vault: Vault;
   rotation: Rotation;
   tail: [number, number, number, number]; // base-60 digits (0..59)

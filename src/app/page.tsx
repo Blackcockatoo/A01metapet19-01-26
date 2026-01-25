@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { mintPrimeTailId, getDeviceHmacKey } from '@/lib/identity/crest';
 import { heptaEncode42, playHepta } from '@/lib/identity/hepta';
 import { encodeGenome, decodeGenome, hashGenome, type Genome, type GenomeHash } from '@/lib/genome';
-import type { PrimeTailId, HeptaDigits, Rotation, Vault } from '@/lib/identity/types';
+import type { PrimeTailID, HeptaDigits, Rotation, Vault } from '@/lib/identity/types';
 import {
   savePet,
   loadPet,
@@ -170,7 +170,7 @@ export default function Home() {
   const evolution = useStore(s => s.evolution);
   const ritualProgress = useStore(s => s.ritualProgress);
   const addRitualRewards = useStore(s => s.addRitualRewards);
-  const [crest, setCrest] = useState<PrimeTailId | null>(null);
+  const [crest, setCrest] = useState<PrimeTailID | null>(null);
   const [heptaCode, setHeptaCode] = useState<HeptaDigits | null>(null);
   const [loading, setLoading] = useState(true);
   const [genomeHash, setGenomeHash] = useState<GenomeHash | null>(null);
@@ -202,7 +202,7 @@ export default function Home() {
 
   const debouncedSave = useMemo(() => createDebouncedSave(1_000), []);
 
-  const crestRef = useRef<PrimeTailId | null>(null);
+  const crestRef = useRef<PrimeTailID | null>(null);
   const heptaRef = useRef<HeptaDigits | null>(null);
   const sessionStartRef = useRef<number | null>(null);
 
@@ -1050,7 +1050,7 @@ export default function Home() {
             <Sparkles className="w-8 h-8 text-pink-400" />
           </div>
           <p className="text-zinc-400 text-sm mb-3">
-            Prime-Tail Crest • HeptaCode v1 • Live Vitals
+            PrimeTail ID • HeptaCode v1 • Live Vitals
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <Link href="/pet">
@@ -1158,7 +1158,7 @@ export default function Home() {
               <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800">
                 <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                   <Shield className="w-5 h-5 text-amber-400" />
-                  Prime-Tail Crest
+                  PrimeTail ID
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2 text-sm">

@@ -6,11 +6,13 @@
 
 ## What's Running Now
 
-✅ **Prime-Tail Crest System**
+✅ **PrimeTail ID System**
 - Mints unique crest with vault/rotation/tail
 - SHA-256 DNA + mirror hashes
 - HMAC signature for tamper-evidence
 - DNA stays **100% private** (only hashes visible)
+
+**Naming rationale:** We standardize on **PrimeTail ID** to emphasize the cryptographic identifier (vault/rotation/tail + hashes) rather than the visual crest. Formerly known as **Prime-Tail Crest** / **PrimeTailId**.
 
 ✅ **Genome Core** (Red60/Blue60/Black60)
 - Deterministic trait derivation from DNA hashes
@@ -60,7 +62,7 @@ meta-pet/
 │   ├── lib/
 │   │   ├── identity/
 │   │   │   ├── types.ts          # Core types
-│   │   │   ├── crest.ts          # PrimeTailId minting
+│   │   │   ├── crest.ts          # PrimeTail ID minting
 │   │   │   └── hepta/
 │   │   │       ├── codec.ts      # Payload → base-7
 │   │   │       ├── ecc.ts        # 6×7 error correction
@@ -337,7 +339,7 @@ Changing the preset regenerates the digits with a fresh nonce and stores the cho
 ## Next Steps (From Master Build Prompt)
 
 ### Phase 1: Complete Identity Layer
-- [x] Prime-Tail crest minting
+- [x] PrimeTail ID minting
 - [x] HeptaCode v1 (pack + MAC + base-7)
 - [x] **Genome Core (Red60/Blue60/Black60)**
 - [x] **Deterministic trait derivation**
@@ -449,7 +451,7 @@ Full spec: `docs/master-build-prompt.pdf` (attached by user)
 
 **TL;DR:**
 - Offline-first Meta-Pet (Tamagotchy × Vimana)
-- Prime-Tail Crest + HeptaCode v1 for identity
+- PrimeTail ID + HeptaCode v1 for identity
 - 4-state evolution (genetics → neuro → quantum → speciation)
 - Privacy-first (DNA never shared, time-boxed consent)
 - Success: D1 ≥ 45%, crash-free ≥ 99.5%, cold-start ≤ 2s

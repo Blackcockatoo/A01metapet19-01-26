@@ -7,7 +7,7 @@
 import type { PetType, Vitals, MirrorModeState } from '@/lib/store';
 import type { Genome, DerivedTraits, GenomeHash } from '@/lib/genome';
 import type { EvolutionData } from '@/lib/evolution';
-import type { HeptaDigits, PrimeTailId, Rotation, Vault } from '@/lib/identity/types';
+import type { HeptaDigits, PrimeTailID, Rotation, Vault } from '@/lib/identity/types';
 import { createDefaultRitualProgress, type RitualProgress } from '@/lib/ritual/types';
 import {
   type Achievement,
@@ -43,7 +43,7 @@ export interface PetSaveData {
   battle: BattleStats;
   miniGames: MiniGameProgress;
   vimana: VimanaState;
-  crest: PrimeTailId;
+  crest: PrimeTailID;
   heptaDigits: HeptaDigits;
   lastSaved: number;
   createdAt: number;
@@ -629,9 +629,9 @@ function normalizeRitualProgress(value: RitualProgress): RitualProgress {
   };
 }
 
-function isValidCrest(value: unknown): value is PrimeTailId {
+function isValidCrest(value: unknown): value is PrimeTailID {
   if (!value || typeof value !== 'object') return false;
-  const crest = value as PrimeTailId & { tail: number[] };
+  const crest = value as PrimeTailID & { tail: number[] };
   const vaults: Vault[] = ['red', 'blue', 'black'];
   const rotations: Rotation[] = ['CW', 'CCW'];
 

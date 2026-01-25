@@ -13,7 +13,8 @@ Capture the unique cryptographic identity visualization.
 - Rendered from same identity data
 - Interconnected circles pattern
 
-## Prime-Tail Crest
+## PrimeTail ID
+- Formerly known as Prime-Tail Crest / PrimeTailId
 - Full cryptographic identity display
 - Crest signature visualization
 - DNA hash indicators (never raw DNA)

@@ -17,7 +17,7 @@ import {
   stopHepta
 } from '@/lib/identity/hepta';
 import type {
-  PrimeTailId,
+  PrimeTailID,
   HeptaPayload,
   HeptaDigits,
   Vault,
@@ -66,7 +66,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * ScaffoldPage: Complete integration demo
- * - PrimeTailId identity minting
+ * - PrimeTail ID identity minting
  * - HeptaCode v1 (ECC, MAC, visuals, chime)
  * - Real-time vitals loop via Zustand
  * - Mock mode with safety rails
@@ -84,7 +84,7 @@ export default function ScaffoldPage() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [hmacKey, setHmacKey] = useState<CryptoKey | null>(null);
-  const [primeTailId, setPrimeTailId] = useState<PrimeTailId | null>(null);
+  const [primeTailId, setPrimeTailId] = useState<PrimeTailID | null>(null);
   const [heptaCode, setHeptaCode] = useState<HeptaDigits | null>(null);
    const [ritualPreset, setRitualPreset] = useState<PrivacyPreset>('standard');
    const [ritualNote, setRitualNote] = useState('');
@@ -125,7 +125,7 @@ export default function ScaffoldPage() {
       const rotation = rotations[Math.floor(Math.random() * rotations.length)];
       const tail = generateTail();
 
-      // Mint PrimeTailId
+      // Mint PrimeTail ID
       const crest = await mintPrimeTailId({
         dna,
         vault,
@@ -332,7 +332,7 @@ export default function ScaffoldPage() {
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
-            PrimeTailId × HeptaCode v1
+            PrimeTail ID × HeptaCode v1
           </h1>
           <p className="text-zinc-400">
             Complete scaffold with identity minting, ECC, MAC, visuals, chime & real-time vitals
@@ -365,10 +365,10 @@ export default function ScaffoldPage() {
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Left Column: Identity & HeptaCode */}
           <div className="space-y-6">
-            {/* PrimeTailId Card */}
+            {/* PrimeTail ID Card */}
             <div className="bg-zinc-800/50 backdrop-blur border border-zinc-700 rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold">PrimeTailId Crest</h2>
+                <h2 className="text-xl font-bold">PrimeTail ID</h2>
                 {isVerified !== null && (
                   <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${
                     isVerified
@@ -733,7 +733,7 @@ export default function ScaffoldPage() {
             <div className="bg-gradient-to-br from-purple-500/10 to-cyan-500/10 backdrop-blur border border-purple-500/30 rounded-2xl p-6">
               <h3 className="font-semibold text-purple-300 mb-3">Architecture</h3>
               <ul className="space-y-2 text-xs text-zinc-400">
-                <li>✓ PrimeTailId: HMAC-SHA256 identity signing</li>
+                <li>✓ PrimeTail ID: HMAC-SHA256 identity signing</li>
                 <li>✓ HeptaCode v1: 42-digit base-7 with ECC (6×7 blocks)</li>
                 <li>✓ MAC-28: Truncated HMAC for compact auth</li>
                 <li>✓ Audio: Web Audio API chime generation</li>

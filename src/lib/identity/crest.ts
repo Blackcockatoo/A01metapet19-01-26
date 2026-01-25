@@ -1,4 +1,4 @@
-import type { PrimeTailId, Vault, Rotation } from './types';
+import type { PrimeTailID, Vault, Rotation } from './types';
 
 const STORAGE_KEY = 'metapet-hmac-key';
 
@@ -35,7 +35,7 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
 }
 
 /**
- * Mint a PrimeTailId crest from DNA string
+ * Mint a PrimeTail ID crest from DNA string
  * DNA stays private; only hashes + tail are exposed
  */
 export async function mintPrimeTailId(opts: {
@@ -44,7 +44,7 @@ export async function mintPrimeTailId(opts: {
   rotation: Rotation;
   tail: [number, number, number, number];
   hmacKey: CryptoKey;
-}): Promise<PrimeTailId> {
+}): Promise<PrimeTailID> {
   const enc = new TextEncoder();
 
   // Hash DNA (forward)
@@ -89,10 +89,10 @@ export async function mintPrimeTailId(opts: {
 }
 
 /**
- * Verify a crest signature
+ * Verify a PrimeTail ID crest signature
  */
 export async function verifyCrest(
-  crest: PrimeTailId,
+  crest: PrimeTailID,
   hmacKey: CryptoKey
 ): Promise<boolean> {
   try {
