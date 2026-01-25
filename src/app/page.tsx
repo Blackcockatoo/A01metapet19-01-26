@@ -64,12 +64,15 @@ import {
   UtensilsCrossed,
   Gamepad2,
   Save,
+  QrCode,
+  UserCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { PetResponseOverlay } from '@/components/PetResponseOverlay';
 import { DigitalKeyPanel } from '@/components/DigitalKeyPanel';
 import RitualLoop from '@/components/RitualLoop';
 import { OnboardingTutorial } from '@/components/OnboardingTutorial';
+import { QRQuickPanel } from '@/components/QRMessaging';
 
 interface PetSummary {
   id: string;
@@ -1052,6 +1055,9 @@ export default function Home() {
           <p className="text-zinc-400 text-sm mb-3">
             PrimeTail ID • HeptaCode v1 • Live Vitals
           </p>
+          <p className="text-xs text-zinc-500">
+            Identity glossary: PrimeTail crest = vault + rotation + tail + DNA hashes; HeptaCode encodes the crest payload. See docs/identity-glossary.md.
+          </p>
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <Link href="/pet">
               <Button
@@ -1061,6 +1067,26 @@ export default function Home() {
               >
                 <Maximize2 className="w-4 h-4" />
                 Full Screen Pet
+              </Button>
+            </Link>
+            <Link href="/qr-messaging">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
+              >
+                <QrCode className="w-4 h-4" />
+                QR Messaging
+              </Button>
+            </Link>
+            <Link href="/identity">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 border-purple-500/60 text-purple-300 hover:bg-purple-500/10"
+              >
+                <UserCircle className="w-4 h-4" />
+                Identity
               </Button>
             </Link>
           </div>
@@ -1510,6 +1536,9 @@ export default function Home() {
             <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800">
               <DigitalKeyPanel />
             </div>
+
+            {/* QR Messaging */}
+            <QRQuickPanel />
 
             <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800">
               <AchievementShelf />

@@ -43,3 +43,16 @@ next-env.d.ts
 # premium addon library (development files - components are in src/components/addons/premium/)
 /premium_addon_library/
 premium_addon_library.zip
+
+# backup files
+*.bak
+
+# Windows
+desktop.ini
+Thumbs.db
+
+# Legacy artifacts
+jewble_metapet_artifact.jsx
+
+# Local Netlify folder
+.netlify

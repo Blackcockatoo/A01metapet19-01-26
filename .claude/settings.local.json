@@ -40,7 +40,11 @@
       "Bash(wc:*)",
       "Bash(bun --version:*)",
       "Bash(git fetch:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(du:*)",
+      "Bash(npx next lint --dir src)",
+      "Bash(npx eslint:*)",
+      "Bash(npx netlify:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,30 @@
+\
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Scroll Issued</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="wrap">
+    <header class="header">
+      <h1>Scroll Issued</h1>
+      <p class="sub">Your Meta-Pet now has papers.</p>
+    </header>
+
+    <section class="panel">
+      <h2>Pet ID</h2>
+      <p class="mono">{{ pet_id }}</p>
+
+      <div class="actions">
+        <a class="button" href="{{ pdf_url }}">Download Registration Scroll (PDF)</a>
+        <a class="link" href="{{ url_for('index') }}">Register another</a>
+      </div>
+
+      <p class="fine">The scroll prints only a proof-of-link hash, not your email.</p>
+    </section>
+  </main>
+</body>
+</html>

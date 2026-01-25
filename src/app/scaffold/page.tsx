@@ -337,6 +337,9 @@ export default function ScaffoldPage() {
           <p className="text-zinc-400">
             Complete scaffold with identity minting, ECC, MAC, visuals, chime & real-time vitals
           </p>
+          <p className="text-xs text-zinc-500 mt-2">
+            Identity glossary: PrimeTail crest = vault + rotation + tail + DNA hashes; HeptaCode encodes the crest payload. See docs/identity-glossary.md.
+          </p>
         </div>
 
         {/* Error Display */}

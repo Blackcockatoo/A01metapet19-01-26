@@ -19,7 +19,7 @@ export function deterministicVitalsTick(
   genome: Genome,
   timeElapsedMs: number
 ): PetVitals {
-  let newVitals = { ...currentVitals };
+  const newVitals = { ...currentVitals };
   
   // 1. Accumulate time
   newVitals.tickAccumulator += timeElapsedMs;

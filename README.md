@@ -54,6 +54,19 @@
 
 ---
 
+## Identity Glossary
+
+- **PrimeTail (PrimeTailId)**: The device-minted identity payload that combines a vault, rotation, tail digits, and the DNA + mirror DNA hashes, all signed with an HMAC signature. It is the cryptographic source of truth for a pet’s crest.
+- **HeptaCode**: A 42-digit base-7 encoding of the PrimeTail payload plus a MAC and ECC blocks, used to render visuals (HeptaTag/Seed of Life) and audio.
+- **Crest**: The visual/UX presentation of PrimeTailId (vault, rotation, tail, hashes, signature), showing that the identity is verified without revealing raw DNA.
+- **DNA hash**: SHA-256 hashes of the forward DNA and the mirrored DNA string; these hashes are what power genome derivation and are safe to share.
+
+**Relationship**: DNA → hashes → PrimeTailId crest → HeptaCode visual/audio. The crest and HeptaCode always reference hashes, never raw DNA.
+
+For a longer reference, see `docs/identity-glossary.md`.
+
+---
+
 ## File Structure
 
 ```
