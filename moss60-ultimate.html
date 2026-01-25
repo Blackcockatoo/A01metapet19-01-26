@@ -1,0 +1,2364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f0c29">
+  <link rel="manifest" href="manifest.json">
+  <title>MOSS60 Ultimate — Quantum-Resistant Cryptographic Platform</title>
+
+  <!-- QR Code Library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    :root {
+      --bg-deep: #0a0a1a;
+      --bg-primary: #0f0c29;
+      --bg-secondary: #1a1a3e;
+      --bg-tertiary: #24243e;
+      --gold: #ffd700;
+      --gold-dim: rgba(255, 215, 0, 0.3);
+      --gold-glow: rgba(255, 215, 0, 0.6);
+      --coral: #ff6b6b;
+      --cyan: #4ecdc4;
+      --blue: #88d8ff;
+      --purple: #667eea;
+      --magenta: #764ba2;
+      --text-primary: #ffd700;
+      --text-secondary: #88d8ff;
+      --text-muted: rgba(136, 216, 255, 0.7);
+      --border-primary: rgba(255, 215, 0, 0.4);
+      --border-secondary: rgba(136, 216, 255, 0.3);
+      --panel-bg: rgba(0, 0, 0, 0.6);
+      --panel-bg-solid: rgba(10, 10, 26, 0.95);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(118, 75, 162, 0.15) 0%, transparent 50%),
+        linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+      color: var(--text-primary);
+      font-family: 'Share Tech Mono', monospace;
+    }
+
+    /* ===== LAYOUT ===== */
+    .app-container {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      background: var(--panel-bg-solid);
+      border-bottom: 1px solid var(--border-primary);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(20px);
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      position: relative;
+    }
+
+    .logo-icon svg {
+      width: 100%;
+      height: 100%;
+      animation: logo-rotate 20s linear infinite;
+    }
+
+    @keyframes logo-rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 8px;
+      background: linear-gradient(90deg, var(--gold), var(--coral), var(--cyan), var(--gold));
+      background-size: 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradient-shift 4s ease infinite;
+    }
+
+    @keyframes gradient-shift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .header-subtitle {
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--text-secondary);
+      opacity: 0.8;
+      margin-top: 2px;
+    }
+
+    /* ===== NAVIGATION ===== */
+    nav {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .nav-btn {
+      padding: 10px 18px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-btn::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      height: 2px;
+      background: var(--gold);
+      transform: translateX(-50%);
+      transition: width 0.3s ease;
+    }
+
+    .nav-btn:hover {
+      color: var(--text-primary);
+      background: rgba(255, 215, 0, 0.05);
+    }
+
+    .nav-btn:hover::before {
+      width: 60%;
+    }
+
+    .nav-btn.active {
+      color: var(--gold);
+      background: rgba(255, 215, 0, 0.1);
+      border-color: var(--border-primary);
+    }
+
+    .nav-btn.active::before {
+      width: 80%;
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    main {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 0;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      background: var(--panel-bg-solid);
+      border-right: 1px solid var(--border-primary);
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .canvas-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ===== SECTIONS ===== */
+    .section {
+      margin-bottom: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+    }
+
+    .section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .section-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      margin-bottom: 16px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 3px;
+      height: 14px;
+      background: var(--gold);
+      border-radius: 2px;
+    }
+
+    /* ===== FORM ELEMENTS ===== */
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 12px 14px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--border-primary);
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      transition: all 0.3s ease;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: var(--gold);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+    }
+
+    input[type="text"]::placeholder {
+      color: var(--text-muted);
+      opacity: 0.5;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, var(--purple) 0%, var(--magenta) 100%);
+      border: none;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 2px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    button:hover::before {
+      left: 100%;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.primary {
+      background: linear-gradient(135deg, var(--gold) 0%, #ffed4e 100%);
+      color: var(--bg-deep);
+    }
+
+    button.primary:hover {
+      box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+    }
+
+    button.secondary {
+      background: transparent;
+      border: 1px solid var(--border-primary);
+      color: var(--text-primary);
+    }
+
+    button.secondary:hover {
+      background: rgba(255, 215, 0, 0.1);
+      box-shadow: none;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .button-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    /* ===== CONTROLS ===== */
+    .control-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+
+    .value-display {
+      color: var(--gold);
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: linear-gradient(90deg, rgba(255,215,0,0.2), rgba(255,215,0,0.4));
+      outline: none;
+      border-radius: 3px;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      background: radial-gradient(circle, var(--gold), var(--coral));
+      cursor: pointer;
+      border-radius: 50%;
+      box-shadow: 0 0 15px var(--gold-glow);
+      transition: all 0.2s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 0 25px var(--gold);
+    }
+
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--border-primary);
+      color: var(--text-primary);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    select option {
+      background: var(--bg-deep);
+    }
+
+    /* ===== CHECKBOX ===== */
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      display: none;
+    }
+
+    .checkbox-custom {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border-primary);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .checkbox-group:hover .checkbox-custom {
+      border-color: var(--gold);
+    }
+
+    .checkbox-group input:checked + .checkbox-custom {
+      background: var(--gold);
+      border-color: var(--gold);
+    }
+
+    .checkbox-group input:checked + .checkbox-custom::after {
+      content: '✓';
+      color: var(--bg-deep);
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .checkbox-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+    }
+
+    /* ===== MODE PANELS ===== */
+    .mode-panel {
+      display: none;
+    }
+
+    .mode-panel.active {
+      display: block;
+    }
+
+    /* ===== CANVAS ===== */
+    .canvas-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    canvas#main-canvas {
+      border: 2px solid var(--gold);
+      border-radius: 8px;
+      background: var(--bg-deep);
+      box-shadow:
+        0 0 60px rgba(255, 215, 0, 0.3),
+        0 0 120px rgba(102, 126, 234, 0.2),
+        inset 0 0 60px rgba(0, 0, 0, 0.5);
+    }
+
+    canvas#overlay-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      border-radius: 8px;
+    }
+
+    /* ===== QR CODE ===== */
+    .qr-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    #qr-canvas {
+      border: 2px solid var(--gold);
+      border-radius: 8px;
+      background: white;
+      padding: 10px;
+      display: none;
+    }
+
+    #qr-scanner-video {
+      width: 100%;
+      max-width: 400px;
+      border: 2px solid var(--cyan);
+      border-radius: 8px;
+      display: none;
+    }
+
+    /* ===== HASH DISPLAY ===== */
+    .hash-display {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-align: center;
+      padding: 16px 20px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid var(--border-primary);
+      border-radius: 6px;
+      margin-top: 20px;
+      text-shadow: 0 0 20px var(--gold-glow);
+      word-break: break-all;
+      max-width: 800px;
+    }
+
+    /* ===== INFO BOX ===== */
+    .info-box {
+      font-size: 10px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+      border-left: 3px solid var(--blue);
+    }
+
+    /* ===== STATUS BAR ===== */
+    .status-bar {
+      display: flex;
+      gap: 16px;
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 6px;
+      font-size: 10px;
+      flex-wrap: wrap;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--cyan);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.9); }
+    }
+
+    .status-dot.active {
+      background: var(--gold);
+    }
+
+    /* ===== MESSAGING UI ===== */
+    .messaging-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .party-box {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-secondary);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .party-box.alice {
+      border-color: var(--gold-dim);
+    }
+
+    .party-box.bob {
+      border-color: rgba(78, 205, 196, 0.4);
+    }
+
+    .party-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .party-box.alice .party-title {
+      color: var(--gold);
+    }
+
+    .party-box.bob .party-title {
+      color: var(--cyan);
+    }
+
+    .message-log {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 12px;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+    }
+
+    .message-entry {
+      padding: 8px;
+      margin-bottom: 8px;
+      background: rgba(255, 215, 0, 0.05);
+      border-radius: 4px;
+      border-left: 3px solid var(--gold);
+      font-size: 10px;
+    }
+
+    .message-entry.sent {
+      border-left-color: var(--coral);
+    }
+
+    .message-entry.received {
+      border-left-color: var(--cyan);
+    }
+
+    .message-header {
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    /* ===== STORAGE UI ===== */
+    .storage-list {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 12px;
+    }
+
+    .storage-item {
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-left: 3px solid var(--gold);
+    }
+
+    .storage-item:hover {
+      background: rgba(255, 215, 0, 0.1);
+    }
+
+    .storage-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .storage-item-name {
+      font-weight: 700;
+      color: var(--gold);
+      font-size: 11px;
+    }
+
+    .storage-item-date {
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+
+    .storage-item-data {
+      font-size: 10px;
+      color: var(--text-secondary);
+      word-break: break-all;
+    }
+
+    .storage-item-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .storage-item-actions button {
+      padding: 6px 12px;
+      font-size: 9px;
+    }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--gold-dim);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--gold-glow);
+    }
+
+    /* ===== FULLSCREEN ===== */
+    .fullscreen-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid var(--border-primary);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      z-index: 10;
+    }
+
+    .fullscreen-btn:hover {
+      background: rgba(255, 215, 0, 0.2);
+      transform: scale(1.05);
+    }
+
+    .fullscreen-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--gold);
+    }
+
+    /* ===== MODAL ===== */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--panel-bg-solid);
+      border: 2px solid var(--border-primary);
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: var(--gold);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 0, 0, 0.2);
+      border: 1px solid rgba(255, 0, 0, 0.4);
+      color: #ff6b6b;
+      font-size: 24px;
+      cursor: pointer;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close:hover {
+      background: rgba(255, 0, 0, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- HEADER -->
+    <header>
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#ffd700"/>
+                <stop offset="50%" style="stop-color:#ff6b6b"/>
+                <stop offset="100%" style="stop-color:#4ecdc4"/>
+              </linearGradient>
+            </defs>
+            <circle cx="50" cy="50" r="45" fill="none" stroke="url(#logo-gradient)" stroke-width="2"/>
+            <path d="M50 10 L50 90 M10 50 L90 50" stroke="url(#logo-gradient)" stroke-width="1" opacity="0.5"/>
+            <circle cx="50" cy="50" r="30" fill="none" stroke="url(#logo-gradient)" stroke-width="1.5"/>
+            <circle cx="50" cy="50" r="15" fill="none" stroke="url(#logo-gradient)" stroke-width="1"/>
+          </svg>
+        </div>
+        <div>
+          <h1>MOSS60</h1>
+          <div class="header-subtitle">ULTIMATE CRYPTOGRAPHIC PLATFORM</div>
+        </div>
+      </div>
+
+      <nav>
+        <button class="nav-btn active" onclick="switchMode('glyph')">GLYPH</button>
+        <button class="nav-btn" onclick="switchMode('serpent')">MESSAGING</button>
+        <button class="nav-btn" onclick="switchMode('qr')">QR CODES</button>
+        <button class="nav-btn" onclick="switchMode('storage')">STORAGE</button>
+        <button class="nav-btn" onclick="switchMode('oracle')">ORACLE</button>
+        <button class="nav-btn" onclick="switchMode('plugins')">PLUGINS</button>
+      </nav>
+    </header>
+
+    <!-- MAIN -->
+    <main>
+      <!-- SIDEBAR -->
+      <div class="sidebar">
+        <!-- GLYPH MODE -->
+        <div class="mode-panel active" id="glyph-panel">
+          <div class="section">
+            <div class="section-title">MESSAGE INPUT</div>
+            <input type="text" id="msg" placeholder="Enter message to sign..." value="MOSS60 Ultimate">
+            <input type="text" id="hidden-msg" placeholder="Hidden steganographic message (optional)">
+            <label class="checkbox-group">
+              <input type="checkbox" id="deterministic" checked>
+              <span class="checkbox-custom"></span>
+              <span class="checkbox-label">Deterministic Mode</span>
+            </label>
+            <button class="primary" onclick="generateGlyph()">GENERATE GLYPH</button>
+          </div>
+
+          <div class="section">
+            <div class="section-title">VISUAL PARAMETERS</div>
+            <div class="control-group">
+              <label>Line Weight <span class="value-display" id="weightVal">2</span></label>
+              <input type="range" id="lineWeight" min="1" max="6" value="2" oninput="updateParam('weight')">
+            </div>
+            <div class="control-group">
+              <label>Prime Glow <span class="value-display" id="glowVal">15</span></label>
+              <input type="range" id="primeGlow" min="0" max="40" value="15" oninput="updateParam('glow')">
+            </div>
+            <div class="control-group">
+              <label>Color Scheme</label>
+              <select id="colorScheme" onchange="updateDisplay()">
+                <option value="spectral">Spectral Rainbow</option>
+                <option value="golden">Golden Monochrome</option>
+                <option value="cyberpunk">Cyberpunk Neon</option>
+                <option value="fire">Elemental Fire</option>
+                <option value="ocean">Deep Ocean</option>
+                <option value="quantum">Quantum Purple</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">3D PROJECTION</div>
+            <select id="projection" onchange="updateProjection()">
+              <option value="flat">Flat (2D)</option>
+              <option value="sphere">Spherical</option>
+              <option value="torus">Toroidal</option>
+              <option value="hyperbolic">Hyperbolic</option>
+              <option value="klein">Klein Bottle</option>
+              <option value="mobius">Möbius Strip</option>
+            </select>
+          </div>
+
+          <div class="section">
+            <div class="section-title">EXPORT</div>
+            <div class="button-row-3">
+              <button class="secondary" onclick="exportPNG()">PNG</button>
+              <button class="secondary" onclick="exportSVG()">SVG</button>
+              <button class="secondary" onclick="saveToStorage()">SAVE</button>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <strong>MOSS60 Ultimate</strong> combines visual cryptographic signatures with quantum-resistant base-60 mathematics, secure messaging, encrypted storage, and beautiful QR codes.
+          </div>
+        </div>
+
+        <!-- MESSAGING MODE -->
+        <div class="mode-panel" id="serpent-panel">
+          <div class="section">
+            <div class="section-title">KEY EXCHANGE</div>
+            <div class="messaging-grid">
+              <div class="party-box alice">
+                <div class="party-title">ALICE</div>
+                <input type="text" id="alice-id" placeholder="Alice identity" value="alice@moss60.io">
+                <button onclick="generateAliceKeys()">GENERATE KEYS</button>
+                <div class="info-box" style="margin-top: 8px; font-size: 9px;" id="alice-public">Not initialized</div>
+              </div>
+              <div class="party-box bob">
+                <div class="party-title">BOB</div>
+                <input type="text" id="bob-id" placeholder="Bob identity" value="bob@moss60.io">
+                <button onclick="generateBobKeys()">GENERATE KEYS</button>
+                <div class="info-box" style="margin-top: 8px; font-size: 9px;" id="bob-public">Not initialized</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <button class="primary" onclick="performHandshake()">ESTABLISH SECURE CHANNEL</button>
+            <div class="status-bar">
+              <div class="status-item">
+                <span class="status-dot" id="connection-dot"></span>
+                <span id="connection-status">Disconnected</span>
+              </div>
+              <div class="status-item">
+                <span>Messages: <span class="value-display" id="msg-count">0</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">SECURE MESSAGING</div>
+            <div class="messaging-grid">
+              <div>
+                <textarea id="alice-message" placeholder="Alice's message..." style="min-height: 60px;"></textarea>
+                <button onclick="aliceSend()">ALICE → BOB</button>
+              </div>
+              <div>
+                <textarea id="bob-message" placeholder="Bob's message..." style="min-height: 60px;"></textarea>
+                <button onclick="bobSend()">BOB → ALICE</button>
+              </div>
+            </div>
+            <div class="message-log" id="message-log"></div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">ENCRYPTION MODE</div>
+            <select id="encryption-mode">
+              <option value="standard">Standard XOR-Stream</option>
+              <option value="temporal">Temporal Evolution (Lucas)</option>
+              <option value="ratchet">Double Ratchet (Forward Secrecy)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- QR CODE MODE -->
+        <div class="mode-panel" id="qr-panel">
+          <div class="section">
+            <div class="section-title">QR CODE GENERATOR</div>
+            <textarea id="qr-data" placeholder="Enter data to encode in QR code..." style="min-height: 100px;"></textarea>
+
+            <div class="control-group">
+              <label>Encoding Format</label>
+              <select id="qr-format">
+                <option value="base60">Base-60 (MOSS60)</option>
+                <option value="hex">Hexadecimal</option>
+                <option value="text">Plain Text</option>
+                <option value="json">JSON</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <label>Error Correction</label>
+              <select id="qr-error-correction">
+                <option value="L">Low (7%)</option>
+                <option value="M" selected>Medium (15%)</option>
+                <option value="Q">Quartile (25%)</option>
+                <option value="H">High (30%)</option>
+              </select>
+            </div>
+
+            <button class="primary" onclick="generateQRCode()">GENERATE QR CODE</button>
+            <button class="secondary" onclick="downloadQR()">DOWNLOAD QR</button>
+          </div>
+
+          <div class="section">
+            <div class="section-title">QR CODE SCANNER</div>
+            <button onclick="startQRScanner()">START CAMERA SCANNER</button>
+            <button class="secondary" onclick="stopQRScanner()">STOP SCANNER</button>
+
+            <div class="info-box" style="margin-top: 12px;">
+              <div id="qr-scan-result">No QR code detected</div>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <strong>Base-60 QR Codes</strong> use MOSS60 encoding for compact, quantum-resistant data storage. Perfect for key exchange and secure data transfer.
+          </div>
+        </div>
+
+        <!-- STORAGE MODE -->
+        <div class="mode-panel" id="storage-panel">
+          <div class="section">
+            <div class="section-title">ENCRYPTED STORAGE</div>
+            <input type="text" id="storage-name" placeholder="Entry name...">
+            <textarea id="storage-data" placeholder="Data to encrypt and store..." style="min-height: 100px;"></textarea>
+            <input type="password" id="storage-password" placeholder="Encryption password...">
+
+            <label class="checkbox-group">
+              <input type="checkbox" id="storage-compress">
+              <span class="checkbox-custom"></span>
+              <span class="checkbox-label">Compress Data</span>
+            </label>
+
+            <button class="primary" onclick="saveEncryptedData()">ENCRYPT & SAVE</button>
+          </div>
+
+          <div class="section">
+            <div class="section-title">STORED ENTRIES</div>
+            <button class="secondary" onclick="loadStorageList()">REFRESH LIST</button>
+            <button class="secondary" onclick="exportAllStorage()">EXPORT ALL</button>
+            <button class="secondary" onclick="clearAllStorage()">CLEAR ALL</button>
+
+            <div class="storage-list" id="storage-list">
+              <div class="info-box">No entries stored yet</div>
+            </div>
+          </div>
+
+          <div class="status-bar">
+            <div class="status-item">
+              <span>Entries: <span class="value-display" id="storage-count">0</span></span>
+            </div>
+            <div class="status-item">
+              <span>Size: <span class="value-display" id="storage-size">0 KB</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ORACLE MODE -->
+        <div class="mode-panel" id="oracle-panel">
+          <div class="section">
+            <div class="section-title">900-DIGIT CASCADE XOR</div>
+            <textarea id="oracle-input" placeholder="Enter data for Oracle processing..." style="min-height: 120px;"></textarea>
+
+            <div class="control-group">
+              <label>Cascade Rounds</label>
+              <input type="range" id="oracle-rounds" min="1" max="10" value="5">
+              <span class="value-display" id="oracle-rounds-val">5</span>
+            </div>
+
+            <button class="primary" onclick="processOracle()">PROCESS ORACLE</button>
+            <button class="secondary" onclick="visualizeOracle()">VISUALIZE</button>
+          </div>
+
+          <div class="section">
+            <div class="section-title">ORACLE OUTPUT</div>
+            <div class="info-box" style="word-break: break-all; max-height: 200px; overflow-y: auto;" id="oracle-output">
+              Awaiting input...
+            </div>
+          </div>
+
+          <div class="info-box">
+            <strong>Oracle Mode</strong> processes data through a 900-digit XOR cascade system with SHA-512 integration for maximum entropy and security.
+          </div>
+        </div>
+
+        <!-- PLUGINS MODE -->
+        <div class="mode-panel" id="plugins-panel">
+          <div class="section">
+            <div class="section-title">PLUGIN SYSTEM</div>
+            <textarea id="plugin-code" placeholder="Paste plugin JavaScript code here..." style="min-height: 200px; font-size: 10px;"></textarea>
+
+            <button class="primary" onclick="installPlugin()">INSTALL PLUGIN</button>
+            <button class="secondary" onclick="showPluginAPI()">VIEW API DOCS</button>
+          </div>
+
+          <div class="section">
+            <div class="section-title">INSTALLED PLUGINS</div>
+            <div class="storage-list" id="plugin-list">
+              <div class="info-box">No plugins installed</div>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <strong>Plugin System</strong> allows extending MOSS60 with custom cryptographic algorithms, visualizations, and integrations. Plugins have access to the full MOSS60 API.
+          </div>
+        </div>
+      </div>
+
+      <!-- CANVAS AREA -->
+      <div class="canvas-area">
+        <button class="fullscreen-btn" onclick="toggleFullscreen()">
+          <svg viewBox="0 0 24 24">
+            <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+          </svg>
+        </button>
+
+        <div class="canvas-container">
+          <canvas id="main-canvas" width="700" height="700"></canvas>
+          <canvas id="overlay-canvas" width="700" height="700"></canvas>
+        </div>
+
+        <div class="qr-container">
+          <canvas id="qr-canvas" width="400" height="400"></canvas>
+          <video id="qr-scanner-video" autoplay playsinline></video>
+        </div>
+
+        <div class="hash-display" id="hash-display">MOSS60 ULTIMATE — READY</div>
+
+        <div class="toolbar">
+          <button class="secondary" onclick="toggleAnimation()">
+            <span id="anim-btn-text">PAUSE</span>
+          </button>
+          <button class="secondary" onclick="resetView()">RESET</button>
+          <button class="secondary" onclick="randomize()">RANDOM</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()">×</button>
+      <div class="modal-header" id="modal-header">Modal Title</div>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    // ========================================
+    // MOSS60 ULTIMATE CRYPTOGRAPHIC PLATFORM
+    // ========================================
+
+    // ===== CONSTANTS =====
+    const PHI = (1 + Math.sqrt(5)) / 2;
+    const R = "113031491493585389543778774590997079619617525721567332336510".split('').map(Number);
+    const K = "011235831459437077415617853819099875279651673033695493257291".split('').map(Number);
+    const B = "012776329785893036118967145479098334781325217074992143965631".split('').map(Number);
+    const primes = new Set([2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59]);
+    const lucas = [2, 1, 3, 4, 7, 11, 18, 29, 47, 76, 123, 199];
+
+    // Base-60 alphabet (using safe, distinguishable characters)
+    const BASE60_ALPHABET = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz";
+
+    // ===== STATE =====
+    let currentMode = 'glyph';
+    let currentHash = '';
+    let animationFrame = null;
+    let animationTime = 0;
+    let isAnimating = true;
+    let lineWeight = 2;
+    let primeGlow = 15;
+    let colorScheme = 'spectral';
+    let projection3D = 'flat';
+    let rotationX = 0;
+    let rotationY = 0;
+
+    // Messaging state
+    let aliceHandshake = null;
+    let bobHandshake = null;
+    let connected = false;
+    let messageCount = 0;
+
+    // QR state
+    let qrStream = null;
+    let qrScanInterval = null;
+
+    // Storage state
+    let storageDB = null;
+
+    // ===== CRYPTOGRAPHIC PRIMITIVES =====
+    function moss60Hash(input) {
+      let x = 0;
+      for (let i = 0; i < input.length; i++) {
+        const c = input.charCodeAt(i);
+        const j = i % 60;
+        x ^= c;
+        x = ((x << 5) | (x >>> 27)) + R[j];
+        x ^= K[j] << 3;
+        x = ((x << 7) | (x >>> 25)) + B[j];
+        x = (x * 31) & 0x7FFFFFFF;
+      }
+      return x.toString(16).padStart(8, '0');
+    }
+
+    function extendedHash(input, iterations = 8) {
+      let result = '';
+      for (let i = 0; i < iterations; i++) {
+        result += moss60Hash(input + i);
+      }
+      return result;
+    }
+
+    function generateKeyPair(seed) {
+      const privateSpiral = [];
+      const hash = extendedHash(seed, 8);
+
+      for (let i = 0; i < 60; i++) {
+        const hexPair = hash.substr((i * 2) % hash.length, 2);
+        privateSpiral.push(parseInt(hexPair, 16) % 60);
+      }
+
+      const publicHash = extendedHash(privateSpiral.join(','), 8);
+
+      return {
+        private: privateSpiral,
+        public: publicHash
+      };
+    }
+
+    function computeSharedSecret(myPrivate, theirPublic) {
+      const combined = myPrivate.map((val, i) => {
+        const theirVal = parseInt(theirPublic.substr((i * 2) % theirPublic.length, 2), 16);
+        if (primes.has(i)) {
+          return Math.floor((val * PHI + theirVal) % 60);
+        }
+        return (val + theirVal) % 60;
+      });
+      return combined;
+    }
+
+    // ===== BASE-60 ENCODING =====
+    function toBase60(data) {
+      if (typeof data === 'string') {
+        data = new TextEncoder().encode(data);
+      }
+
+      let result = '';
+      let value = 0n;
+
+      // Convert bytes to big integer
+      for (let i = 0; i < data.length; i++) {
+        value = (value << 8n) | BigInt(data[i]);
+      }
+
+      // Convert to base-60
+      if (value === 0n) return BASE60_ALPHABET[0];
+
+      while (value > 0n) {
+        result = BASE60_ALPHABET[Number(value % 60n)] + result;
+        value = value / 60n;
+      }
+
+      return result;
+    }
+
+    function fromBase60(encoded) {
+      let value = 0n;
+
+      for (let i = 0; i < encoded.length; i++) {
+        const digit = BASE60_ALPHABET.indexOf(encoded[i]);
+        if (digit === -1) throw new Error('Invalid base-60 character');
+        value = value * 60n + BigInt(digit);
+      }
+
+      // Convert to bytes
+      const bytes = [];
+      while (value > 0n) {
+        bytes.unshift(Number(value & 0xFFn));
+        value = value >> 8n;
+      }
+
+      return new Uint8Array(bytes);
+    }
+
+    // ===== HANDSHAKE CLASS =====
+    class Moss60Handshake {
+      constructor(identity) {
+        this.identity = identity;
+        const keys = generateKeyPair(identity + Date.now() + Math.random());
+        this.privateSpiral = keys.private;
+        this.publicHash = keys.public;
+        this.sharedSecret = null;
+        this.encryptionKey = null;
+        this.decryptionKey = null;
+        this.messageCount = 0;
+      }
+
+      computeSharedSecret(theirPublic) {
+        this.sharedSecret = computeSharedSecret(this.privateSpiral, theirPublic);
+        this.deriveKeys();
+      }
+
+      deriveKeys() {
+        const keyMaterial = extendedHash(this.sharedSecret.join(','), 16);
+        this.encryptionKey = keyMaterial.substring(0, 64).split('').map(c => c.charCodeAt(0));
+        this.decryptionKey = keyMaterial.substring(64, 128).split('').map(c => c.charCodeAt(0));
+      }
+
+      encrypt(plaintext) {
+        const mode = document.getElementById('encryption-mode')?.value || 'standard';
+        const bytes = new TextEncoder().encode(plaintext);
+        let evolved = Array.from(bytes);
+
+        if (mode === 'temporal') {
+          evolved = this.evolveKey(evolved, this.messageCount);
+        }
+
+        const encrypted = evolved.map((byte, i) => byte ^ this.encryptionKey[i % this.encryptionKey.length]);
+        this.messageCount++;
+        return btoa(String.fromCharCode(...encrypted));
+      }
+
+      decrypt(ciphertext) {
+        const mode = document.getElementById('encryption-mode')?.value || 'standard';
+        const encrypted = atob(ciphertext).split('').map(c => c.charCodeAt(0));
+        const decrypted = encrypted.map((byte, i) => byte ^ this.decryptionKey[i % this.decryptionKey.length]);
+
+        let result = decrypted;
+        if (mode === 'temporal') {
+          result = this.devolveKey(decrypted, this.messageCount);
+        }
+
+        this.messageCount++;
+        return new TextDecoder().decode(new Uint8Array(result));
+      }
+
+      evolveKey(data, count) {
+        const lucasValue = lucas[count % lucas.length];
+        return data.map((byte, i) => (byte + lucasValue + i) % 256);
+      }
+
+      devolveKey(data, count) {
+        const lucasValue = lucas[count % lucas.length];
+        return data.map((byte, i) => (byte - lucasValue - i + 256) % 256);
+      }
+    }
+
+    // ===== RENDERING =====
+    function render() {
+      const canvas = document.getElementById('main-canvas');
+      const ctx = canvas.getContext('2d');
+      const overlay = document.getElementById('overlay-canvas');
+      const overlayCtx = overlay.getContext('2d');
+
+      const cx = 350, cy = 350;
+      const baseR = 280;
+
+      ctx.fillStyle = 'rgba(10, 10, 26, 0.25)';
+      ctx.fillRect(0, 0, 700, 700);
+      overlayCtx.clearRect(0, 0, 700, 700);
+
+      let points = generatePoints(cx, cy, baseR);
+
+      if (projection3D !== 'flat') {
+        points = applyProjection(points, cx, cy);
+      }
+
+      drawSpiral(ctx, points);
+
+      // Draw center hash
+      ctx.save();
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+      ctx.fillStyle = '#ffd700';
+      ctx.font = 'bold 16px Orbitron';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(currentHash.toUpperCase().substring(0, 8), cx, cy);
+      ctx.restore();
+
+      animationTime += 16;
+
+      if (isAnimating) {
+        animationFrame = requestAnimationFrame(render);
+      }
+    }
+
+    function generatePoints(cx, cy, baseR) {
+      const points = [];
+
+      for (let i = 0; i < 60; i++) {
+        const angle = (i / 60) * Math.PI * 2 - Math.PI / 2;
+        const digitVal = R[i] + K[i] + B[i];
+        const rMod = 0.95 + 0.1 * (digitVal / 27);
+        const r = baseR * rMod;
+
+        points.push({
+          x: cx + r * Math.cos(angle),
+          y: cy + r * Math.sin(angle),
+          radius: r,
+          angle: angle,
+          isPrime: primes.has(i),
+          index: i
+        });
+      }
+
+      return points;
+    }
+
+    function applyProjection(points, cx, cy) {
+      const radX = (rotationX + animationTime * 0.01) * Math.PI / 180;
+      const radY = (rotationY + animationTime * 0.01) * Math.PI / 180;
+
+      return points.map(p => {
+        let x = p.x - cx;
+        let y = p.y - cy;
+        let z = 0;
+
+        switch (projection3D) {
+          case 'sphere':
+            const phi = p.angle;
+            const theta = (p.radius / 280) * Math.PI / 2;
+            x = 200 * Math.sin(theta) * Math.cos(phi + animationTime * 0.001);
+            y = 200 * Math.sin(theta) * Math.sin(phi + animationTime * 0.001);
+            z = 200 * Math.cos(theta);
+            break;
+
+          case 'torus':
+            const R_torus = 150;
+            const r_torus = 80;
+            const u = p.angle + animationTime * 0.001;
+            const v = (p.index / 60) * Math.PI * 2;
+            x = (R_torus + r_torus * Math.cos(v)) * Math.cos(u);
+            y = (R_torus + r_torus * Math.cos(v)) * Math.sin(u);
+            z = r_torus * Math.sin(v);
+            break;
+
+          case 'hyperbolic':
+            const hr = p.radius * 0.8;
+            const scale = 1 / (1 + (hr / 300) * (hr / 300));
+            x = x * scale;
+            y = y * scale;
+            break;
+
+          case 'klein':
+            const ku = p.angle + animationTime * 0.001;
+            const kv = (p.index / 60) * Math.PI * 2;
+            if (kv < Math.PI) {
+              x = 120 * (1 + Math.cos(kv)) * Math.cos(ku);
+              y = 120 * (1 + Math.cos(kv)) * Math.sin(ku);
+            } else {
+              x = 120 * Math.cos(ku) - 40 * Math.cos(kv - Math.PI);
+              y = 120 * Math.sin(ku);
+            }
+            z = 60 * Math.sin(kv);
+            break;
+
+          case 'mobius':
+            const mu = p.angle + animationTime * 0.001;
+            const mv = ((p.index / 60) - 0.5) * 100;
+            x = (150 + mv * Math.cos(mu / 2)) * Math.cos(mu);
+            y = (150 + mv * Math.cos(mu / 2)) * Math.sin(mu);
+            z = mv * Math.sin(mu / 2);
+            break;
+        }
+
+        // Apply 3D rotation
+        const cosX = Math.cos(radX), sinX = Math.sin(radX);
+        const cosY = Math.cos(radY), sinY = Math.sin(radY);
+
+        const y1 = y * cosX - z * sinX;
+        const z1 = y * sinX + z * cosX;
+        const x1 = x * cosY + z1 * sinY;
+        const z2 = -x * sinY + z1 * cosY;
+
+        const perspective = 500 / (500 + z2);
+
+        return {
+          ...p,
+          x: cx + x1 * perspective,
+          y: cy + y1 * perspective,
+          z: z2,
+          scale: perspective
+        };
+      });
+    }
+
+    function drawSpiral(ctx, points) {
+      const path = [];
+      let pos = 1;
+      path.push(pos);
+      for (let i = 1; i <= 60; i++) {
+        pos = (pos + i) % 60;
+        path.push(pos);
+      }
+
+      for (let i = 0; i < path.length - 1; i++) {
+        const p1 = points[path[i]];
+        const p2 = points[path[i + 1]];
+
+        if (!p1 || !p2) continue;
+
+        const color = getColor(i, p1.isPrime || p2.isPrime);
+        const weight = lineWeight + (p1.isPrime || p2.isPrime ? 1.5 : 0);
+        const scale = (p1.scale || 1) * (p2.scale || 1);
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = weight * Math.sqrt(scale);
+        ctx.globalAlpha = 0.7 * scale;
+
+        if (p1.isPrime || p2.isPrime) {
+          ctx.shadowBlur = primeGlow;
+          ctx.shadowColor = color;
+        } else {
+          ctx.shadowBlur = 3;
+          ctx.shadowColor = color;
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      }
+
+      points.forEach(p => {
+        const scale = p.scale || 1;
+        ctx.fillStyle = p.isPrime ? '#ffd700' : '#88d8ff';
+        ctx.globalAlpha = scale;
+        ctx.shadowBlur = p.isPrime ? primeGlow : 5;
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, (p.isPrime ? 5 : 3) * scale, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+    }
+
+    function getColor(index, isPrime) {
+      switch (colorScheme) {
+        case 'golden':
+          return isPrime ? '#ffd700' : 'rgba(255, 215, 0, 0.6)';
+        case 'cyberpunk':
+          return isPrime ? '#ff00ff' : `hsl(${280 + index * 2}, 100%, 50%)`;
+        case 'fire':
+          return `hsl(${15 + index * 0.8}, 100%, ${50 + (isPrime ? 15 : 0)}%)`;
+        case 'ocean':
+          return `hsl(${200 + index * 1.5}, 80%, ${45 + (isPrime ? 20 : 0)}%)`;
+        case 'quantum':
+          return `hsl(${270 + index * 1.5}, 90%, ${50 + (isPrime ? 15 : 0)}%)`;
+        default: // spectral
+          return `hsl(${(index * 6) % 360}, 80%, ${55 + (isPrime ? 10 : 0)}%)`;
+      }
+    }
+
+    // ===== UI FUNCTIONS =====
+    function switchMode(mode) {
+      currentMode = mode;
+
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.nav-btn[onclick="switchMode('${mode}')"]`).classList.add('active');
+
+      document.querySelectorAll('.mode-panel').forEach(panel => panel.classList.remove('active'));
+      document.getElementById(mode + '-panel').classList.add('active');
+
+      // Show/hide appropriate displays
+      document.getElementById('main-canvas').style.display = (mode === 'glyph') ? 'block' : 'none';
+      document.getElementById('qr-canvas').style.display = (mode === 'qr') ? 'block' : 'none';
+      document.getElementById('qr-scanner-video').style.display = 'none';
+
+      // Mode-specific actions
+      if (mode === 'storage') {
+        loadStorageList();
+      } else if (mode === 'plugins') {
+        loadPluginList();
+      }
+    }
+
+    function generateGlyph() {
+      const msg = document.getElementById('msg').value;
+      const hidden = document.getElementById('hidden-msg').value;
+      const deterministic = document.getElementById('deterministic').checked;
+
+      const seed = deterministic ? msg : msg + Date.now();
+      currentHash = hidden ? extendedHash(seed + hidden) : extendedHash(seed);
+
+      document.getElementById('hash-display').textContent = currentHash.toUpperCase().substring(0, 32) + '...';
+
+      if (!animationFrame) {
+        render();
+      }
+    }
+
+    function updateParam(type) {
+      switch (type) {
+        case 'weight':
+          lineWeight = parseInt(document.getElementById('lineWeight').value);
+          document.getElementById('weightVal').textContent = lineWeight;
+          break;
+        case 'glow':
+          primeGlow = parseInt(document.getElementById('primeGlow').value);
+          document.getElementById('glowVal').textContent = primeGlow;
+          break;
+      }
+    }
+
+    function updateDisplay() {
+      colorScheme = document.getElementById('colorScheme').value;
+    }
+
+    function updateProjection() {
+      projection3D = document.getElementById('projection').value;
+    }
+
+    // ===== MESSAGING FUNCTIONS =====
+    function generateAliceKeys() {
+      const identity = document.getElementById('alice-id').value;
+      aliceHandshake = new Moss60Handshake(identity);
+      document.getElementById('alice-public').textContent = 'Public Key: ' + aliceHandshake.publicHash.substring(0, 32) + '...';
+    }
+
+    function generateBobKeys() {
+      const identity = document.getElementById('bob-id').value;
+      bobHandshake = new Moss60Handshake(identity);
+      document.getElementById('bob-public').textContent = 'Public Key: ' + bobHandshake.publicHash.substring(0, 32) + '...';
+    }
+
+    function performHandshake() {
+      if (!aliceHandshake || !bobHandshake) {
+        alert('Generate keys for both parties first!');
+        return;
+      }
+
+      aliceHandshake.computeSharedSecret(bobHandshake.publicHash);
+      bobHandshake.computeSharedSecret(aliceHandshake.publicHash);
+
+      connected = true;
+      document.getElementById('connection-dot').classList.add('active');
+      document.getElementById('connection-status').textContent = 'Secure Channel Active';
+
+      addMessageLog('System', 'Secure channel established', 'system');
+    }
+
+    function aliceSend() {
+      if (!connected) {
+        alert('Establish connection first!');
+        return;
+      }
+
+      const msg = document.getElementById('alice-message').value;
+      if (!msg) return;
+
+      const encrypted = aliceHandshake.encrypt(msg);
+      const decrypted = bobHandshake.decrypt(encrypted);
+
+      messageCount++;
+      document.getElementById('msg-count').textContent = messageCount;
+
+      addMessageLog('Alice → Bob', msg, 'sent');
+      document.getElementById('alice-message').value = '';
+    }
+
+    function bobSend() {
+      if (!connected) {
+        alert('Establish connection first!');
+        return;
+      }
+
+      const msg = document.getElementById('bob-message').value;
+      if (!msg) return;
+
+      const encrypted = bobHandshake.encrypt(msg);
+      const decrypted = aliceHandshake.decrypt(encrypted);
+
+      messageCount++;
+      document.getElementById('msg-count').textContent = messageCount;
+
+      addMessageLog('Bob → Alice', msg, 'received');
+      document.getElementById('bob-message').value = '';
+    }
+
+    function addMessageLog(sender, content, type) {
+      const log = document.getElementById('message-log');
+      const entry = document.createElement('div');
+      entry.className = 'message-entry ' + type;
+      entry.innerHTML = `
+        <div class="message-header">${sender} — ${new Date().toLocaleTimeString()}</div>
+        <div>${content}</div>
+      `;
+      log.insertBefore(entry, log.firstChild);
+    }
+
+    // ===== QR CODE FUNCTIONS =====
+    async function generateQRCode() {
+      const data = document.getElementById('qr-data').value;
+      if (!data) {
+        alert('Enter data to encode');
+        return;
+      }
+
+      const format = document.getElementById('qr-format').value;
+      const errorCorrection = document.getElementById('qr-error-correction').value;
+
+      let encodedData = data;
+
+      if (format === 'base60') {
+        encodedData = 'MOSS60:' + toBase60(data);
+      } else if (format === 'hex') {
+        encodedData = Array.from(new TextEncoder().encode(data))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+      } else if (format === 'json') {
+        try {
+          encodedData = JSON.stringify(JSON.parse(data));
+        } catch (e) {
+          alert('Invalid JSON');
+          return;
+        }
+      }
+
+      const canvas = document.getElementById('qr-canvas');
+      canvas.style.display = 'block';
+
+      try {
+        await QRCode.toCanvas(canvas, encodedData, {
+          errorCorrectionLevel: errorCorrection,
+          width: 400,
+          margin: 2,
+          color: {
+            dark: '#0a0a1a',
+            light: '#ffffff'
+          }
+        });
+
+        document.getElementById('hash-display').textContent = 'QR Code Generated: ' + encodedData.substring(0, 40) + '...';
+      } catch (err) {
+        alert('QR generation failed: ' + err.message);
+      }
+    }
+
+    function downloadQR() {
+      const canvas = document.getElementById('qr-canvas');
+      const link = document.createElement('a');
+      link.download = 'moss60-qr-' + Date.now() + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    async function startQRScanner() {
+      const video = document.getElementById('qr-scanner-video');
+      const canvas = document.getElementById('qr-canvas');
+
+      canvas.style.display = 'none';
+      video.style.display = 'block';
+
+      try {
+        qrStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }
+        });
+
+        video.srcObject = qrStream;
+
+        // Scan for QR codes
+        qrScanInterval = setInterval(() => {
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = video.videoWidth;
+          tempCanvas.height = video.videoHeight;
+          const ctx = tempCanvas.getContext('2d');
+          ctx.drawImage(video, 0, 0);
+
+          const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+          if (code) {
+            let decoded = code.data;
+
+            // Handle MOSS60 format
+            if (decoded.startsWith('MOSS60:')) {
+              try {
+                const base60Data = decoded.substring(7);
+                const bytes = fromBase60(base60Data);
+                decoded = new TextDecoder().decode(bytes);
+              } catch (e) {
+                decoded = 'Error decoding Base-60: ' + e.message;
+              }
+            }
+
+            document.getElementById('qr-scan-result').textContent = 'Detected: ' + decoded;
+            document.getElementById('hash-display').textContent = 'QR Scanned: ' + decoded.substring(0, 40) + '...';
+          }
+        }, 100);
+
+      } catch (err) {
+        alert('Camera access denied: ' + err.message);
+      }
+    }
+
+    function stopQRScanner() {
+      if (qrStream) {
+        qrStream.getTracks().forEach(track => track.stop());
+        qrStream = null;
+      }
+
+      if (qrScanInterval) {
+        clearInterval(qrScanInterval);
+        qrScanInterval = null;
+      }
+
+      document.getElementById('qr-scanner-video').style.display = 'none';
+      document.getElementById('qr-scan-result').textContent = 'Scanner stopped';
+    }
+
+    // ===== STORAGE FUNCTIONS =====
+    async function initStorage() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open('MOSS60Storage', 1);
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          storageDB = request.result;
+          resolve();
+        };
+
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains('encrypted')) {
+            db.createObjectStore('encrypted', { keyPath: 'name' });
+          }
+          if (!db.objectStoreNames.contains('plugins')) {
+            db.createObjectStore('plugins', { keyPath: 'name' });
+          }
+        };
+      });
+    }
+
+    async function saveEncryptedData() {
+      const name = document.getElementById('storage-name').value;
+      const data = document.getElementById('storage-data').value;
+      const password = document.getElementById('storage-password').value;
+
+      if (!name || !data || !password) {
+        alert('Fill in all fields');
+        return;
+      }
+
+      // Encrypt data
+      const encryptionKey = extendedHash(password, 16);
+      const bytes = new TextEncoder().encode(data);
+      const encrypted = Array.from(bytes).map((byte, i) => {
+        const keyByte = parseInt(encryptionKey.substr((i * 2) % encryptionKey.length, 2), 16);
+        return byte ^ keyByte;
+      });
+
+      const encryptedData = btoa(String.fromCharCode(...encrypted));
+
+      try {
+        if (!storageDB) await initStorage();
+
+        const transaction = storageDB.transaction(['encrypted'], 'readwrite');
+        const store = transaction.objectStore('encrypted');
+
+        await store.put({
+          name: name,
+          data: encryptedData,
+          timestamp: Date.now(),
+          hash: moss60Hash(data)
+        });
+
+        alert('Data encrypted and saved!');
+        document.getElementById('storage-name').value = '';
+        document.getElementById('storage-data').value = '';
+        document.getElementById('storage-password').value = '';
+
+        loadStorageList();
+      } catch (err) {
+        alert('Storage error: ' + err.message);
+      }
+    }
+
+    async function loadStorageList() {
+      try {
+        if (!storageDB) await initStorage();
+
+        const transaction = storageDB.transaction(['encrypted'], 'readonly');
+        const store = transaction.objectStore('encrypted');
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+          const entries = request.result;
+          const list = document.getElementById('storage-list');
+
+          if (entries.length === 0) {
+            list.innerHTML = '<div class="info-box">No entries stored yet</div>';
+            document.getElementById('storage-count').textContent = '0';
+            document.getElementById('storage-size').textContent = '0 KB';
+            return;
+          }
+
+          let totalSize = 0;
+          list.innerHTML = '';
+
+          entries.forEach(entry => {
+            totalSize += entry.data.length;
+
+            const item = document.createElement('div');
+            item.className = 'storage-item';
+            item.innerHTML = `
+              <div class="storage-item-header">
+                <div class="storage-item-name">${entry.name}</div>
+                <div class="storage-item-date">${new Date(entry.timestamp).toLocaleString()}</div>
+              </div>
+              <div class="storage-item-data">Hash: ${entry.hash}</div>
+              <div class="storage-item-actions">
+                <button onclick="decryptEntry('${entry.name}')">DECRYPT</button>
+                <button onclick="deleteEntry('${entry.name}')">DELETE</button>
+              </div>
+            `;
+            list.appendChild(item);
+          });
+
+          document.getElementById('storage-count').textContent = entries.length;
+          document.getElementById('storage-size').textContent = (totalSize / 1024).toFixed(2) + ' KB';
+        };
+      } catch (err) {
+        console.error('Storage load error:', err);
+      }
+    }
+
+    async function decryptEntry(name) {
+      const password = prompt('Enter decryption password:');
+      if (!password) return;
+
+      try {
+        const transaction = storageDB.transaction(['encrypted'], 'readonly');
+        const store = transaction.objectStore('encrypted');
+        const request = store.get(name);
+
+        request.onsuccess = () => {
+          const entry = request.result;
+          if (!entry) {
+            alert('Entry not found');
+            return;
+          }
+
+          // Decrypt
+          const encryptionKey = extendedHash(password, 16);
+          const encrypted = atob(entry.data).split('').map(c => c.charCodeAt(0));
+          const decrypted = encrypted.map((byte, i) => {
+            const keyByte = parseInt(encryptionKey.substr((i * 2) % encryptionKey.length, 2), 16);
+            return byte ^ keyByte;
+          });
+
+          const plaintext = new TextDecoder().decode(new Uint8Array(decrypted));
+
+          // Verify hash
+          if (moss60Hash(plaintext) !== entry.hash) {
+            alert('Decryption failed - wrong password or corrupted data');
+            return;
+          }
+
+          showModal('Decrypted Data: ' + name, `<div class="info-box" style="word-break: break-all; max-height: 400px; overflow-y: auto;">${plaintext}</div>`);
+        };
+      } catch (err) {
+        alert('Decryption error: ' + err.message);
+      }
+    }
+
+    async function deleteEntry(name) {
+      if (!confirm('Delete entry "' + name + '"?')) return;
+
+      try {
+        const transaction = storageDB.transaction(['encrypted'], 'readwrite');
+        const store = transaction.objectStore('encrypted');
+        await store.delete(name);
+
+        loadStorageList();
+      } catch (err) {
+        alert('Delete error: ' + err.message);
+      }
+    }
+
+    async function exportAllStorage() {
+      try {
+        const transaction = storageDB.transaction(['encrypted'], 'readonly');
+        const store = transaction.objectStore('encrypted');
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+          const data = JSON.stringify(request.result, null, 2);
+          const blob = new Blob([data], { type: 'application/json' });
+          const link = document.createElement('a');
+          link.download = 'moss60-storage-' + Date.now() + '.json';
+          link.href = URL.createObjectURL(blob);
+          link.click();
+        };
+      } catch (err) {
+        alert('Export error: ' + err.message);
+      }
+    }
+
+    async function clearAllStorage() {
+      if (!confirm('Delete ALL stored entries? This cannot be undone!')) return;
+
+      try {
+        const transaction = storageDB.transaction(['encrypted'], 'readwrite');
+        const store = transaction.objectStore('encrypted');
+        await store.clear();
+
+        loadStorageList();
+      } catch (err) {
+        alert('Clear error: ' + err.message);
+      }
+    }
+
+    // ===== ORACLE FUNCTIONS =====
+    function processOracle() {
+      const input = document.getElementById('oracle-input').value;
+      if (!input) {
+        alert('Enter data to process');
+        return;
+      }
+
+      const rounds = parseInt(document.getElementById('oracle-rounds').value);
+      document.getElementById('oracle-rounds-val').textContent = rounds;
+
+      let result = input;
+      let cascade = [];
+
+      for (let i = 0; i < rounds; i++) {
+        result = extendedHash(result, 16);
+        cascade.push(result);
+      }
+
+      const finalHash = cascade[cascade.length - 1];
+
+      const output = document.getElementById('oracle-output');
+      output.innerHTML = `
+        <div><strong>Oracle Cascade (${rounds} rounds)</strong></div>
+        <div style="margin-top: 8px;">Final Hash: ${finalHash}</div>
+        <div style="margin-top: 8px; font-size: 9px;">
+          ${cascade.map((h, i) => `Round ${i + 1}: ${h.substring(0, 32)}...`).join('<br>')}
+        </div>
+      `;
+
+      document.getElementById('hash-display').textContent = 'Oracle: ' + finalHash.substring(0, 40) + '...';
+    }
+
+    function visualizeOracle() {
+      const input = document.getElementById('oracle-input').value;
+      if (!input) {
+        alert('Process Oracle data first');
+        return;
+      }
+
+      document.getElementById('msg').value = 'ORACLE:' + input;
+      generateGlyph();
+      switchMode('glyph');
+    }
+
+    // ===== PLUGIN FUNCTIONS =====
+    async function installPlugin() {
+      const code = document.getElementById('plugin-code').value;
+      if (!code) {
+        alert('Paste plugin code');
+        return;
+      }
+
+      try {
+        // Create plugin API
+        const pluginAPI = {
+          moss60Hash,
+          extendedHash,
+          generateKeyPair,
+          toBase60,
+          fromBase60,
+          PHI,
+          R, K, B,
+          primes,
+          lucas,
+          showModal,
+          alert: (msg) => alert(msg)
+        };
+
+        // Execute plugin code in isolated scope
+        const pluginFunc = new Function('API', code);
+        const plugin = pluginFunc(pluginAPI);
+
+        if (!plugin || !plugin.name || !plugin.version || !plugin.init) {
+          throw new Error('Invalid plugin format. Must export: name, version, init()');
+        }
+
+        // Initialize plugin
+        plugin.init();
+
+        // Save plugin
+        if (!storageDB) await initStorage();
+        const transaction = storageDB.transaction(['plugins'], 'readwrite');
+        const store = transaction.objectStore('plugins');
+
+        await store.put({
+          name: plugin.name,
+          version: plugin.version,
+          code: code,
+          timestamp: Date.now()
+        });
+
+        alert('Plugin "' + plugin.name + '" installed successfully!');
+        document.getElementById('plugin-code').value = '';
+        loadPluginList();
+
+      } catch (err) {
+        alert('Plugin installation failed: ' + err.message);
+      }
+    }
+
+    async function loadPluginList() {
+      try {
+        if (!storageDB) await initStorage();
+
+        const transaction = storageDB.transaction(['plugins'], 'readonly');
+        const store = transaction.objectStore('plugins');
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+          const plugins = request.result;
+          const list = document.getElementById('plugin-list');
+
+          if (plugins.length === 0) {
+            list.innerHTML = '<div class="info-box">No plugins installed</div>';
+            return;
+          }
+
+          list.innerHTML = '';
+
+          plugins.forEach(plugin => {
+            const item = document.createElement('div');
+            item.className = 'storage-item';
+            item.innerHTML = `
+              <div class="storage-item-header">
+                <div class="storage-item-name">${plugin.name}</div>
+                <div class="storage-item-date">v${plugin.version}</div>
+              </div>
+              <div class="storage-item-data">Installed: ${new Date(plugin.timestamp).toLocaleString()}</div>
+              <div class="storage-item-actions">
+                <button onclick="runPlugin('${plugin.name}')">RUN</button>
+                <button onclick="deletePlugin('${plugin.name}')">DELETE</button>
+              </div>
+            `;
+            list.appendChild(item);
+          });
+        };
+      } catch (err) {
+        console.error('Plugin list error:', err);
+      }
+    }
+
+    async function runPlugin(name) {
+      try {
+        const transaction = storageDB.transaction(['plugins'], 'readonly');
+        const store = transaction.objectStore('plugins');
+        const request = store.get(name);
+
+        request.onsuccess = () => {
+          const plugin = request.result;
+          if (!plugin) {
+            alert('Plugin not found');
+            return;
+          }
+
+          const pluginAPI = {
+            moss60Hash,
+            extendedHash,
+            generateKeyPair,
+            toBase60,
+            fromBase60,
+            PHI,
+            R, K, B,
+            primes,
+            lucas,
+            showModal,
+            alert: (msg) => alert(msg)
+          };
+
+          const pluginFunc = new Function('API', plugin.code);
+          const pluginObj = pluginFunc(pluginAPI);
+
+          if (pluginObj.run) {
+            pluginObj.run();
+          } else {
+            alert('Plugin has no run() function');
+          }
+        };
+      } catch (err) {
+        alert('Plugin run error: ' + err.message);
+      }
+    }
+
+    async function deletePlugin(name) {
+      if (!confirm('Delete plugin "' + name + '"?')) return;
+
+      try {
+        const transaction = storageDB.transaction(['plugins'], 'readwrite');
+        const store = transaction.objectStore('plugins');
+        await store.delete(name);
+
+        loadPluginList();
+      } catch (err) {
+        alert('Delete error: ' + err.message);
+      }
+    }
+
+    function showPluginAPI() {
+      const apiDocs = `
+        <h3 style="color: var(--gold); margin-bottom: 12px;">MOSS60 Plugin API</h3>
+        <div class="info-box" style="text-align: left;">
+          <strong>Plugin Structure:</strong><br><br>
+          <code style="background: rgba(0,0,0,0.5); padding: 8px; display: block; margin: 8px 0; border-radius: 4px;">
+return {<br>
+&nbsp;&nbsp;name: 'MyPlugin',<br>
+&nbsp;&nbsp;version: '1.0.0',<br>
+&nbsp;&nbsp;init: function() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// Initialization code<br>
+&nbsp;&nbsp;},<br>
+&nbsp;&nbsp;run: function() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// Plugin logic<br>
+&nbsp;&nbsp;}<br>
+};
+          </code><br>
+          <strong>Available API Functions:</strong><br>
+          • API.moss60Hash(input)<br>
+          • API.extendedHash(input, iterations)<br>
+          • API.generateKeyPair(seed)<br>
+          • API.toBase60(data)<br>
+          • API.fromBase60(encoded)<br>
+          • API.showModal(title, content)<br>
+          • API.alert(message)<br><br>
+          <strong>Constants:</strong><br>
+          • API.PHI, API.R, API.K, API.B<br>
+          • API.primes, API.lucas
+        </div>
+      `;
+      showModal('Plugin API Documentation', apiDocs);
+    }
+
+    // ===== UTILITY FUNCTIONS =====
+    function toggleAnimation() {
+      isAnimating = !isAnimating;
+      document.getElementById('anim-btn-text').textContent = isAnimating ? 'PAUSE' : 'PLAY';
+      if (isAnimating) render();
+    }
+
+    function resetView() {
+      rotationX = 0;
+      rotationY = 0;
+      projection3D = 'flat';
+      document.getElementById('projection').value = 'flat';
+    }
+
+    function randomize() {
+      const randomMsg = 'MOSS60-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+      document.getElementById('msg').value = randomMsg;
+      generateGlyph();
+    }
+
+    function toggleFullscreen() {
+      const canvas = document.getElementById('main-canvas');
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        canvas.requestFullscreen();
+      }
+    }
+
+    function saveToStorage() {
+      const msg = document.getElementById('msg').value;
+      const hash = currentHash;
+
+      if (!msg || !hash) {
+        alert('Generate a glyph first');
+        return;
+      }
+
+      document.getElementById('storage-name').value = 'Glyph_' + Date.now();
+      document.getElementById('storage-data').value = JSON.stringify({
+        message: msg,
+        hash: hash,
+        timestamp: Date.now()
+      });
+
+      switchMode('storage');
+    }
+
+    function exportPNG() {
+      const canvas = document.getElementById('main-canvas');
+      const link = document.createElement('a');
+      link.download = 'moss60-glyph-' + currentHash.substring(0, 8) + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function exportSVG() {
+      alert('SVG export coming soon!');
+    }
+
+    function showModal(title, content) {
+      document.getElementById('modal-header').textContent = title;
+      document.getElementById('modal-body').innerHTML = content;
+      document.getElementById('modal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+    }
+
+    // ===== KEYBOARD SHORTCUTS =====
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      switch (e.key) {
+        case ' ':
+          e.preventDefault();
+          toggleAnimation();
+          break;
+        case 'r':
+          randomize();
+          break;
+        case 'f':
+          toggleFullscreen();
+          break;
+        case '1':
+          switchMode('glyph');
+          break;
+        case '2':
+          switchMode('serpent');
+          break;
+        case '3':
+          switchMode('qr');
+          break;
+        case '4':
+          switchMode('storage');
+          break;
+        case '5':
+          switchMode('oracle');
+          break;
+        case '6':
+          switchMode('plugins');
+          break;
+        case 'Escape':
+          closeModal();
+          break;
+      }
+    });
+
+    // ===== PWA SUPPORT =====
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').then(
+          (registration) => console.log('ServiceWorker registered:', registration.scope),
+          (err) => console.log('ServiceWorker registration failed:', err)
+        );
+      });
+    }
+
+    // ===== INITIALIZE =====
+    window.addEventListener('load', async () => {
+      await initStorage();
+      generateGlyph();
+      console.log('🔒 MOSS60 Ultimate initialized');
+      console.log('📊 Base-60 encoding active');
+      console.log('🌐 All systems operational');
+    });
+  </script>
+</body>
+</html>

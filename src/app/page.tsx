@@ -64,12 +64,14 @@ import {
   UtensilsCrossed,
   Gamepad2,
   Save,
+  QrCode,
 } from 'lucide-react';
 import Link from 'next/link';
 import { PetResponseOverlay } from '@/components/PetResponseOverlay';
 import { DigitalKeyPanel } from '@/components/DigitalKeyPanel';
 import RitualLoop from '@/components/RitualLoop';
 import { OnboardingTutorial } from '@/components/OnboardingTutorial';
+import { QRQuickPanel } from '@/components/QRMessaging';
 
 interface PetSummary {
   id: string;
@@ -1066,6 +1068,16 @@ export default function Home() {
                 Full Screen Pet
               </Button>
             </Link>
+            <Link href="/qr-messaging">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
+              >
+                <QrCode className="w-4 h-4" />
+                QR Messaging
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -1513,6 +1525,9 @@ export default function Home() {
             <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800">
               <DigitalKeyPanel />
             </div>
+
+            {/* QR Messaging */}
+            <QRQuickPanel />
 
             <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800">
               <AchievementShelf />
