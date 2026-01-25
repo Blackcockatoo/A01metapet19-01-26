@@ -1052,6 +1052,9 @@ export default function Home() {
           <p className="text-zinc-400 text-sm mb-3">
             Prime-Tail Crest • HeptaCode v1 • Live Vitals
           </p>
+          <p className="text-xs text-zinc-500">
+            Identity glossary: PrimeTail crest = vault + rotation + tail + DNA hashes; HeptaCode encodes the crest payload. See docs/identity-glossary.md.
+          </p>
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <Link href="/pet">
               <Button
