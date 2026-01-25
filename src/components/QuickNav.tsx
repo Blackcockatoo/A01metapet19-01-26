@@ -115,7 +115,7 @@ export function QuickNav() {
               variant="ghost"
               size="icon"
               onClick={handleInstall}
-              className="h-14 w-14 rounded-full text-slate-200 hover:bg-slate-800/80 touch-manipulation"
+              className="h-11 w-11 rounded-full text-slate-200 hover:bg-slate-800/80 touch-manipulation"
               aria-label="Install app"
               title="Install app"
             >
