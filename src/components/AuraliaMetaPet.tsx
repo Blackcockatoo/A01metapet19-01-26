@@ -2307,7 +2307,7 @@ const AuraliaMetaPet: React.FC<AuraliaMetaPetProps> = ({
             <div className="bg-gray-900/80 rounded-2xl p-6 border border-yellow-600/20">
               <h3 className="text-xl font-semibold text-yellow-400 mb-4">Trinity Genome Vaults</h3>
               <div className="space-y-2">
-                <div className="flex justify-between text-sm text-gray-400"><span>Red-60 (Spine Energy)</span><span className="font-mono text-yellow-500">{red60.toFixed(2)}%</span></div>
+                <div className="flex justify-between text-sm text-gray-400"><span>Red-60 (Spine Energy)</span><span className="font-mono text-yellow-500">••••</span></div>
                 <div className="w-full bg-gray-700 rounded-full h-2"><div className="bg-red-500 h-2 rounded-full" style={{ width: `${red60}%` }}></div></div>
                 
                 <div className="flex justify-between text-sm text-gray-400 pt-2"><span>Blue-60 (Form Integrity)</span><span className="font-mono text-yellow-500">{blue60.toFixed(2)}%</span></div>
@@ -2341,7 +2341,7 @@ const AuraliaMetaPet: React.FC<AuraliaMetaPetProps> = ({
               />
 
               <div className="mt-3 text-xs text-gray-500 space-y-1">
-                <p>Red-60 ({red60.toFixed(1)}%): Morph bias (circle↔triangle)</p>
+                <p>Red-60 (••••): Morph bias (circle↔triangle)</p>
                 <p>Blue-60 ({blue60.toFixed(1)}%): Form stability</p>
                 <p>Black-60 ({black60.toFixed(1)}%): Mystery halo glow</p>
               </div>
@@ -2619,7 +2619,7 @@ const AuraliaMetaPet: React.FC<AuraliaMetaPetProps> = ({
                           <p className="text-sm text-purple-300 font-mono">{child.name}</p>
                           <p className="text-xs text-gray-400">Parents: {child.parents.join(' × ')}</p>
                           <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
-                            <div><span className="text-gray-400">R:</span> <span className="text-red-400">{child.genome.red60.toFixed(1)}</span></div>
+                            <div><span className="text-gray-400">R:</span> <span className="text-red-400">••••</span></div>
                             <div><span className="text-gray-400">B:</span> <span className="text-blue-400">{child.genome.blue60.toFixed(1)}</span></div>
                             <div><span className="text-gray-400">K:</span> <span className="text-gray-400">{child.genome.black60.toFixed(1)}</span></div>
                           </div>
