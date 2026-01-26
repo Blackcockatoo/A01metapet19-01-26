@@ -59,6 +59,7 @@ import {
   HeartHandshake,
   ChevronDown,
   ChevronUp,
+  Award,
 } from 'lucide-react';
 import { PetResponseOverlay } from '@/components/PetResponseOverlay';
 import { DigitalKeyPanel } from '@/components/DigitalKeyPanel';
@@ -68,6 +69,7 @@ import { HeptaTag } from '@/components/HeptaTag';
 import { SeedOfLifeGlyph } from '@/components/SeedOfLifeGlyph';
 import { AchievementShelf } from '@/components/AchievementShelf';
 import { QRQuickPanel } from '@/components/QRMessaging';
+import { RegistrationCertificate, CertificateButton } from '@/components/RegistrationCertificate';
 
 interface PetSummary {
   id: string;
@@ -230,6 +232,7 @@ export default function Home() {
   const [offspringSummary, setOffspringSummary] = useState<PetSummary | null>(null);
   const [breedingError, setBreedingError] = useState<string | null>(null);
   const [breedingBusy, setBreedingBusy] = useState(false);
+  const [certificateOpen, setCertificateOpen] = useState(false);
 
   const debouncedSave = useMemo(() => createDebouncedSave(1_000), []);
 
@@ -1113,6 +1116,19 @@ export default function Home() {
 
           {/* Quick Actions */}
           <FloatingActions />
+
+          {/* Certificate Button */}
+          <div className="flex justify-center pt-2">
+            <Button
+              onClick={() => setCertificateOpen(true)}
+              variant="outline"
+              size="sm"
+              className="border-purple-500/50 text-purple-300 hover:bg-purple-500/10 touch-manipulation"
+            >
+              <Award className="w-4 h-4 mr-2" />
+              View Certificate
+            </Button>
+          </div>
         </div>
 
         {/* ===== VITALS BAR ===== */}
@@ -1524,6 +1540,18 @@ export default function Home() {
           </p>
         </div>
       </div>
+
+      {/* Registration Certificate Modal */}
+      <RegistrationCertificate
+        petId={currentPetId ?? PET_ID}
+        petName={petName || 'Unnamed Companion'}
+        crest={crest}
+        heptaCode={heptaCode}
+        createdAt={createdAt ?? undefined}
+        evolutionState={evolution?.state}
+        isOpen={certificateOpen}
+        onClose={() => setCertificateOpen(false)}
+      />
     </AmbientBackground>
   );
 }
