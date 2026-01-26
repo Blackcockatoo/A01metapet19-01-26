@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { triggerHaptic } from '@/lib/haptics';
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -34,6 +35,7 @@ export function QuickNav() {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   const handleBack = useCallback(() => {
+    triggerHaptic('light');
     if (typeof window !== 'undefined' && window.history.length > 1) {
       router.back();
       return;
@@ -66,6 +68,7 @@ export function QuickNav() {
     if (!installPrompt) {
       return;
     }
+    triggerHaptic('success');
     await installPrompt.prompt();
     const choice = await installPrompt.userChoice;
     if (choice.outcome === 'accepted') {
@@ -73,56 +76,80 @@ export function QuickNav() {
     }
   }, [installPrompt]);
 
+  const handleNavClick = useCallback(() => {
+    triggerHaptic('selection');
+  }, []);
+
   return (
-    <div className="fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-50 flex justify-center px-4 pointer-events-none">
-      <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-slate-700/70 bg-slate-950/80 px-3 py-2 shadow-lg shadow-slate-950/40 backdrop-blur">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={handleBack}
-          className="h-14 w-14 rounded-full text-slate-200 hover:bg-slate-800/80 touch-manipulation"
-          aria-label="Go back"
-          title="Back"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="h-6 w-px bg-slate-700/70" />
-        {NAV_ITEMS.map(item => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href;
-          return (
-            <Link key={item.href} href={item.href} className="flex">
+    <div className="fixed inset-x-0 bottom-0 z-50 pb-[max(0.75rem,env(safe-area-inset-bottom))] px-4 pointer-events-none">
+      <div className="max-w-lg mx-auto">
+        <div className="pointer-events-auto flex items-center justify-between rounded-2xl border border-slate-700/70 bg-slate-950/90 px-2 py-2 shadow-lg shadow-slate-950/60 backdrop-blur-lg">
+          {/* Back button */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={handleBack}
+            className="h-12 w-12 rounded-xl text-slate-400 hover:bg-slate-800/80 hover:text-white touch-manipulation"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+
+          {/* Divider */}
+          <div className="h-8 w-px bg-slate-700/50" />
+
+          {/* Nav Items */}
+          <div className="flex-1 flex items-center justify-around">
+            {NAV_ITEMS.map(item => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={handleNavClick}
+                  className="flex"
+                >
+                  <div
+                    className={`
+                      flex flex-col items-center justify-center gap-0.5
+                      min-w-[52px] h-12 px-2 rounded-xl
+                      transition-all duration-200
+                      touch-manipulation
+                      ${isActive
+                        ? 'bg-cyan-500/20 text-cyan-300'
+                        : 'text-slate-400 hover:bg-slate-800/60 hover:text-white active:scale-95'
+                      }
+                    `}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span className={`text-[9px] font-medium ${isActive ? 'opacity-100' : 'opacity-70'}`}>
+                      {item.label}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Install button */}
+          {showInstall && (
+            <>
+              <div className="h-8 w-px bg-slate-700/50" />
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-14 w-14 rounded-full text-slate-200 hover:bg-slate-800/80 data-[active=true]:bg-cyan-500/20 data-[active=true]:text-cyan-200 touch-manipulation"
-                data-active={isActive}
-                aria-label={item.label}
-                title={item.label}
+                onClick={handleInstall}
+                className="h-12 w-12 rounded-xl text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 touch-manipulation"
+                aria-label="Install app"
               >
-                <Icon className="h-5 w-5" />
+                <ArrowDownToLine className="h-5 w-5" />
               </Button>
-            </Link>
-          );
-        })}
-        {showInstall ? (
-          <>
-            <div className="h-6 w-px bg-slate-700/70" />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={handleInstall}
-              className="h-11 w-11 rounded-full text-slate-200 hover:bg-slate-800/80 touch-manipulation"
-              aria-label="Install app"
-              title="Install app"
-            >
-              <ArrowDownToLine className="h-5 w-5" />
-            </Button>
-          </>
-        ) : null}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

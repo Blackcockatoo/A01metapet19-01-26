@@ -5,14 +5,12 @@ import type { ChangeEvent } from 'react';
 
 import { useStore } from '@/lib/store';
 import type { PetType, RewardSource } from '@metapet/core/store';
-import { HUD } from '@/components/HUD';
+import { PetHero } from '@/components/PetHero';
+import { CompactVitalsBar } from '@/components/CompactVitalsBar';
+import { FloatingActions } from '@/components/FloatingActions';
+import { AmbientBackground } from '@/components/AmbientBackground';
+import { AmbientParticles } from '@/components/AmbientParticles';
 import { TraitPanel } from '@/components/TraitPanel';
-import { PetSprite } from '@/components/PetSprite';
-import AuraliaMetaPet from '@/components/AuraliaMetaPet';
-import AuraliaSprite from '@/components/AuraliaSprite';
-import { HeptaTag } from '@/components/HeptaTag';
-import { SeedOfLifeGlyph } from '@/components/SeedOfLifeGlyph';
-import { AchievementShelf } from '@/components/AchievementShelf';
 import { Button } from '@/components/ui/button';
 import { mintPrimeTailId, getDeviceHmacKey } from '@/lib/identity/crest';
 import { heptaEncode42, playHepta } from '@/lib/identity/hepta';
@@ -59,19 +57,16 @@ import {
   Baby,
   FlaskConical,
   HeartHandshake,
-  Maximize2,
-  Key,
-  UtensilsCrossed,
-  Gamepad2,
-  Save,
-  QrCode,
-  UserCircle,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
-import Link from 'next/link';
 import { PetResponseOverlay } from '@/components/PetResponseOverlay';
 import { DigitalKeyPanel } from '@/components/DigitalKeyPanel';
 import RitualLoop from '@/components/RitualLoop';
 import { OnboardingTutorial } from '@/components/OnboardingTutorial';
+import { HeptaTag } from '@/components/HeptaTag';
+import { SeedOfLifeGlyph } from '@/components/SeedOfLifeGlyph';
+import { AchievementShelf } from '@/components/AchievementShelf';
 import { QRQuickPanel } from '@/components/QRMessaging';
 
 interface PetSummary {
@@ -160,6 +155,42 @@ function createDebouncedSave(delay: number) {
 const PET_ID = 'metapet-primary';
 const SESSION_ANALYTICS_KEY = 'metapet-analytics';
 
+// Collapsible Section Component
+function CollapsibleSection({
+  title,
+  icon,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-800/30 transition-colors touch-manipulation"
+      >
+        <div className="flex items-center gap-2">
+          {icon}
+          <h2 className="text-lg font-bold text-white">{title}</h2>
+        </div>
+        {isOpen ? (
+          <ChevronUp className="w-5 h-5 text-zinc-400" />
+        ) : (
+          <ChevronDown className="w-5 h-5 text-zinc-400" />
+        )}
+      </button>
+      {isOpen && <div className="px-4 pb-4">{children}</div>}
+    </div>
+  );
+}
+
 export default function Home() {
   const startTick = useStore(s => s.startTick);
   const stopTick = useStore(s => s.stopTick);
@@ -199,9 +230,6 @@ export default function Home() {
   const [offspringSummary, setOffspringSummary] = useState<PetSummary | null>(null);
   const [breedingError, setBreedingError] = useState<string | null>(null);
   const [breedingBusy, setBreedingBusy] = useState(false);
-
-  // keep companion card compact by default; explicit user action expands it
-  const [companionExpanded, setCompanionExpanded] = useState(false);
 
   const debouncedSave = useMemo(() => createDebouncedSave(1_000), []);
 
@@ -990,7 +1018,7 @@ export default function Home() {
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="text-5xl animate-bounce" aria-hidden>
-            🧬
+            <Sparkles className="w-12 h-12 text-cyan-400 mx-auto" />
           </div>
           <div className="space-y-1">
             <p className="text-white font-semibold">Initializing Meta-Pet...</p>
@@ -1035,126 +1063,66 @@ export default function Home() {
     : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 p-6 pb-24 sm:pb-6">
+    <AmbientBackground>
+      {/* Ambient Particles */}
+      <AmbientParticles />
+
       {/* Onboarding Tutorial for new users */}
       <OnboardingTutorial />
 
       {/* Real-time Response Overlay */}
       <PetResponseOverlay enableAudio={true} enableAnticipation={true} />
 
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-3">
-            <Sparkles className="w-8 h-8 text-cyan-400" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Meta-Pet
-            </h1>
-            <Sparkles className="w-8 h-8 text-pink-400" />
+      <div className="min-h-screen pb-24">
+        {/* ===== HERO SECTION: PET AT TOP ===== */}
+        <div className="pt-6 pb-2">
+          {/* Pet Name & Type Toggle */}
+          <div className="text-center px-4 mb-4">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <input
+                type="text"
+                value={petName}
+                onChange={event => setPetName(event.target.value)}
+                onBlur={() => void handleNameBlur()}
+                placeholder="Name your companion"
+                className="text-2xl font-bold text-center bg-transparent border-none text-white placeholder:text-zinc-500 focus:outline-none focus:ring-0 max-w-[200px]"
+              />
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <Button
+                variant={petType === 'geometric' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setPetType('geometric')}
+                className="text-xs h-7 touch-manipulation"
+              >
+                Geometric
+              </Button>
+              <Button
+                variant={petType === 'auralia' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setPetType('auralia')}
+                className="text-xs h-7 touch-manipulation"
+              >
+                Auralia
+              </Button>
+            </div>
           </div>
-          <p className="text-zinc-400 text-sm mb-3">
-            PrimeTail ID • HeptaCode v1 • Live Vitals
-          </p>
-          <p className="text-xs text-zinc-500">
-            Identity glossary: PrimeTail crest = vault + rotation + tail + DNA hashes; HeptaCode encodes the crest payload. See docs/identity-glossary.md.
-          </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-3">
-            <Link href="/pet">
-              <Button
-                variant="default"
-                size="sm"
-                className="gap-2 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
-              >
-                <Maximize2 className="w-4 h-4" />
-                Full Screen Pet
-              </Button>
-            </Link>
-            <Link href="/qr-messaging">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
-              >
-                <QrCode className="w-4 h-4" />
-                QR Messaging
-              </Button>
-            </Link>
-            <Link href="/identity">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 border-purple-500/60 text-purple-300 hover:bg-purple-500/10"
-              >
-                <UserCircle className="w-4 h-4" />
-                Identity
-              </Button>
-            </Link>
-          </div>
+
+          {/* Pet Hero with Progress Rings */}
+          <PetHero className="py-4" />
+
+          {/* Quick Actions */}
+          <FloatingActions />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Pet Card */}
-          <div className="lg:col-span-1 space-y-6 order-2 lg:order-1">
-            <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-cyan-400" />
-                  Your Companion
-                </h2>
+        {/* ===== VITALS BAR ===== */}
+        <CompactVitalsBar />
 
-                {/* Pet Type Switcher */}
-                <div className="flex gap-2">
-                  <Button
-                    variant={petType === 'geometric' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setPetType('geometric')}
-                    className="text-xs"
-                  >
-                    Geometric
-                  </Button>
-                  <Button
-                    variant={petType === 'auralia' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setPetType('auralia')}
-                    className="text-xs"
-                  >
-                    Auralia
-                  </Button>
-                </div>
-              </div>
+        {/* ===== CONTENT SECTIONS ===== */}
+        <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
 
-              {/* Pet sprite */}
-              <div
-                className={`relative mb-6 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 rounded-xl overflow-hidden flex items-center justify-center ${companionExpanded ? 'h-[500px]' : 'h-48'}`}
-                onDoubleClick={() => setCompanionExpanded(e => !e)}
-                onKeyDown={event => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    setCompanionExpanded(e => !e);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-                aria-label="Toggle companion expanded"
-              >
-                {petType === 'geometric' ? <PetSprite /> : <AuraliaSprite />}
-              </div>
-
-              <HUD />
-            </div>
-
-            {/* Genome Traits */}
-            <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800 max-h-[calc(100vh-12rem)] sm:max-h-[calc(100vh-8rem)] overflow-y-auto">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2 sticky top-0 bg-slate-900/50 backdrop-blur-sm -mx-6 px-6 py-3 z-10">
-                <Dna className="w-5 h-5 text-purple-400" />
-                Genome Traits
-              </h2>
-              <TraitPanel />
-            </div>
-          </div>
-
-          {/* Identity & Persistence */}
-          <div className="lg:col-span-2 space-y-6">
+          {/* Ritual Loop - Important, keep expanded */}
+          <div id="ritual">
             <RitualLoop
               petId={currentPetId ?? PET_ID}
               initialProgress={ritualProgress}
@@ -1178,439 +1146,384 @@ export default function Home() {
                   : undefined
               }
             />
+          </div>
 
-            {/* Crest */}
-            {crest && (
-              <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800">
-                <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-amber-400" />
-                  PrimeTail ID
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="text-zinc-400">Vault:</span>
-                      <span className="text-blue-400 font-mono font-bold uppercase">{crest.vault}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-zinc-400">Rotation:</span>
-                      <span className="text-cyan-400 font-mono font-bold">{crest.rotation}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-zinc-400">Tail:</span>
-                      <span className="text-purple-400 font-mono">[{crest.tail.join(', ')}]</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="text-zinc-400">DNA Hash:</span>
-                      <span className="text-green-400 font-mono text-xs break-all">{crest.dnaHash.slice(0, 16)}...</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="text-zinc-400">Mirror Hash:</span>
-                      <span className="text-sky-400 font-mono text-xs break-all">{crest.mirrorHash.slice(0, 16)}...</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="text-zinc-400">Signature:</span>
-                      <span className="text-pink-400 font-mono text-xs break-all">{crest.signature.slice(0, 16)}...</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-zinc-400">Coronated:</span>
-                      <span className="text-amber-200 text-xs font-mono">
-                        {new Date(crest.coronatedAt).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <div className="text-6xl">👑</div>
-                  </div>
+          {/* Evolution Progress */}
+          <CollapsibleSection
+            title="Evolution"
+            icon={<Sparkles className="w-5 h-5 text-cyan-300" />}
+            defaultOpen
+          >
+            <EvolutionPanel />
+          </CollapsibleSection>
+
+          {/* Mini Games */}
+          <div id="mini-games">
+            <CollapsibleSection
+              title="Mini-Games"
+              icon={<Sparkles className="w-5 h-5 text-pink-400" />}
+              defaultOpen
+            >
+              <FeaturesDashboard />
+            </CollapsibleSection>
+          </div>
+
+          {/* Breeding Lab */}
+          <CollapsibleSection
+            title="Breeding Lab"
+            icon={<FlaskConical className="w-5 h-5 text-pink-400" />}
+          >
+            <div className="space-y-4">
+              {/* Breeding Mode Selection */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs uppercase tracking-wide text-zinc-500">Breeding Mode</label>
+                <div className="flex flex-wrap gap-2">
+                  {(['BALANCED', 'DOMINANT', 'MUTATION'] as const).map(mode => (
+                    <Button
+                      key={mode}
+                      size="sm"
+                      variant={breedingMode === mode ? 'default' : 'outline'}
+                      onClick={() => setBreedingMode(mode)}
+                      className={`touch-manipulation ${breedingMode === mode ? 'bg-pink-600 hover:bg-pink-700' : 'border-slate-700'}`}
+                    >
+                      {mode}
+                    </Button>
+                  ))}
                 </div>
+                <p className="text-xs text-zinc-500">
+                  {breedingMode === 'BALANCED' && 'Equal mix of both parents\' traits'}
+                  {breedingMode === 'DOMINANT' && 'Stronger traits take priority'}
+                  {breedingMode === 'MUTATION' && 'Higher chance of unique mutations'}
+                </p>
               </div>
-            )}
 
-            {/* Breeding Lab */}
-            <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <FlaskConical className="w-5 h-5 text-pink-400" />
-                Breeding Lab
-              </h2>
-
-              <div className="space-y-4">
-                {/* Breeding Mode Selection */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs uppercase tracking-wide text-zinc-500">Breeding Mode</label>
-                  <div className="flex flex-wrap gap-2">
-                    {(['BALANCED', 'DOMINANT', 'MUTATION'] as const).map(mode => (
-                      <Button
-                        key={mode}
-                        size="sm"
-                        variant={breedingMode === mode ? 'default' : 'outline'}
-                        onClick={() => setBreedingMode(mode)}
-                        className={breedingMode === mode ? 'bg-pink-600 hover:bg-pink-700' : 'border-slate-700'}
-                      >
-                        {mode}
-                      </Button>
+              {/* Partner Selection */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs uppercase tracking-wide text-zinc-500">Select Partner</label>
+                <select
+                  value={breedingPartnerId}
+                  onChange={event => setBreedingPartnerId(event.target.value)}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-3 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-pink-500 touch-manipulation"
+                >
+                  <option value="">Choose a companion...</option>
+                  {petSummaries
+                    .filter(s => s.id !== currentPetId)
+                    .map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.name && s.name.trim() !== '' ? s.name : `Companion ${s.id.slice(0, 8)}`}
+                      </option>
                     ))}
+                </select>
+              </div>
+
+              {/* Breeding Preview */}
+              {breedingPreview && (
+                <div className="rounded-lg border border-pink-500/30 bg-pink-500/5 p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <HeartHandshake className="w-5 h-5 text-pink-400" />
+                    <span className="text-sm font-semibold text-pink-200">Compatibility Preview</span>
                   </div>
-                  <p className="text-xs text-zinc-500">
-                    {breedingMode === 'BALANCED' && 'Equal mix of both parents\' traits'}
-                    {breedingMode === 'DOMINANT' && 'Stronger traits take priority'}
-                    {breedingMode === 'MUTATION' && 'Higher chance of unique mutations'}
-                  </p>
-                </div>
-
-                {/* Partner Selection */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs uppercase tracking-wide text-zinc-500">Select Partner</label>
-                  <select
-                    value={breedingPartnerId}
-                    onChange={event => setBreedingPartnerId(event.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-pink-500"
-                  >
-                    <option value="">Choose a companion...</option>
-                    {petSummaries
-                      .filter(s => s.id !== currentPetId)
-                      .map(s => (
-                        <option key={s.id} value={s.id}>
-                          {s.name && s.name.trim() !== '' ? s.name : `Companion ${s.id.slice(0, 8)}`}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-
-                {/* Breeding Preview */}
-                {breedingPreview && (
-                  <div className="rounded-lg border border-pink-500/30 bg-pink-500/5 p-4 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <HeartHandshake className="w-5 h-5 text-pink-400" />
-                      <span className="text-sm font-semibold text-pink-200">Compatibility Preview</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-zinc-400">Partner:</span>
-                        <span className="ml-2 text-white">{breedingPreview.partnerName || 'Unknown'}</span>
-                      </div>
-                      <div>
-                        <span className="text-zinc-400">Stage:</span>
-                        <span className="ml-2 text-cyan-400">{breedingPreview.partnerStage}</span>
-                      </div>
-                      <div>
-                        <span className="text-zinc-400">Genetic Similarity:</span>
-                        <span className="ml-2 text-purple-400">{(breedingPreview.similarity * 100).toFixed(1)}%</span>
-                      </div>
-                      <div>
-                        <span className="text-zinc-400">Confidence:</span>
-                        <span className="ml-2 text-green-400">{(breedingPreview.confidence * 100).toFixed(1)}%</span>
-                      </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-zinc-400">Partner:</span>
+                      <span className="ml-2 text-white">{breedingPreview.partnerName || 'Unknown'}</span>
                     </div>
                     <div>
-                      <span className="text-xs text-zinc-500">Possible Traits:</span>
+                      <span className="text-zinc-400">Stage:</span>
+                      <span className="ml-2 text-cyan-400">{breedingPreview.partnerStage}</span>
+                    </div>
+                    <div>
+                      <span className="text-zinc-400">Genetic Similarity:</span>
+                      <span className="ml-2 text-purple-400">{(breedingPreview.similarity * 100).toFixed(1)}%</span>
+                    </div>
+                    <div>
+                      <span className="text-zinc-400">Confidence:</span>
+                      <span className="ml-2 text-green-400">{(breedingPreview.confidence * 100).toFixed(1)}%</span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-xs text-zinc-500">Possible Traits:</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {breedingPreview.possibleTraits.slice(0, 6).map(trait => (
+                        <span key={trait} className="px-2 py-0.5 rounded-full bg-slate-800 text-xs text-zinc-300">
+                          {trait}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Breed Button */}
+              <Button
+                onClick={() => void handleBreedWithPartner()}
+                disabled={isBreedingDisabled}
+                className="w-full h-12 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 disabled:opacity-50 touch-manipulation"
+              >
+                <Baby className="w-4 h-4 mr-2" />
+                {breedingBusy ? 'Breeding...' : 'Breed Companions'}
+              </Button>
+              {breedingHint && (
+                <p className="text-xs text-zinc-400">{breedingHint}</p>
+              )}
+
+              {breedingError && (
+                <p className="text-xs text-rose-400">{breedingError}</p>
+              )}
+
+              {/* Breeding Result */}
+              {breedingResult && offspringSummary && (
+                <div className="rounded-lg border border-green-500/30 bg-green-500/5 p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Baby className="w-5 h-5 text-green-400" />
+                    <span className="text-sm font-semibold text-green-200">New Offspring!</span>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-zinc-400">Name:</span>
+                      <span className="ml-2 text-white">{offspringSummary.name}</span>
+                    </div>
+                    <div>
+                      <span className="text-zinc-400">Lineage Key:</span>
+                      <span className="ml-2 text-purple-400 font-mono text-xs">{breedingResult.lineageKey.slice(0, 16)}...</span>
+                    </div>
+                    <div>
+                      <span className="text-zinc-400">Inherited Traits:</span>
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {breedingPreview.possibleTraits.slice(0, 6).map(trait => (
-                          <span key={trait} className="px-2 py-0.5 rounded-full bg-slate-800 text-xs text-zinc-300">
-                            {trait}
+                        {Object.entries(breedingResult.traits).slice(0, 4).map(([key, value]) => (
+                          <span key={key} className="px-2 py-0.5 rounded-full bg-slate-800 text-xs text-zinc-300">
+                            {key}: {typeof value === 'number' ? value.toFixed(2) : String(value)}
                           </span>
                         ))}
                       </div>
                     </div>
                   </div>
-                )}
-
-                {/* Breed Button */}
-                <Button
-                  onClick={() => void handleBreedWithPartner()}
-                  disabled={isBreedingDisabled}
-                  className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 disabled:opacity-50"
-                >
-                  <Baby className="w-4 h-4 mr-2" />
-                  {breedingBusy ? 'Breeding...' : 'Breed Companions'}
-                </Button>
-                {breedingHint && (
-                  <p className="text-xs text-zinc-400">{breedingHint}</p>
-                )}
-
-                {breedingError && (
-                  <p className="text-xs text-rose-400">{breedingError}</p>
-                )}
-
-                {/* Breeding Result */}
-                {breedingResult && offspringSummary && (
-                  <div className="rounded-lg border border-green-500/30 bg-green-500/5 p-4 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Baby className="w-5 h-5 text-green-400" />
-                      <span className="text-sm font-semibold text-green-200">New Offspring!</span>
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div>
-                        <span className="text-zinc-400">Name:</span>
-                        <span className="ml-2 text-white">{offspringSummary.name}</span>
-                      </div>
-                      <div>
-                        <span className="text-zinc-400">Lineage Key:</span>
-                        <span className="ml-2 text-purple-400 font-mono text-xs">{breedingResult.lineageKey.slice(0, 16)}...</span>
-                      </div>
-                      <div>
-                        <span className="text-zinc-400">Inherited Traits:</span>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {Object.entries(breedingResult.traits).slice(0, 4).map(([key, value]) => (
-                            <span key={key} className="px-2 py-0.5 rounded-full bg-slate-800 text-xs text-zinc-300">
-                              {key}: {typeof value === 'number' ? value.toFixed(2) : String(value)}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-green-600 text-green-400 hover:bg-green-500/10"
-                      onClick={() => void handleSelectPet(offspringSummary.id)}
-                    >
-                      Switch to Offspring
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* HeptaCode Visuals */}
-            {heptaCode && (
-              <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800">
-                <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <Hash className="w-5 h-5 text-purple-400" />
-                  HeptaCode v1 (42 Digits)
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="flex flex-col items-center">
-                    <p className="text-zinc-400 text-sm mb-3">HeptaTag (7-sided, 3 rings)</p>
-                    <HeptaTag digits={heptaCode} size={280} />
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <p className="text-zinc-400 text-sm mb-3">Seed of Life (Sacred Geometry)</p>
-                    <SeedOfLifeGlyph digits={heptaCode} size={260} />
-                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-green-600 text-green-400 hover:bg-green-500/10 touch-manipulation"
+                    onClick={() => void handleSelectPet(offspringSummary.id)}
+                  >
+                    Switch to Offspring
+                  </Button>
                 </div>
-                <div className="mt-4 space-y-3">
-                  <div className="p-3 bg-slate-950/50 rounded-lg">
-                    <p className="text-xs text-zinc-500 font-mono break-all">
-                      Digits: [{heptaCode.join(', ')}]
-                    </p>
+              )}
+            </div>
+          </CollapsibleSection>
+
+          {/* Genome Traits */}
+          <CollapsibleSection
+            title="Genome Traits"
+            icon={<Dna className="w-5 h-5 text-purple-400" />}
+          >
+            <TraitPanel />
+          </CollapsibleSection>
+
+          {/* PrimeTail ID */}
+          {crest && (
+            <CollapsibleSection
+              title="PrimeTail ID"
+              icon={<Shield className="w-5 h-5 text-amber-400" />}
+            >
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-400">Vault:</span>
+                    <span className="text-blue-400 font-mono font-bold uppercase">{crest.vault}</span>
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <Button
-                      variant="outline"
-                      className="border-slate-700 bg-slate-950/60 text-cyan-200 hover:text-cyan-50"
-                      onClick={handlePlayHepta}
-                    >
-                      <Volume2 className="w-4 h-4 mr-2" />
-                      Play Hepta Tone
-                    </Button>
-                    <span className={`text-xs ${audioError ? 'text-rose-400' : 'text-zinc-500'}`}>
-                      {audioError ?? 'Turn up your volume to hear the crest signature.'}
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-400">Rotation:</span>
+                    <span className="text-cyan-400 font-mono font-bold">{crest.rotation}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-400">Tail:</span>
+                    <span className="text-purple-400 font-mono text-xs">[{crest.tail.join(', ')}]</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-400">Coronated:</span>
+                    <span className="text-amber-200 text-xs">
+                      {new Date(crest.coronatedAt).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
+                <div className="p-3 bg-slate-950/50 rounded-lg">
+                  <p className="text-xs text-zinc-500 font-mono break-all">
+                    Sig: {crest.signature.slice(0, 32)}...
+                  </p>
+                </div>
               </div>
-            )}
+            </CollapsibleSection>
+          )}
 
-            <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <Database className="w-5 h-5 text-emerald-400" />
-                Offline Archives
-              </h2>
-
+          {/* HeptaCode Visuals */}
+          {heptaCode && (
+            <CollapsibleSection
+              title="HeptaCode"
+              icon={<Hash className="w-5 h-5 text-purple-400" />}
+            >
               <div className="space-y-4">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs uppercase tracking-wide text-zinc-500">Pet Name</label>
-                  <input
-                    type="text"
-                    value={petName}
-                    onChange={event => setPetName(event.target.value)}
-                    onBlur={() => void handleNameBlur()}
-                    placeholder="Name your companion"
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
+                <div className="flex justify-center gap-4">
+                  <HeptaTag digits={heptaCode} size={120} />
+                  <SeedOfLifeGlyph digits={heptaCode} size={120} />
                 </div>
+                <Button
+                  variant="outline"
+                  className="w-full border-slate-700 bg-slate-950/60 text-cyan-200 hover:text-cyan-50 touch-manipulation"
+                  onClick={handlePlayHepta}
+                >
+                  <Volume2 className="w-4 h-4 mr-2" />
+                  Play Hepta Tone
+                </Button>
+                {audioError && (
+                  <p className="text-xs text-rose-400 text-center">{audioError}</p>
+                )}
+              </div>
+            </CollapsibleSection>
+          )}
 
-                <div className="flex flex-wrap gap-3">
-                  <Button onClick={() => void handleCreateNewPet()} disabled={mintDisabled}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Mint New Companion
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={importDisabled}
-                    className="border-slate-700"
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    Import JSON
-                  </Button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="application/json"
-                    hidden
-                    onChange={handleImportInput}
-                  />
+          {/* Offline Archives */}
+          <CollapsibleSection
+            title="Offline Archives"
+            icon={<Database className="w-5 h-5 text-emerald-400" />}
+          >
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  onClick={() => void handleCreateNewPet()}
+                  disabled={mintDisabled}
+                  className="flex-1 h-12 touch-manipulation"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Mint New
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={importDisabled}
+                  className="flex-1 h-12 border-slate-700 touch-manipulation"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Import
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/json"
+                  hidden
+                  onChange={handleImportInput}
+                />
+              </div>
+              {(mintHint || importHint) && (
+                <div className="space-y-1">
+                  {mintHint && <p className="text-xs text-zinc-500">{mintHint}</p>}
+                  {importHint && <p className="text-xs text-zinc-500">{importHint}</p>}
                 </div>
-                {(mintHint || importHint) && (
-                  <div className="space-y-1">
-                    {mintHint && <p className="text-xs text-zinc-500">{mintHint}</p>}
-                    {importHint && <p className="text-xs text-zinc-500">{importHint}</p>}
+              )}
+
+              {importError && (
+                <p className="text-xs text-rose-400">{importError}</p>
+              )}
+
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {petSummaries.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-slate-700 bg-slate-950/50 p-4 text-sm text-zinc-500">
+                    {persistenceSupported
+                      ? 'No archived companions yet.'
+                      : 'IndexedDB is unavailable.'}
                   </div>
-                )}
-
-                {importError && (
-                  <p className="text-xs text-rose-400">{importError}</p>
-                )}
-
-                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                  {petSummaries.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-slate-700 bg-slate-950/50 p-4 text-sm text-zinc-500">
-                      {persistenceSupported
-                        ? 'No archived companions yet. Mint a new one or import an existing save.'
-                        : 'IndexedDB is unavailable in this environment. Persistence features are disabled.'}
-                    </div>
-                  ) : (
-                    petSummaries.map(summary => {
-                      const isActive = summary.id === currentPetId;
-                      return (
-                        <div
-                          key={summary.id}
-                          className={`rounded-lg border p-4 transition ${
-                            isActive
-                              ? 'border-cyan-500 bg-cyan-500/10'
-                              : 'border-slate-800 bg-slate-950/40 hover:border-slate-700'
-                          }`}
-                        >
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                              <p className="text-sm font-semibold text-white">
-                                {summary.name && summary.name.trim() !== '' ? summary.name : 'Unnamed Companion'}
-                              </p>
-                              <p className="text-xs text-zinc-500">
-                                Updated {new Date(summary.lastSaved).toLocaleString()}
-                              </p>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => void handleSelectPet(summary.id)}
-                                disabled={isActive}
-                              >
-                                Load
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => void handleExportPet(summary.id)}
-                              >
-                                <Download className="w-4 h-4 mr-1" />
-                                Export
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="text-rose-400 hover:bg-rose-500/10 hover:text-rose-200"
-                                onClick={() => void handleDeletePet(summary.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                            {isActive && (
-                              <p className="text-[11px] text-zinc-500">
-                                Prerequisite: this companion is already active.
-                              </p>
-                            )}
+                ) : (
+                  petSummaries.map(summary => {
+                    const isActive = summary.id === currentPetId;
+                    return (
+                      <div
+                        key={summary.id}
+                        className={`rounded-lg border p-3 transition ${
+                          isActive
+                            ? 'border-cyan-500 bg-cyan-500/10'
+                            : 'border-slate-800 bg-slate-950/40'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-white truncate">
+                              {summary.name && summary.name.trim() !== '' ? summary.name : 'Unnamed'}
+                            </p>
+                            <p className="text-xs text-zinc-500">
+                              {new Date(summary.lastSaved).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => void handleSelectPet(summary.id)}
+                              disabled={isActive}
+                              className="h-8 w-8 p-0 touch-manipulation"
+                              aria-label="Load"
+                            >
+                              <Sparkles className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => void handleExportPet(summary.id)}
+                              className="h-8 w-8 p-0 touch-manipulation"
+                              aria-label="Export"
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 text-rose-400 hover:bg-rose-500/10 touch-manipulation"
+                              onClick={() => void handleDeletePet(summary.id)}
+                              aria-label="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </div>
                         </div>
-                      );
-                    })
-                  )}
-                </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
+          </CollapsibleSection>
 
-            {/* Digital Keys */}
-            <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800">
-              <DigitalKeyPanel />
-            </div>
+          {/* Digital Keys */}
+          <CollapsibleSection
+            title="Digital Keys"
+            icon={<Shield className="w-5 h-5 text-cyan-400" />}
+          >
+            <DigitalKeyPanel />
+          </CollapsibleSection>
 
-            {/* QR Messaging */}
-            <QRQuickPanel />
+          {/* QR Messaging */}
+          <QRQuickPanel />
 
-            <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800">
-              <AchievementShelf />
-            </div>
-
-            {/* Evolution */}
-            <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-800">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-cyan-300" />
-                Evolution Progress
-              </h2>
-              <EvolutionPanel />
-            </div>
-
-            {/* Features Dashboard */}
-            <div id="mini-games" className="scroll-mt-20">
-              <FeaturesDashboard />
-            </div>
-          </div>
+          {/* Achievements */}
+          <CollapsibleSection
+            title="Achievements"
+            icon={<Sparkles className="w-5 h-5 text-amber-400" />}
+          >
+            <AchievementShelf />
+          </CollapsibleSection>
         </div>
 
-        {/* Info Footer */}
-        <div className="mt-8 text-center text-zinc-600 text-xs space-y-1">
-          <p>✨ DNA stays private • Only hashes + tail are visible</p>
-          <p>🔆 Time-boxed consent • Pairwise identity • Fully offline</p>
-          <p>🎿 HeptaCode: One source → Color + Geometry + Tone</p>
+        {/* Footer Info */}
+        <div className="text-center text-zinc-600 text-xs px-4 pb-4 space-y-1">
           <p className="flex items-center justify-center gap-2">
             <Database className={`w-3 h-3 ${persistenceActive ? 'text-green-400' : 'text-yellow-400'}`} />
             {persistenceSupported
               ? persistenceActive
-                ? 'Offline autosave active (sync every 60s)'
-                : 'Autosave paused — interact to resume saving'
-              : 'Offline persistence unavailable in this environment'}
+                ? 'Autosave active'
+                : 'Autosave paused'
+              : 'Offline unavailable'}
           </p>
         </div>
       </div>
-
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-800 bg-slate-950/90 backdrop-blur sm:hidden">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3">
-          <Button
-            variant="ghost"
-            className="flex flex-1 flex-col gap-1 text-xs text-zinc-200"
-            onClick={feed}
-          >
-            <UtensilsCrossed className="h-4 w-4" />
-            Feed
-          </Button>
-          <Link
-            href="#ritual"
-            className="flex flex-1 flex-col items-center gap-1 text-xs text-zinc-200"
-          >
-            <Sparkles className="h-4 w-4" />
-            Ritual
-          </Link>
-          <Link
-            href="#mini-games"
-            className="flex flex-1 flex-col items-center gap-1 text-xs text-zinc-200"
-          >
-            <Gamepad2 className="h-4 w-4" />
-            Mini-Games
-          </Link>
-          <Button
-            variant="ghost"
-            className="flex flex-1 flex-col gap-1 text-xs text-zinc-200"
-            onClick={() => void handleNameBlur()}
-            disabled={!persistenceSupported}
-          >
-            <Save className="h-4 w-4" />
-            Save
-          </Button>
-        </div>
-      </div>
-    </div>
+    </AmbientBackground>
   );
 }
