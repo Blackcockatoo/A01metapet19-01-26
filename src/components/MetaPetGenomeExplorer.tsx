@@ -246,7 +246,7 @@ const GenomeWheel: React.FC<GenomeWheelProps> = ({
               fontFamily="monospace"
               fontWeight="bold"
             >
-              {gate.palindrome}
+              •••••
             </text>
           </g>
         );
@@ -662,7 +662,7 @@ const MetaPetGenomeExplorer: React.FC = () => {
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <p className="text-xs uppercase tracking-[0.2em] text-white/40">Palindrome</p>
-                      <p className="text-xl font-bold text-rose-200">{selectedGate.palindrome}</p>
+                      <p className="text-xl font-bold text-rose-200">•••••</p>
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-[0.2em] text-white/40">Position</p>
@@ -677,7 +677,7 @@ const MetaPetGenomeExplorer: React.FC = () => {
                     <div>
                       <p className="text-xs uppercase tracking-[0.2em] text-white/40">HeptaCode</p>
                       <p className="font-mono text-base text-cyan-200">
-                        {toHeptaCode(Number.parseInt(selectedGate.palindrome, 10))}
+                        •••••
                       </p>
                     </div>
                   </div>
