@@ -702,7 +702,7 @@ const MetaPetGenomeExplorer: React.FC = () => {
                         textShadow: entry.accent ? '0 0 10px rgba(255,0,0,0.7)' : 'none',
                       }}
                     >
-                      {entry.digit}
+                      •
                     </span>
                   ))}
                 </div>
