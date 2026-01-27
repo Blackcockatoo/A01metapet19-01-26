@@ -70,6 +70,12 @@ import { SeedOfLifeGlyph } from '@/components/SeedOfLifeGlyph';
 import { AchievementShelf } from '@/components/AchievementShelf';
 import { QRQuickPanel } from '@/components/QRMessaging';
 import { RegistrationCertificate, CertificateButton } from '@/components/RegistrationCertificate';
+import { WellnessSync, QuickMoodButton } from '@/components/WellnessSync';
+import { HydrationTracker, HydrationQuickButton } from '@/components/HydrationTracker';
+import { SleepTracker, SleepStatusButton } from '@/components/SleepTracker';
+import { AnxietyAnchor, EmergencyGroundingButton } from '@/components/AnxietyAnchor';
+import { WellnessSettings, WellnessSettingsButton } from '@/components/WellnessSettings';
+import { useWellnessStore } from '@/lib/wellness';
 
 interface PetSummary {
   id: string;
@@ -234,11 +240,26 @@ export default function Home() {
   const [breedingBusy, setBreedingBusy] = useState(false);
   const [certificateOpen, setCertificateOpen] = useState(false);
 
+  // Wellness tracking state
+  const [wellnessSyncOpen, setWellnessSyncOpen] = useState(false);
+  const [hydrationOpen, setHydrationOpen] = useState(false);
+  const [sleepOpen, setSleepOpen] = useState(false);
+  const [anxietyOpen, setAnxietyOpen] = useState(false);
+  const [wellnessSettingsOpen, setWellnessSettingsOpen] = useState(false);
+  const [lastWellnessAction, setLastWellnessAction] = useState<'feed' | 'clean' | 'play' | 'sleep' | null>(null);
+  const wellnessSetupCompleted = useWellnessStore(state => state.setupCompletedAt);
+  const checkStreaks = useWellnessStore(state => state.checkStreaks);
+
   const debouncedSave = useMemo(() => createDebouncedSave(1_000), []);
 
   const crestRef = useRef<PrimeTailID | null>(null);
   const heptaRef = useRef<HeptaDigits | null>(null);
   const sessionStartRef = useRef<number | null>(null);
+
+  // Check wellness streaks on mount
+  useEffect(() => {
+    checkStreaks();
+  }, [checkStreaks]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -1129,6 +1150,15 @@ export default function Home() {
               View Certificate
             </Button>
           </div>
+
+          {/* Wellness Quick Bar */}
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-4 px-4">
+            <QuickMoodButton onClick={() => setWellnessSyncOpen(true)} />
+            <HydrationQuickButton onClick={() => setHydrationOpen(true)} />
+            <SleepStatusButton onClick={() => setSleepOpen(true)} />
+            <EmergencyGroundingButton onClick={() => setAnxietyOpen(true)} />
+            <WellnessSettingsButton onClick={() => setWellnessSettingsOpen(true)} />
+          </div>
         </div>
 
         {/* ===== VITALS BAR ===== */}
@@ -1551,6 +1581,29 @@ export default function Home() {
         evolutionState={evolution?.state}
         isOpen={certificateOpen}
         onClose={() => setCertificateOpen(false)}
+      />
+
+      {/* Wellness Modals */}
+      <WellnessSync
+        isOpen={wellnessSyncOpen}
+        onClose={() => setWellnessSyncOpen(false)}
+        lastAction={lastWellnessAction}
+      />
+      <HydrationTracker
+        isOpen={hydrationOpen}
+        onClose={() => setHydrationOpen(false)}
+      />
+      <SleepTracker
+        isOpen={sleepOpen}
+        onClose={() => setSleepOpen(false)}
+      />
+      <AnxietyAnchor
+        isOpen={anxietyOpen}
+        onClose={() => setAnxietyOpen(false)}
+      />
+      <WellnessSettings
+        isOpen={wellnessSettingsOpen}
+        onClose={() => setWellnessSettingsOpen(false)}
       />
     </AmbientBackground>
   );
