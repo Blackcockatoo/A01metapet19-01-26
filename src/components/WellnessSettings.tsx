@@ -9,12 +9,7 @@ import {
 } from '@/lib/wellness/types';
 import { triggerHaptic } from '@/lib/haptics';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { GlassCard, GlassOverlay } from '@/components/GlassCard';
 import { Switch } from '@/components/ui/switch';
 import {
   Settings,
@@ -154,39 +149,40 @@ export function WellnessSettings({ isOpen, onClose }: WellnessSettingsProps) {
   const phase3Features = FEATURE_CONFIG.filter(f => f.phase === 3);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-zinc-900/95 border-emerald-500/30 max-w-md max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-emerald-400">
-            <Settings className="w-5 h-5" />
-            Wellness Settings
-          </DialogTitle>
-        </DialogHeader>
+    <GlassOverlay isOpen={isOpen} onClose={onClose}>
+      <GlassCard className="p-6 max-h-[85vh] overflow-y-auto" showClose onClose={onClose}>
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+            <Settings className="w-5 h-5 text-emerald-400" />
+          </div>
+          <h2 className="text-xl font-bold text-white">Wellness Settings</h2>
+        </div>
 
-        <div className="py-4 space-y-6">
+        <div className="space-y-6">
           {/* Reminder Mode */}
           <div className="space-y-3">
-            <h3 className="text-sm font-medium text-zinc-300">Reminder Style</h3>
-            <p className="text-xs text-zinc-500">
+            <h3 className="text-base font-semibold text-white">Reminder Style</h3>
+            <p className="text-sm text-zinc-400">
               How should your companion communicate wellness feedback?
             </p>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-3">
               {REMINDER_MODES.map(({ mode, icon }) => (
                 <button
                   key={mode}
                   onClick={() => handleModeChange(mode)}
-                  className={`flex flex-col items-center p-3 rounded-xl border transition-all touch-manipulation ${
+                  className={`flex flex-col items-center p-4 rounded-xl border transition-all touch-manipulation ${
                     reminderMode === mode
                       ? 'bg-emerald-500/20 border-emerald-500/50 ring-2 ring-emerald-500/30'
-                      : 'bg-zinc-800/50 border-zinc-700 hover:border-emerald-500/30'
+                      : 'bg-white/5 border-white/10 hover:border-emerald-500/30'
                   }`}
                 >
                   <div className={`mb-2 ${reminderMode === mode ? 'text-emerald-400' : 'text-zinc-400'}`}>
                     {icon}
                   </div>
-                  <span className={`text-xs font-medium ${
-                    reminderMode === mode ? 'text-emerald-300' : 'text-zinc-400'
+                  <span className={`text-sm font-medium ${
+                    reminderMode === mode ? 'text-emerald-300' : 'text-zinc-300'
                   }`}>
                     {REMINDER_MODE_LABELS[mode]}
                   </span>
@@ -194,7 +190,7 @@ export function WellnessSettings({ isOpen, onClose }: WellnessSettingsProps) {
               ))}
             </div>
 
-            <p className="text-xs text-zinc-500 text-center">
+            <p className="text-sm text-zinc-400 text-center">
               {REMINDER_MODE_DESCRIPTIONS[reminderMode]}
             </p>
           </div>
@@ -202,8 +198,8 @@ export function WellnessSettings({ isOpen, onClose }: WellnessSettingsProps) {
           {/* Phase 1 Features */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium text-zinc-300">Core Wellness</h3>
-              <span className="text-xs px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full">
+              <h3 className="text-base font-semibold text-white">Core Wellness</h3>
+              <span className="text-xs px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded-full font-medium">
                 Phase 1
               </span>
             </div>
@@ -212,15 +208,15 @@ export function WellnessSettings({ isOpen, onClose }: WellnessSettingsProps) {
               {phase1Features.map((feature) => (
                 <div
                   key={feature.key}
-                  className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg"
+                  className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`${enabledFeatures[feature.key] ? 'text-emerald-400' : 'text-zinc-500'}`}>
                       {feature.icon}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-zinc-200">{feature.label}</p>
-                      <p className="text-xs text-zinc-500">{feature.description}</p>
+                      <p className="text-base font-medium text-white">{feature.label}</p>
+                      <p className="text-sm text-zinc-400">{feature.description}</p>
                     </div>
                   </div>
                   <Switch
@@ -235,8 +231,8 @@ export function WellnessSettings({ isOpen, onClose }: WellnessSettingsProps) {
           {/* Phase 2 Features */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium text-zinc-300">Productivity</h3>
-              <span className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full">
+              <h3 className="text-base font-semibold text-white">Productivity</h3>
+              <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full font-medium">
                 Phase 2
               </span>
             </div>
@@ -245,15 +241,15 @@ export function WellnessSettings({ isOpen, onClose }: WellnessSettingsProps) {
               {phase2Features.map((feature) => (
                 <div
                   key={feature.key}
-                  className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg"
+                  className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`${enabledFeatures[feature.key] ? 'text-blue-400' : 'text-zinc-500'}`}>
                       {feature.icon}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-zinc-200">{feature.label}</p>
-                      <p className="text-xs text-zinc-500">{feature.description}</p>
+                      <p className="text-base font-medium text-white">{feature.label}</p>
+                      <p className="text-sm text-zinc-400">{feature.description}</p>
                     </div>
                   </div>
                   <Switch
@@ -268,8 +264,8 @@ export function WellnessSettings({ isOpen, onClose }: WellnessSettingsProps) {
           {/* Phase 3 Features */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium text-zinc-300">Goals & Growth</h3>
-              <span className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full">
+              <h3 className="text-base font-semibold text-white">Goals & Growth</h3>
+              <span className="text-xs px-2 py-1 bg-purple-500/20 text-purple-400 rounded-full font-medium">
                 Phase 3
               </span>
             </div>
@@ -278,18 +274,18 @@ export function WellnessSettings({ isOpen, onClose }: WellnessSettingsProps) {
               {phase3Features.map((feature) => (
                 <div
                   key={feature.key}
-                  className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg opacity-60"
+                  className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl opacity-60"
                 >
                   <div className="flex items-center gap-3">
                     <div className="text-zinc-500">
                       {feature.icon}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-zinc-400">{feature.label}</p>
-                      <p className="text-xs text-zinc-600">{feature.description}</p>
+                      <p className="text-base font-medium text-zinc-400">{feature.label}</p>
+                      <p className="text-sm text-zinc-500">{feature.description}</p>
                     </div>
                   </div>
-                  <span className="text-xs text-zinc-500">Coming Soon</span>
+                  <span className="text-sm text-zinc-500 font-medium">Coming Soon</span>
                 </div>
               ))}
             </div>
@@ -299,15 +295,15 @@ export function WellnessSettings({ isOpen, onClose }: WellnessSettingsProps) {
           {!setupCompletedAt && (
             <Button
               onClick={handleCompleteSetup}
-              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500"
+              className="w-full h-14 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-semibold text-lg touch-manipulation"
             >
-              <Check className="w-4 h-4 mr-2" />
+              <Check className="w-5 h-5 mr-2" />
               Complete Setup
             </Button>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </GlassCard>
+    </GlassOverlay>
   );
 }
 

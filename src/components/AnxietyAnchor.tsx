@@ -4,13 +4,8 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useWellnessStore, type AnxietyLevel } from '@/lib/wellness';
 import { triggerHaptic } from '@/lib/haptics';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Anchor, Wind, Hand, Heart, Sparkles, X } from 'lucide-react';
+import { GlassCard, GlassOverlay } from '@/components/GlassCard';
+import { Anchor, Wind, Hand, Sparkles, X } from 'lucide-react';
 
 interface AnxietyAnchorProps {
   isOpen: boolean;
@@ -211,16 +206,17 @@ export function AnxietyAnchor({ isOpen, onClose }: AnxietyAnchorProps) {
     : null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="bg-zinc-900/95 border-indigo-500/30 max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-indigo-400">
-            <Anchor className="w-5 h-5" />
-            Grounding Anchor
-          </DialogTitle>
-        </DialogHeader>
+    <GlassOverlay isOpen={isOpen} onClose={handleClose}>
+      <GlassCard className="p-6" showClose onClose={handleClose}>
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center">
+            <Anchor className="w-5 h-5 text-indigo-400" />
+          </div>
+          <h2 className="text-xl font-bold text-white">Grounding Anchor</h2>
+        </div>
 
-        <div className="py-4 space-y-6">
+        <div className="space-y-6">
           {/* Active Exercise View */}
           {isActive && activeExercise ? (
             <div className="space-y-6 animate-in fade-in">
@@ -285,8 +281,8 @@ export function AnxietyAnchor({ isOpen, onClose }: AnxietyAnchorProps) {
               </div>
 
               {/* Current instruction */}
-              <div className="text-center p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
-                <p className="text-indigo-200 text-lg">
+              <div className="text-center p-5 bg-indigo-500/10 border border-indigo-500/30 rounded-xl">
+                <p className="text-white text-lg font-medium">
                   {activeExercise.type === 'breath'
                     ? breathPhase === 'inhale' ? 'Breathe in slowly...'
                     : breathPhase === 'hold' ? 'Hold gently...'
@@ -301,7 +297,7 @@ export function AnxietyAnchor({ isOpen, onClose }: AnxietyAnchorProps) {
               <Button
                 variant="outline"
                 onClick={() => completeExercise(false)}
-                className="w-full border-zinc-600"
+                className="w-full h-12 border-white/20 bg-white/5 hover:bg-white/10 text-white touch-manipulation"
               >
                 <X className="w-4 h-4 mr-2" />
                 End Early
@@ -312,11 +308,11 @@ export function AnxietyAnchor({ isOpen, onClose }: AnxietyAnchorProps) {
               {/* Level selection */}
               {!selectedLevel ? (
                 <div className="space-y-4">
-                  <p className="text-zinc-400 text-sm text-center">
+                  <p className="text-zinc-300 text-base text-center font-medium">
                     How are you feeling right now?
                   </p>
 
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {ANXIETY_LEVELS.map((item) => (
                       <button
                         key={item.level}
@@ -324,14 +320,14 @@ export function AnxietyAnchor({ isOpen, onClose }: AnxietyAnchorProps) {
                           setSelectedLevel(item.level);
                           triggerHaptic('light');
                         }}
-                        className={`w-full p-4 rounded-xl border transition-all text-left ${item.color} hover:scale-[1.02] touch-manipulation`}
+                        className={`w-full p-5 rounded-xl border transition-all text-left ${item.color} hover:scale-[1.02] touch-manipulation`}
                       >
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="font-medium">{item.label}</p>
-                            <p className="text-sm opacity-70">{item.description}</p>
+                            <p className="font-semibold text-lg">{item.label}</p>
+                            <p className="text-sm opacity-80">{item.description}</p>
                           </div>
-                          <Sparkles className="w-5 h-5 opacity-50" />
+                          <Sparkles className="w-6 h-6 opacity-60" />
                         </div>
                       </button>
                     ))}
@@ -343,43 +339,43 @@ export function AnxietyAnchor({ isOpen, onClose }: AnxietyAnchorProps) {
                   <div className="flex items-center justify-between">
                     <button
                       onClick={() => setSelectedLevel(null)}
-                      className="text-sm text-zinc-400 hover:text-white"
+                      className="text-sm text-zinc-300 hover:text-white font-medium touch-manipulation"
                     >
                       ← Back
                     </button>
-                    <span className={`text-sm px-3 py-1 rounded-full ${
+                    <span className={`text-sm px-3 py-1.5 rounded-full font-medium ${
                       ANXIETY_LEVELS.find(l => l.level === selectedLevel)?.color
                     }`}>
                       {ANXIETY_LEVELS.find(l => l.level === selectedLevel)?.label}
                     </span>
                   </div>
 
-                  <p className="text-zinc-400 text-sm text-center">
+                  <p className="text-zinc-300 text-base text-center font-medium">
                     Choose a grounding exercise
                   </p>
 
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {GROUNDING_EXERCISES.map((exercise) => {
                       const isRecommended = exercise === recommendedExercise;
                       return (
                         <button
                           key={exercise.type}
                           onClick={() => startExercise(exercise)}
-                          className={`w-full p-4 rounded-xl border transition-all text-left touch-manipulation ${
+                          className={`w-full p-5 rounded-xl border transition-all text-left touch-manipulation ${
                             isRecommended
                               ? 'bg-indigo-500/20 border-indigo-500/50 ring-2 ring-indigo-500/30'
-                              : 'bg-zinc-800/50 border-zinc-700 hover:border-indigo-500/30'
+                              : 'bg-white/5 border-white/10 hover:border-indigo-500/30'
                           }`}
                         >
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${isRecommended ? 'bg-indigo-500/30' : 'bg-zinc-700'}`}>
+                          <div className="flex items-center gap-4">
+                            <div className={`p-3 rounded-xl ${isRecommended ? 'bg-indigo-500/30' : 'bg-white/10'}`}>
                               {exercise.icon}
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <p className="font-medium text-white">{exercise.name}</p>
+                                <p className="font-semibold text-white text-lg">{exercise.name}</p>
                                 {isRecommended && (
-                                  <span className="text-xs px-2 py-0.5 bg-indigo-500/30 text-indigo-300 rounded-full">
+                                  <span className="text-xs px-2 py-1 bg-indigo-500/30 text-indigo-300 rounded-full font-medium">
                                     Recommended
                                   </span>
                                 )}
@@ -400,13 +396,13 @@ export function AnxietyAnchor({ isOpen, onClose }: AnxietyAnchorProps) {
 
           {/* Completion message */}
           {!isActive && !selectedLevel && progress === 0 && (
-            <p className="text-xs text-zinc-500 text-center">
+            <p className="text-sm text-zinc-400 text-center">
               Your companion is here with you. Take all the time you need.
             </p>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </GlassCard>
+    </GlassOverlay>
   );
 }
 
