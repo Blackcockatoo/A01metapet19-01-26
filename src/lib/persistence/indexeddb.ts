@@ -10,6 +10,19 @@ import type { EvolutionData } from '@/lib/evolution';
 import type { HeptaDigits, PrimeTailID, Rotation, Vault } from '@/lib/identity/types';
 import { createDefaultRitualProgress, type RitualProgress } from '@/lib/ritual/types';
 import {
+  createWitnessRecord,
+  createTraceFromWitness,
+  isDerivedWitnessMark,
+  isValidWitnessRecord,
+  type PetOntologyState,
+  type WitnessRecord,
+} from '@/lib/witness';
+import {
+  type InvariantIssue,
+  type SystemState,
+  shouldSealSystem,
+} from '@/lib/system/invariants';
+import {
   type Achievement,
   type BattleStats,
   type MiniGameProgress,
@@ -20,8 +33,9 @@ import {
 } from '@/lib/progression/types';
 
 const DB_NAME = 'MetaPetDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'pets';
+const HISTORY_STORE = 'petHistory';
 const VIMANA_FIELDS = ['calm', 'neuro', 'quantum', 'earth'] as const;
 const VIMANA_REWARDS = ['mood', 'energy', 'hygiene', 'mystery'] as const;
 
@@ -31,6 +45,11 @@ export interface PetSaveData {
   vitals: Vitals;
   petType: PetType;
   mirrorMode: MirrorModeState;
+  witness: WitnessRecord;
+  petOntology: PetOntologyState;
+  systemState: SystemState;
+  sealedAt: number | null;
+  invariantIssues: InvariantIssue[];
   genome: Genome;
   genomeHash: GenomeHash;
   traits: DerivedTraits;
@@ -48,6 +67,22 @@ export interface PetSaveData {
   lastSaved: number;
   createdAt: number;
 }
+
+type PetHistoryRecord =
+  | {
+      recordId: string;
+      petId: string;
+      recordedAt: number;
+      kind: 'snapshot';
+      data: PetSaveData;
+    }
+  | {
+      recordId: string;
+      petId: string;
+      recordedAt: number;
+      kind: 'tombstone';
+      reason?: string;
+    };
 
 /**
  * Initialize IndexedDB
@@ -68,6 +103,36 @@ export async function initDB(): Promise<IDBDatabase> {
         objectStore.createIndex('lastSaved', 'lastSaved', { unique: false });
         objectStore.createIndex('createdAt', 'createdAt', { unique: false });
       }
+
+      if (!db.objectStoreNames.contains(HISTORY_STORE)) {
+        const historyStore = db.createObjectStore(HISTORY_STORE, { keyPath: 'recordId' });
+        historyStore.createIndex('byPetId', 'petId', { unique: false });
+        historyStore.createIndex('byPetIdRecordedAt', ['petId', 'recordedAt'], { unique: false });
+        historyStore.createIndex('byRecordedAt', 'recordedAt', { unique: false });
+      }
+
+      if (event.oldVersion < 2 && db.objectStoreNames.contains(STORE_NAME)) {
+        const transaction = request.transaction;
+        if (!transaction) return;
+        const legacyStore = transaction.objectStore(STORE_NAME);
+        const historyStore = transaction.objectStore(HISTORY_STORE);
+        const requestAll = legacyStore.getAll();
+        requestAll.onsuccess = () => {
+          const items = Array.isArray(requestAll.result) ? requestAll.result : [];
+          items.forEach(item => {
+            const data = normalizePetData(item);
+            const recordedAt = data.lastSaved ?? Date.now();
+            const record: PetHistoryRecord = {
+              recordId: createRecordId(data.id, recordedAt),
+              petId: data.id,
+              recordedAt,
+              kind: 'snapshot',
+              data,
+            };
+            historyStore.add(record);
+          });
+        };
+      }
     };
   });
 }
@@ -79,26 +144,35 @@ export async function savePet(data: PetSaveData): Promise<void> {
   const db = await initDB();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
+    const transaction = db.transaction([HISTORY_STORE], 'readwrite');
+    const store = transaction.objectStore(HISTORY_STORE);
 
-    const saveData = {
-      ...data,
-      genome: {
-        red60: [...data.genome.red60],
-        blue60: [...data.genome.blue60],
-        black60: [...data.genome.black60],
+    const recordedAt = Date.now();
+    const record: PetHistoryRecord = {
+      recordId: createRecordId(data.id, recordedAt),
+      petId: data.id,
+      recordedAt,
+      kind: 'snapshot',
+      data: {
+        ...data,
+        genome: {
+          red60: [...data.genome.red60],
+          blue60: [...data.genome.blue60],
+          black60: [...data.genome.black60],
+        },
+        witness: JSON.parse(JSON.stringify(data.witness)) as WitnessRecord,
+        invariantIssues: data.invariantIssues.map(issue => ({ ...issue })),
+        achievements: data.achievements.map(entry => ({ ...entry })),
+        battle: { ...data.battle },
+        miniGames: { ...data.miniGames },
+        vimana: cloneVimana(data.vimana),
+        mirrorMode: { ...data.mirrorMode },
+        heptaDigits: Array.from(data.heptaDigits) as HeptaDigits,
+        lastSaved: recordedAt,
       },
-      achievements: data.achievements.map(entry => ({ ...entry })),
-      battle: { ...data.battle },
-      miniGames: { ...data.miniGames },
-      vimana: cloneVimana(data.vimana),
-      mirrorMode: { ...data.mirrorMode },
-      heptaDigits: Array.from(data.heptaDigits) as HeptaDigits,
-      lastSaved: Date.now(),
     };
 
-    const request = store.put(saveData);
+    const request = store.add(record);
 
     request.onsuccess = () => {
       db.close();
@@ -118,14 +192,25 @@ export async function loadPet(id: string): Promise<PetSaveData | null> {
   const db = await initDB();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORE_NAME], 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.get(id);
+    const transaction = db.transaction([HISTORY_STORE], 'readonly');
+    const store = transaction.objectStore(HISTORY_STORE);
+    const index = store.index('byPetIdRecordedAt');
+    const range = IDBKeyRange.bound([id, 0], [id, Number.MAX_SAFE_INTEGER]);
+    const request = index.openCursor(range, 'prev');
 
     request.onsuccess = () => {
       db.close();
-      const raw = request.result;
-      resolve(raw ? normalizePetData(raw) : null);
+      const cursor = request.result;
+      if (!cursor) {
+        resolve(null);
+        return;
+      }
+      const record = cursor.value as PetHistoryRecord;
+      if (record.kind === 'tombstone') {
+        resolve(null);
+        return;
+      }
+      resolve(normalizePetData(record.data));
     };
     request.onerror = () => {
       db.close();
@@ -141,16 +226,33 @@ export async function getAllPets(): Promise<PetSaveData[]> {
   const db = await initDB();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORE_NAME], 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.getAll();
+    const transaction = db.transaction([HISTORY_STORE], 'readonly');
+    const store = transaction.objectStore(HISTORY_STORE);
+    const index = store.index('byPetIdRecordedAt');
+    const request = index.openCursor(null, 'prev');
+    const latestById = new Map<string, PetSaveData>();
+    const tombstoned = new Set<string>();
 
     request.onsuccess = () => {
-      db.close();
-      const raw = request.result;
-      const items = Array.isArray(raw) ? raw : [];
-      resolve(items.map(item => normalizePetData(item)));
+      const cursor = request.result;
+      if (!cursor) {
+        db.close();
+        resolve([...latestById.values()]);
+        return;
+      }
+
+      const record = cursor.value as PetHistoryRecord;
+      if (!latestById.has(record.petId) && !tombstoned.has(record.petId)) {
+        if (record.kind === 'snapshot') {
+          latestById.set(record.petId, normalizePetData(record.data));
+        } else {
+          tombstoned.add(record.petId);
+        }
+      }
+
+      cursor.continue();
     };
+
     request.onerror = () => {
       db.close();
       reject(request.error);
@@ -159,15 +261,23 @@ export async function getAllPets(): Promise<PetSaveData[]> {
 }
 
 /**
- * Delete pet data
+ * Archive pet data (append-only tombstone)
  */
 export async function deletePet(id: string): Promise<void> {
   const db = await initDB();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.delete(id);
+    const transaction = db.transaction([HISTORY_STORE], 'readwrite');
+    const store = transaction.objectStore(HISTORY_STORE);
+    const recordedAt = Date.now();
+    const record: PetHistoryRecord = {
+      recordId: createRecordId(id, recordedAt),
+      petId: id,
+      recordedAt,
+      kind: 'tombstone',
+      reason: 'archived-by-user',
+    };
+    const request = store.add(record);
 
     request.onsuccess = () => {
       db.close();
@@ -216,6 +326,11 @@ export function exportPetToJSON(data: PetSaveData): string {
     miniGames: { ...data.miniGames },
     vimana: cloneVimana(data.vimana),
     mirrorMode: { ...data.mirrorMode },
+    witness: JSON.parse(JSON.stringify(data.witness)) as WitnessRecord,
+    petOntology: data.petOntology,
+    systemState: data.systemState,
+    sealedAt: data.sealedAt,
+    invariantIssues: data.invariantIssues.map(issue => ({ ...issue })),
     ritualProgress: {
       ...data.ritualProgress,
       history: data.ritualProgress.history.map(entry => ({ ...entry })),
@@ -319,6 +434,39 @@ export function importPetFromJSON(json: string, options?: { skipGenomeValidation
     throw new Error('Invalid pet file: mirror mode malformed');
   })();
 
+  const witness = (() => {
+    const defaultWitness = createWitnessRecord(parsed.id);
+    if (parsed.witness === undefined) return defaultWitness;
+    if (isValidWitnessRecord(parsed.witness)) {
+      if (!isDerivedWitnessMark(parsed.witness.mark)) {
+        throw new Error('Invalid pet file: witness mark does not match seed');
+      }
+      if (parsed.witness.state.presence === 'disappeared' && !parsed.witness.trace) {
+        return {
+          ...parsed.witness,
+          trace: createTraceFromWitness(parsed.witness),
+        };
+      }
+      return parsed.witness;
+    }
+    throw new Error('Invalid pet file: witness record malformed');
+  })();
+
+  const petOntology: PetOntologyState = (() => {
+    if (parsed.petOntology === 'living' || parsed.petOntology === 'unwitnessed' || parsed.petOntology === 'enduring') {
+      return parsed.petOntology;
+    }
+    return 'living';
+  })();
+
+  const systemState: SystemState = parsed.systemState === 'sealed' ? 'sealed' : 'active';
+  const sealedAt = typeof parsed.sealedAt === 'number' ? parsed.sealedAt : null;
+  const invariantIssues = (() => {
+    if (!Array.isArray(parsed.invariantIssues)) return [] as InvariantIssue[];
+    const issues = parsed.invariantIssues.filter(isValidInvariantIssue).map(issue => ({ ...issue }));
+    return issues;
+  })();
+
   const createdAt = typeof parsed.createdAt === 'number' ? parsed.createdAt : Date.now();
   const lastSaved = typeof parsed.lastSaved === 'number' ? parsed.lastSaved : Date.now();
 
@@ -326,6 +474,9 @@ export function importPetFromJSON(json: string, options?: { skipGenomeValidation
   const lastRewardSource =
     typeof parsed.lastRewardSource === 'string' ? parsed.lastRewardSource : null;
   const lastRewardAmount = typeof parsed.lastRewardAmount === 'number' ? parsed.lastRewardAmount : 0;
+
+  const resolvedSealed = systemState === 'sealed' || shouldSealSystem(invariantIssues);
+  const effectiveSealedAt = resolvedSealed ? sealedAt ?? Date.now() : null;
 
   return {
     id: parsed.id,
@@ -347,6 +498,11 @@ export function importPetFromJSON(json: string, options?: { skipGenomeValidation
     miniGames,
     vimana,
     mirrorMode,
+    witness,
+    petOntology,
+    systemState: resolvedSealed ? 'sealed' : systemState,
+    sealedAt: effectiveSealedAt,
+    invariantIssues,
     crest: parsed.crest,
     heptaDigits: Object.freeze([...parsed.heptaDigits]) as HeptaDigits,
     createdAt,
@@ -388,6 +544,26 @@ function normalizePetData(raw: unknown): PetSaveData {
   const lastRewardSource =
     typeof typed.lastRewardSource === 'string' ? typed.lastRewardSource : null;
   const lastRewardAmount = typeof typed.lastRewardAmount === 'number' ? typed.lastRewardAmount : 0;
+  const witnessSeed = typeof typed.id === 'string' ? typed.id : 'unknown';
+  const witness = isValidWitnessRecord(typed.witness)
+    ? (isDerivedWitnessMark(typed.witness.mark) ? typed.witness : createWitnessRecord(witnessSeed))
+    : createWitnessRecord(witnessSeed);
+  const normalizedWitness =
+    witness.state.presence === 'disappeared' && !witness.trace
+      ? { ...witness, trace: createTraceFromWitness(witness) }
+      : witness;
+  const petOntology: PetOntologyState =
+    typed.petOntology === 'unwitnessed' || typed.petOntology === 'enduring' || typed.petOntology === 'living'
+      ? typed.petOntology
+      : 'living';
+  const invariantIssues = Array.isArray(typed.invariantIssues)
+    ? typed.invariantIssues.filter(isValidInvariantIssue).map(issue => ({ ...issue }))
+    : [];
+  const resolvedSealed =
+    typed.systemState === 'sealed' || shouldSealSystem(invariantIssues);
+  const systemState: SystemState = resolvedSealed ? 'sealed' : 'active';
+  const sealedAt =
+    resolvedSealed && typeof typed.sealedAt === 'number' ? typed.sealedAt : null;
 
   // Normalize vitals to include new sickness properties with defaults
   const vitals = normalizeVitals(typed.vitals);
@@ -405,6 +581,11 @@ function normalizePetData(raw: unknown): PetSaveData {
     lastRewardSource,
     lastRewardAmount,
     petType: isValidPetType(typed.petType) ? typed.petType : 'geometric',
+    witness: normalizedWitness,
+    petOntology,
+    systemState,
+    sealedAt: systemState === 'sealed' ? sealedAt ?? Date.now() : null,
+    invariantIssues,
   } as PetSaveData;
 }
 
@@ -473,6 +654,16 @@ function isValidGenomeHash(value: unknown): value is GenomeHash {
 
 function isValidPetType(value: unknown): value is PetType {
   return value === 'geometric' || value === 'auralia';
+}
+
+function isValidInvariantIssue(value: unknown): value is InvariantIssue {
+  if (!value || typeof value !== 'object') return false;
+  const issue = value as InvariantIssue;
+  const typeOk =
+    issue.type === 'inability' ||
+    issue.type === 'ambiguity' ||
+    issue.type === 'contradiction';
+  return typeOk && typeof issue.message === 'string' && typeof issue.detectedAt === 'number';
 }
 
 function isBase7Array(value: unknown, expectedLength: number): value is number[] {
@@ -705,4 +896,12 @@ function createDefaultMirrorMode(): MirrorModeState {
     presenceToken: null,
     lastReflection: null,
   };
+}
+
+function createRecordId(petId: string, recordedAt: number): string {
+  const suffix =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : Math.random().toString(16).slice(2, 10);
+  return `${petId}-${recordedAt}-${suffix}`;
 }

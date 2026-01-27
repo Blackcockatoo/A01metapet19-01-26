@@ -14,6 +14,7 @@ export function FloatingActions() {
   const clean = useStore(state => state.clean);
   const play = useStore(state => state.play);
   const sleep = useStore(state => state.sleep);
+  const systemState = useStore(state => state.systemState);
 
   const [activeAction, setActiveAction] = useState<string | null>(null);
 
@@ -61,6 +62,8 @@ export function FloatingActions() {
     },
   ];
 
+  const isSealed = systemState === 'sealed';
+
   return (
     <div className="flex items-center justify-center gap-3 py-4 px-4">
       {actions.map(({ name, icon: Icon, action, color, activeColor, label }) => (
@@ -68,6 +71,7 @@ export function FloatingActions() {
           key={name}
           type="button"
           onClick={() => handleAction(action, name)}
+          disabled={isSealed}
           className={`
             relative flex flex-col items-center gap-1
             min-w-[64px] min-h-[64px] p-3
@@ -77,6 +81,7 @@ export function FloatingActions() {
             active:scale-95 transition-all duration-150
             touch-manipulation
             ${activeAction === name ? `ring-2 ${activeColor} ring-offset-2 ring-offset-slate-950` : ''}
+            ${isSealed ? 'opacity-40 grayscale cursor-not-allowed active:scale-100' : ''}
           `}
           aria-label={label}
         >
