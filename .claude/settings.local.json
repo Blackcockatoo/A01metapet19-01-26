@@ -45,7 +45,9 @@
       "Bash(npx next lint --dir src)",
       "Bash(npx eslint:*)",
       "Bash(npx netlify:*)",
-      "Bash(netlify --version:*)"
+      "Bash(netlify --version:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
