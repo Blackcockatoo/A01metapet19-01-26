@@ -25,6 +25,7 @@ export function PetHero({ className = '' }: PetHeroProps) {
   const vitals = useStore(state => state.vitals);
   const evolution = useStore(state => state.evolution);
   const ritualProgress = useStore(state => state.ritualProgress);
+  const systemState = useStore(state => state.systemState);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -64,6 +65,7 @@ export function PetHero({ className = '' }: PetHeroProps) {
 
   // Handle touch end - detect gestures
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (systemState === 'sealed') return;
     if (!touchStartRef.current) return;
 
     const touch = e.changedTouches[0];
@@ -124,7 +126,7 @@ export function PetHero({ className = '' }: PetHeroProps) {
     }
 
     touchStartRef.current = null;
-  }, [feed, play, clean, sleep, showGesture]);
+  }, [clean, feed, play, showGesture, sleep, systemState]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -184,7 +186,9 @@ export function PetHero({ className = '' }: PetHeroProps) {
       {/* Gesture Hint */}
       <div className="mt-4 text-center">
         <p className="text-zinc-500 text-xs">
-          Swipe to interact • Double-tap to rest
+          {systemState === 'sealed'
+            ? 'Stillness holds • gestures are quiet'
+            : 'Swipe to interact • Double-tap to rest'}
         </p>
       </div>
     </div>

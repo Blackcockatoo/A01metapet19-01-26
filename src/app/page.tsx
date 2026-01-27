@@ -43,6 +43,7 @@ import {
 } from '@/lib/progression/types';
 import { createDefaultRitualProgress } from '@/lib/ritual/types';
 import { DEFAULT_VITALS } from '@/vitals';
+import { createWitnessRecord } from '@/lib/witness';
 import {
   Sparkles,
   Shield,
@@ -450,6 +451,11 @@ export default function Home() {
       vitals: state.vitals,
       petType: state.petType,
       mirrorMode: state.mirrorMode,
+      witness: state.witness,
+      petOntology: state.petOntology,
+      systemState: state.systemState,
+      sealedAt: state.sealedAt,
+      invariantIssues: state.invariantIssues,
       genome: state.genome,
       genomeHash: genomeHashRef.current,
       traits: state.traits,
@@ -487,6 +493,11 @@ export default function Home() {
           vitals: state.vitals,
           petType: state.petType,
           mirrorMode: state.mirrorMode,
+          witness: state.witness,
+          petOntology: state.petOntology,
+          systemState: state.systemState,
+          sealedAt: state.sealedAt,
+          invariantIssues: state.invariantIssues,
           genome: state.genome,
           genomeHash: genomeHashRef.current,
           traits: state.traits,
@@ -566,6 +577,11 @@ export default function Home() {
         : createDefaultVimanaState(),
       petType: pet.petType,
       mirrorMode: pet.mirrorMode,
+      witness: pet.witness,
+      petOntology: pet.petOntology,
+      systemState: pet.systemState,
+      sealedAt: pet.sealedAt,
+      invariantIssues: pet.invariantIssues,
     });
 
     const digits = Object.freeze([...pet.heptaDigits]) as HeptaDigits;
@@ -647,9 +663,11 @@ export default function Home() {
     );
 
     const created = Date.now();
+    const petId = `pet-${crestValue.signature.slice(0, 12)}`;
+    const witness = createWitnessRecord(petId, created);
 
     return {
-      id: `pet-${crestValue.signature.slice(0, 12)}`,
+      id: petId,
       name: undefined,
       vitals: {
         ...DEFAULT_VITALS,
@@ -663,6 +681,11 @@ export default function Home() {
         presenceToken: null,
         lastReflection: null,
       },
+      witness,
+      petOntology: 'living',
+      systemState: 'active',
+      sealedAt: null,
+      invariantIssues: [],
       genome,
       genomeHash: genomeHashValue,
       traits,
@@ -717,9 +740,11 @@ export default function Home() {
 
       const now = Date.now();
       const genomeHashValue = await hashGenome(result.offspring);
+      const petId = `pet-${crestValue.signature.slice(0, 12)}`;
+      const witness = createWitnessRecord(petId, now);
 
       return {
-        id: `pet-${crestValue.signature.slice(0, 12)}`,
+        id: petId,
         name: buildOffspringName(result.lineageKey, partnerName),
         vitals: {
           ...DEFAULT_VITALS,
@@ -737,6 +762,11 @@ export default function Home() {
           presenceToken: null,
           lastReflection: null,
         },
+        witness,
+        petOntology: 'living',
+        systemState: 'active',
+        sealedAt: null,
+        invariantIssues: [],
         genome: result.offspring,
         genomeHash: genomeHashValue,
         traits: result.traits,
@@ -994,7 +1024,7 @@ export default function Home() {
 
   const handleDeletePet = useCallback(async (id: string) => {
     if (!persistenceSupportedRef.current) return;
-    if (!window.confirm('Delete this companion from local archives?')) return;
+    if (!window.confirm('Archive this companion from local archives? A trace will remain.')) return;
 
     try {
       await deletePet(id);
@@ -1024,7 +1054,7 @@ export default function Home() {
       }
       setImportError(null);
     } catch (error) {
-      console.error('Failed to delete pet:', error);
+      console.error('Failed to archive pet:', error);
     }
   }, [activateAutoSave, applyPetData, createFreshPet, currentPetId, refreshPetSummaries]);
 
@@ -1524,7 +1554,7 @@ export default function Home() {
                               variant="ghost"
                               className="h-8 w-8 p-0 text-rose-400 hover:bg-rose-500/10 touch-manipulation"
                               onClick={() => void handleDeletePet(summary.id)}
-                              aria-label="Delete"
+                              aria-label="Archive"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>

@@ -8,6 +8,7 @@ import {
 import type { PetSaveData } from './indexeddb';
 import { createDefaultBattleStats, createDefaultMiniGameProgress, createDefaultVimanaState } from '@/lib/progression/types';
 import { createDefaultRitualProgress } from '@/lib/ritual/types';
+import { createWitnessRecord } from '@/lib/witness';
 
 describe('Sealed Export/Import', () => {
   let hmacKey: CryptoKey;
@@ -22,6 +23,8 @@ describe('Sealed Export/Import', () => {
     );
 
     // Create mock pet data
+    const witness = createWitnessRecord('test-pet-123');
+
     mockPetData = {
       id: 'test-pet-123',
       name: 'Test Pet',
@@ -36,6 +39,11 @@ describe('Sealed Export/Import', () => {
         deathCount: 0,
       },
       petType: 'geometric',
+      witness,
+      petOntology: 'living',
+      systemState: 'active',
+      sealedAt: null,
+      invariantIssues: [],
       genome: {
         red60: Array(60).fill(0).map((_, i) => i % 7),
         blue60: Array(60).fill(0).map((_, i) => (i * 2) % 7),
