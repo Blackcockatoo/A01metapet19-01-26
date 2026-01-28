@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trophy, Zap, Target, Skull } from 'lucide-react';
+import { ArrowLeft, Trophy, Zap, Target, Skull, Gift, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { checkSpaceJewblesRewards } from '@/lib/addons/starter';
 
 interface GameResult {
   score: number;
@@ -17,6 +18,8 @@ export default function SpaceJewblesPage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [lastResult, setLastResult] = useState<GameResult | null>(null);
+  const [newUnlocks, setNewUnlocks] = useState<string[]>([]);
+  const [showUnlockAnimation, setShowUnlockAnimation] = useState(false);
 
   // Get pet data from store
   const traits = useStore(s => s.traits);
@@ -59,7 +62,7 @@ export default function SpaceJewblesPage() {
 
   // Handle messages from the game iframe
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
+    const handleMessage = async (event: MessageEvent) => {
       if (event.data?.type === 'GAME_READY') {
         // Send pet data to the game
         iframeRef.current?.contentWindow?.postMessage(
@@ -78,29 +81,68 @@ export default function SpaceJewblesPage() {
           result.bossesDefeated,
           result.mythicDrops
         );
+
+        // Check for addon rewards with updated totals
+        const updatedStats = {
+          maxWave: Math.max(miniGames.spaceJewblesMaxWave, result.wave),
+          bossesDefeated: miniGames.spaceJewblesBossesDefeated + result.bossesDefeated,
+          mythicDrops: miniGames.spaceJewblesMythicDrops + result.mythicDrops,
+        };
+
+        const rewards = await checkSpaceJewblesRewards(updatedStats);
+        if (rewards.newUnlocks.length > 0) {
+          setNewUnlocks(rewards.newUnlocks);
+          setShowUnlockAnimation(true);
+          setTimeout(() => setShowUnlockAnimation(false), 5000);
+        }
       }
     };
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [petData, recordSpaceJewblesRun]);
+  }, [petData, recordSpaceJewblesRun, miniGames]);
 
   const handleStartGame = useCallback(() => {
     setGameStarted(true);
     setLastResult(null);
+    setNewUnlocks([]);
   }, []);
 
   const handlePlayAgain = useCallback(() => {
     setGameStarted(true);
     setLastResult(null);
+    setNewUnlocks([]);
     // Force iframe reload
     if (iframeRef.current) {
       iframeRef.current.src = iframeRef.current.src;
     }
   }, []);
 
+  // Calculate progress towards rewards
+  const rewardProgress = useMemo(() => ({
+    badge: { current: miniGames.spaceJewblesMaxWave, target: 10, label: 'Champion Badge' },
+    banana: { current: miniGames.spaceJewblesBossesDefeated, target: 5, label: 'Cosmic Banana' },
+    mythic: { current: miniGames.spaceJewblesMythicDrops, target: 3, label: 'Mythic Aura' },
+  }), [miniGames]);
+
   return (
     <div className="w-screen min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 flex flex-col overflow-hidden">
+      {/* Unlock Animation Overlay */}
+      {showUnlockAnimation && newUnlocks.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 animate-fade-in">
+          <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-3xl p-8 border-2 border-amber-400 shadow-2xl animate-bounce-in">
+            <div className="text-center">
+              <Sparkles className="w-16 h-16 text-amber-400 mx-auto mb-4 animate-pulse" />
+              <h2 className="text-3xl font-bold text-amber-400 mb-2">Addon Unlocked!</h2>
+              {newUnlocks.map((name, i) => (
+                <p key={i} className="text-xl text-white">{name}</p>
+              ))}
+              <p className="text-slate-400 mt-4 text-sm">Check your addon inventory!</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
         <Link href="/pet">
@@ -174,7 +216,7 @@ export default function SpaceJewblesPage() {
               )}
 
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-4 mb-6 text-sm">
+              <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
                 <div className="bg-slate-800/30 rounded-lg p-3">
                   <div className="text-amber-400 font-bold text-xl">
                     {miniGames.spaceJewblesHighScore.toLocaleString()}
@@ -192,6 +234,39 @@ export default function SpaceJewblesPage() {
                     {miniGames.spaceJewblesBossesDefeated}
                   </div>
                   <div className="text-slate-500">Bosses</div>
+                </div>
+              </div>
+
+              {/* Addon Reward Progress */}
+              <div className="bg-slate-800/30 rounded-xl p-4 mb-4">
+                <div className="flex items-center gap-2 justify-center mb-3">
+                  <Gift className="w-4 h-4 text-purple-400" />
+                  <span className="text-sm font-semibold text-purple-300">Earnable Addons</span>
+                </div>
+                <div className="space-y-2 text-xs">
+                  {Object.entries(rewardProgress).map(([key, prog]) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <div className="flex justify-between text-slate-400 mb-1">
+                          <span>{prog.label}</span>
+                          <span>{Math.min(prog.current, prog.target)}/{prog.target}</span>
+                        </div>
+                        <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-500 ${
+                              prog.current >= prog.target
+                                ? 'bg-gradient-to-r from-amber-400 to-yellow-300'
+                                : 'bg-purple-500'
+                            }`}
+                            style={{ width: `${Math.min(100, (prog.current / prog.target) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                      {prog.current >= prog.target && (
+                        <Sparkles className="w-4 h-4 text-amber-400" />
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
 
