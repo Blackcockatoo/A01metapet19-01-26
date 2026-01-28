@@ -619,6 +619,8 @@
         let waveEnemiesRemaining = 0;
         let waveTransition = false;
         let waveTransitionTimer = 0;
+        let bossesDefeated = 0;
+        let mythicDropsCollected = 0;
 
         // Player
         const player = {
@@ -1385,6 +1387,11 @@
             addFloatingText(enemy.x, enemy.y, `+${points}`, '#ffd700');
             createParticles(enemy.x, enemy.y, enemy.data.color, 15);
 
+            // Track boss kills
+            if (enemy.data.isBoss) {
+                bossesDefeated++;
+            }
+
             // Drop chance
             rollDrop(enemy);
 
@@ -1496,6 +1503,11 @@
 
         function collectDrop(drop) {
             const item = drop.item;
+
+            // Track mythic drops
+            if (item.rarity === 'mythic') {
+                mythicDropsCollected++;
+            }
 
             // Show drop banner
             showDropBanner(item, drop.tier);
@@ -1815,6 +1827,8 @@
             lives = 3;
             wave = 1;
             waveTransition = false;
+            bossesDefeated = 0;
+            mythicDropsCollected = 0;
 
             // Reset player
             player.x = CANVAS_WIDTH / 2;
@@ -1866,7 +1880,12 @@
             if (window.parent !== window) {
                 window.parent.postMessage({
                     type: 'GAME_RESULT',
-                    payload: { score, wave }
+                    payload: {
+                        score,
+                        wave,
+                        bossesDefeated,
+                        mythicDrops: mythicDropsCollected
+                    }
                 }, '*');
             }
         }
@@ -2028,6 +2047,7 @@
         window.addEventListener('message', (e) => {
             if (e.data && e.data.type === 'PET_DATA') {
                 const data = e.data.payload;
+                // Handle both physical nested and flat formats
                 if (data.physical) {
                     petData.bodyType = data.physical.bodyType || petData.bodyType;
                     petData.primaryColor = data.physical.primaryColor || petData.primaryColor;
@@ -2036,6 +2056,15 @@
                     petData.texture = data.physical.texture || petData.texture;
                     petData.size = data.physical.size || petData.size;
                     petData.features = data.physical.features || petData.features;
+                } else {
+                    // Flat format from page component
+                    petData.bodyType = data.bodyType || petData.bodyType;
+                    petData.primaryColor = data.primaryColor || petData.primaryColor;
+                    petData.secondaryColor = data.secondaryColor || petData.secondaryColor;
+                    petData.pattern = data.pattern || petData.pattern;
+                    petData.texture = data.texture || petData.texture;
+                    petData.size = data.size || petData.size;
+                    petData.features = data.features || petData.features;
                 }
                 if (data.petName) {
                     petData.petName = data.petName;
@@ -2062,6 +2091,11 @@
             initStars();
             updatePetPreview();
             updateAmmoUI();
+
+            // Notify parent that game is ready
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'GAME_READY' }, '*');
+            }
 
             // Animate pet preview
             function animatePreview() {

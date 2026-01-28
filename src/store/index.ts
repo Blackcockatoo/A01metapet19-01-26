@@ -123,6 +123,7 @@ export interface MetaPetState {
   recordBattle: (result: 'win' | 'loss', opponent: string) => void;
   updateMiniGameScore: (game: 'memory' | 'rhythm', score: number) => void;
   recordVimanaRun: (score: number, lines: number, level: number) => void;
+  recordSpaceJewblesRun: (score: number, wave: number, bossesDefeated: number, mythicDrops: number) => void;
   exploreCell: (cellId: string) => void;
   resolveAnomaly: (cellId: string) => void;
   recordReward: (payload: RewardPayloadInput) => void;
@@ -645,6 +646,94 @@ export function createMetaPetWebStore(
 
         return update;
       });
+
+      rewardPayloads.forEach(payload => get().recordReward(payload));
+    },
+
+    recordSpaceJewblesRun(score, wave, bossesDefeated, mythicDrops) {
+      if (get().systemState === 'sealed') return;
+      const rewardPayloads: RewardPayloadInput[] = [];
+      set(state => {
+        const previous = state.miniGames;
+        const hasProgress = score > 0 || wave > 0;
+
+        const next: MiniGameProgress = {
+          ...previous,
+          focusStreak: hasProgress ? previous.focusStreak + 1 : 0,
+          spaceJewblesHighScore: Math.max(previous.spaceJewblesHighScore, score),
+          spaceJewblesMaxWave: Math.max(previous.spaceJewblesMaxWave, wave),
+          spaceJewblesLastScore: score,
+          spaceJewblesLastWave: wave,
+          spaceJewblesMythicDrops: previous.spaceJewblesMythicDrops + mythicDrops,
+          spaceJewblesBossesDefeated: previous.spaceJewblesBossesDefeated + bossesDefeated,
+          lastPlayedAt: Date.now(),
+        };
+
+        let achievements = state.achievements;
+
+        // Score achievement (5000+)
+        if (next.spaceJewblesHighScore >= 5000) {
+          const result = unlockAchievementWithReward(achievements, 'minigame-jewbles-score');
+          achievements = result.achievements;
+          if (result.reward) rewardPayloads.push(result.reward);
+        }
+
+        // Wave achievement (wave 10+)
+        if (next.spaceJewblesMaxWave >= 10) {
+          const result = unlockAchievementWithReward(achievements, 'minigame-jewbles-wave');
+          achievements = result.achievements;
+          if (result.reward) rewardPayloads.push(result.reward);
+        }
+
+        // Boss achievement (3+ bosses defeated total)
+        if (next.spaceJewblesBossesDefeated >= 3) {
+          const result = unlockAchievementWithReward(achievements, 'minigame-jewbles-boss');
+          achievements = result.achievements;
+          if (result.reward) rewardPayloads.push(result.reward);
+        }
+
+        // Mythic drop achievement (any mythic)
+        if (next.spaceJewblesMythicDrops >= 1) {
+          const result = unlockAchievementWithReward(achievements, 'minigame-jewbles-mythic');
+          achievements = result.achievements;
+          if (result.reward) rewardPayloads.push(result.reward);
+        }
+
+        const update: Partial<MetaPetState> = { miniGames: next };
+        if (achievements !== state.achievements) {
+          update.achievements = achievements;
+        }
+
+        // Grant XP based on performance (5-15 XP, scaled by wave and score)
+        if (hasProgress) {
+          const xpGain = Math.min(15, Math.max(5, Math.floor(wave / 2) + Math.floor(score / 1000)));
+          update.evolution = gainExperience(state.evolution, xpGain);
+        }
+
+        // Boost vitals from playing
+        const moodBoost = Math.min(8, Math.floor(wave));
+        const energyCost = Math.min(5, Math.floor(wave / 3));
+        update.vitals = {
+          ...state.vitals,
+          mood: clamp(state.vitals.mood + moodBoost),
+          energy: clamp(state.vitals.energy - energyCost),
+        };
+
+        return update;
+      });
+
+      // Record game result as reward
+      if (score > 0) {
+        rewardPayloads.push({
+          source: 'minigame',
+          title: 'Space Jewbles Run',
+          description: `Reached wave ${wave} with ${score} points.`,
+          reward: {
+            type: 'score',
+            value: score,
+          },
+        });
+      }
 
       rewardPayloads.forEach(payload => get().recordReward(payload));
     },

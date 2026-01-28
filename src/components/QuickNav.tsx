@@ -10,6 +10,7 @@ import {
   Home,
   PawPrint,
   QrCode,
+  Rocket,
   UserCircle,
 } from 'lucide-react';
 
@@ -24,6 +25,7 @@ type BeforeInstallPromptEvent = Event & {
 const NAV_ITEMS = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/pet', label: 'Pet', icon: PawPrint },
+  { href: '/space-jewbles', label: 'Jewbles', icon: Rocket },
   { href: '/identity', label: 'Identity', icon: UserCircle },
   { href: '/qr-messaging', label: 'QR', icon: QrCode },
   { href: '/genome-explorer', label: 'Genome', icon: Dna },

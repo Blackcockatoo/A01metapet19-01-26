@@ -46,6 +46,13 @@ export interface MiniGameProgress {
   vimanaLastScore: number;
   vimanaLastLines: number;
   vimanaLastLevel: number;
+  // Space Jewbles fields
+  spaceJewblesHighScore: number;
+  spaceJewblesMaxWave: number;
+  spaceJewblesLastScore: number;
+  spaceJewblesLastWave: number;
+  spaceJewblesMythicDrops: number;
+  spaceJewblesBossesDefeated: number;
   lastPlayedAt: number | null;
 }
 
@@ -112,6 +119,31 @@ export const ACHIEVEMENT_CATALOG: Achievement[] = [
     description: 'Breed two pets to create a new companion.',
     category: 'breeding',
   },
+  // Space Jewbles achievements
+  {
+    id: 'minigame-jewbles-score',
+    title: 'Cosmic Defender',
+    description: 'Score 5,000 or more in Space Jewbles.',
+    category: 'minigame',
+  },
+  {
+    id: 'minigame-jewbles-wave',
+    title: 'Wave Rider',
+    description: 'Reach wave 10 in Space Jewbles.',
+    category: 'minigame',
+  },
+  {
+    id: 'minigame-jewbles-boss',
+    title: 'Banana Slayer',
+    description: 'Defeat 3 Boss Bananas in Space Jewbles.',
+    category: 'minigame',
+  },
+  {
+    id: 'minigame-jewbles-mythic',
+    title: 'Mythic Hunter',
+    description: 'Collect a Mythic drop in Space Jewbles.',
+    category: 'minigame',
+  },
 ];
 
 export interface CreateBattleStatsOptions {
@@ -142,6 +174,13 @@ export function createDefaultMiniGameProgress(overrides: Partial<MiniGameProgres
     vimanaLastScore: 0,
     vimanaLastLines: 0,
     vimanaLastLevel: 0,
+    // Space Jewbles defaults
+    spaceJewblesHighScore: 0,
+    spaceJewblesMaxWave: 0,
+    spaceJewblesLastScore: 0,
+    spaceJewblesLastWave: 0,
+    spaceJewblesMythicDrops: 0,
+    spaceJewblesBossesDefeated: 0,
     lastPlayedAt: null,
     ...overrides,
   };
