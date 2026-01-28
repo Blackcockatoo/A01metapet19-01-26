@@ -124,6 +124,17 @@
             font-size: 12px;
             color: #aaa;
             margin-top: 2px;
+            transition: color 0.2s ease;
+        }
+
+        .ammo-count.low {
+            color: #ff6b6b;
+            animation: lowAmmoFlash 1s ease infinite;
+        }
+
+        @keyframes lowAmmoFlash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
         .ammo-key {
             font-size: 10px;
@@ -473,7 +484,10 @@
 
             <!-- HUD -->
             <div id="hud">
-                <div class="hud-item score">SCORE: <span id="scoreValue">0</span></div>
+                <div class="hud-item score">
+                    SCORE: <span id="scoreValue">0</span>
+                    <span id="highScoreDisplay" style="display: none; font-size: 12px; color: #aaa; margin-left: 8px;"></span>
+                </div>
                 <div class="hud-item wave">WAVE <span id="waveValue">1</span></div>
                 <div class="hud-item lives" id="livesDisplay"></div>
             </div>
@@ -550,6 +564,16 @@
         const MAX_PROJECTILES = 20;
         const MAX_PARTICLES = 150;
         const BOSS_WAVE_INTERVAL = 10;
+        const LOW_AMMO_THRESHOLD = 3;
+
+        // Difficulty scaling
+        const DIFFICULTY_CONFIG = {
+            speedMultPerWave: 0.02,
+            hpMultPerWave: 0.15,
+            spawnMultPerWave: 0.1,
+            maxSpeedMult: 2.5,
+            maxHpMult: 3.0
+        };
 
         // Projectile Types
         const PROJECTILES = {
@@ -707,6 +731,114 @@
         // Input
         const keys = {};
         const keysPressed = {}; // Track single press events
+
+        // Audio Context
+        let audioContext = null;
+        let soundEnabled = true;
+
+        // Loot pity system
+        let dropsPityCounter = 0;
+        let mythicPityCounter = 0;
+        const PITY_THRESHOLD = 50; // Guaranteed rare+ after 50 kills
+        const MYTHIC_PITY_THRESHOLD = 200; // Guaranteed mythic after 200 kills
+
+        // High score tracking
+        let highScore = 0;
+        let personalBest = 0;
+
+        // ============================================
+        // AUDIO SYSTEM
+        // ============================================
+
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.warn('Web Audio API not supported');
+                soundEnabled = false;
+            }
+        }
+
+        function playSound(type, volume = 0.3) {
+            if (!soundEnabled || !audioContext) return;
+
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            const now = audioContext.currentTime;
+
+            switch(type) {
+                case 'shoot':
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(200, now + 0.1);
+                    gain.gain.setValueAtTime(volume, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                    break;
+
+                case 'hit':
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(150, now);
+                    gain.gain.setValueAtTime(volume * 0.5, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                    break;
+
+                case 'explosion':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(100, now);
+                    osc.frequency.exponentialRampToValueAtTime(20, now + 0.3);
+                    gain.gain.setValueAtTime(volume * 0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                    break;
+
+                case 'pickup':
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.15);
+                    gain.gain.setValueAtTime(volume * 0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                    break;
+
+                case 'damage':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
+                    gain.gain.setValueAtTime(volume * 0.5, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                    break;
+
+                case 'powerup':
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.2);
+                    gain.gain.setValueAtTime(volume * 0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                    break;
+
+                case 'boss':
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(80, now);
+                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.5);
+                    gain.gain.setValueAtTime(volume * 0.6, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                    break;
+            }
+        }
 
         // ============================================
         // PET SPRITE RENDERING
@@ -1017,6 +1149,9 @@
                 screenShake = Math.max(screenShake, 3);
             }
 
+            // Play shoot sound
+            playSound('shoot', 0.2);
+
             updateAmmoUI();
         }
 
@@ -1086,8 +1221,11 @@
             const isBossWave = waveNum % BOSS_WAVE_INTERVAL === 0;
 
             if (isBossWave) {
-                // Boss wave
-                const bossHpMult = 1 + Math.floor(waveNum / BOSS_WAVE_INTERVAL) * 0.5;
+                // Boss wave with progressive difficulty
+                const bossHpMult = Math.min(
+                    1 + Math.floor(waveNum / BOSS_WAVE_INTERVAL) * 0.5 + (waveNum * DIFFICULTY_CONFIG.hpMultPerWave),
+                    DIFFICULTY_CONFIG.maxHpMult
+                );
                 enemies.push({
                     x: CANVAS_WIDTH / 2,
                     y: 100,
@@ -1104,13 +1242,18 @@
                 });
                 waveEnemiesRemaining = 1;
                 showNotification('BOSS WAVE!', '#ff0088', 2000);
+                playSound('boss', 0.5);
             } else {
-                // Normal wave
+                // Normal wave with progressive difficulty
                 const templateIndex = (waveNum - 1) % WAVE_TEMPLATES.length;
                 const template = WAVE_TEMPLATES[templateIndex];
-                const difficultyMult = 1 + Math.floor(waveNum / WAVE_TEMPLATES.length) * 0.2;
+                const baseDiffMult = 1 + Math.floor(waveNum / WAVE_TEMPLATES.length) * 0.2;
+                const progressiveDiffMult = 1 + (waveNum - 1) * DIFFICULTY_CONFIG.hpMultPerWave;
+                const difficultyMult = Math.min(baseDiffMult * progressiveDiffMult, DIFFICULTY_CONFIG.maxHpMult);
 
                 const positions = getFormationPositions(template.formation, template.count);
+
+                const speedMult = Math.min(1 + (waveNum - 1) * DIFFICULTY_CONFIG.speedMultPerWave, DIFFICULTY_CONFIG.maxSpeedMult);
 
                 positions.forEach((pos, i) => {
                     const typeKey = template.enemies[i % template.enemies.length];
@@ -1125,7 +1268,8 @@
                         data: typeData,
                         hp: typeData.hp * difficultyMult,
                         maxHp: typeData.hp * difficultyMult,
-                        vx: typeData.speed * (Math.random() > 0.5 ? 1 : -1),
+                        vx: typeData.speed * speedMult * (Math.random() > 0.5 ? 1 : -1),
+                        baseSpeed: typeData.speed * speedMult,
                         vy: 0,
                         t: Math.random() * 1000,
                         slowed: 0,
@@ -1339,6 +1483,7 @@
                     if (distSq < hitRadius * hitRadius) {
                         // Hit!
                         e.hp -= p.weapon.damage;
+                        playSound('hit', 0.15);
 
                         // Apply effects
                         switch (p.weapon.effect) {
@@ -1458,12 +1603,15 @@
             addFloatingText(enemy.x, enemy.y, `+${points}`, '#ffd700');
             createParticles(enemy.x, enemy.y, enemy.data.color, 15);
 
+            // Play explosion sound
+            playSound('explosion', enemy.data.isBoss ? 0.5 : 0.25);
+
             // Track boss kills
             if (enemy.data.isBoss) {
                 bossesDefeated++;
             }
 
-            // Drop chance
+            // Drop chance with pity system
             rollDrop(enemy);
 
             enemies.splice(index, 1);
@@ -1476,20 +1624,48 @@
         // ============================================
 
         function rollDrop(enemy) {
-            let dropChance = 0;
+            dropsPityCounter++;
+            mythicPityCounter++;
+
             const scoreBonus = Math.floor(score / 5000) * 0.01;
 
             // Guaranteed drop from boss
             if (enemy.data.isBoss) {
                 spawnDrop(enemy.x, enemy.y, 'epic');
+                dropsPityCounter = 0;
                 return;
             }
 
-            // Roll through tiers (highest first)
+            // Pity system - guaranteed rare+ after threshold
+            if (dropsPityCounter >= PITY_THRESHOLD) {
+                spawnDrop(enemy.x, enemy.y, 'rare');
+                dropsPityCounter = 0;
+                return;
+            }
+
+            // Mythic pity system
+            if (mythicPityCounter >= MYTHIC_PITY_THRESHOLD) {
+                spawnDrop(enemy.x, enemy.y, 'mythic');
+                dropsPityCounter = 0;
+                mythicPityCounter = 0;
+                return;
+            }
+
+            // Roll through tiers (highest first) with pity bonuses
+            const pityBonus = (dropsPityCounter / PITY_THRESHOLD) * 0.05;
+            const mythicPityBonus = (mythicPityCounter / MYTHIC_PITY_THRESHOLD) * 0.01;
+
             const tiers = ['mythic', 'legendary', 'epic', 'rare', 'uncommon', 'common'];
             for (const tier of tiers) {
-                if (Math.random() < DROP_TIERS[tier].chance + scoreBonus) {
+                let chance = DROP_TIERS[tier].chance + scoreBonus + pityBonus;
+                if (tier === 'mythic') chance += mythicPityBonus;
+
+                if (Math.random() < chance) {
                     spawnDrop(enemy.x, enemy.y, tier);
+                    dropsPityCounter = 0;
+                    if (tier === 'mythic' || tier === 'legendary') {
+                        mythicPityCounter = 0;
+                    }
                     return;
                 }
             }
@@ -1578,6 +1754,13 @@
             // Track mythic drops
             if (item.rarity === 'mythic') {
                 mythicDropsCollected++;
+            }
+
+            // Play sound based on rarity
+            if (item.rarity === 'mythic' || item.rarity === 'legendary') {
+                playSound('powerup', 0.5);
+            } else {
+                playSound('pickup', 0.3);
             }
 
             // Show drop banner
@@ -1787,12 +1970,14 @@
                 player.shield--;
                 createParticles(player.x, player.y, '#00ffff', 20);
                 showNotification('Shield blocked!', '#00ffff');
+                playSound('hit', 0.3);
                 return;
             }
 
             lives--;
             screenShake = 15;
             createParticles(player.x, player.y, '#ff0000', 30);
+            playSound('damage', 0.4);
             updateUI();
 
             if (lives <= 0) {
@@ -1835,18 +2020,34 @@
             document.getElementById('scoreValue').textContent = score.toLocaleString();
             document.getElementById('waveValue').textContent = wave;
             document.getElementById('livesDisplay').innerHTML = '❤️'.repeat(lives);
+
+            // Update high score display
+            if (score > personalBest) {
+                personalBest = score;
+                const hsDisplay = document.getElementById('highScoreDisplay');
+                hsDisplay.textContent = `NEW BEST!`;
+                hsDisplay.style.display = 'inline';
+                hsDisplay.style.color = '#ffd700';
+            } else if (personalBest > 0) {
+                const hsDisplay = document.getElementById('highScoreDisplay');
+                hsDisplay.textContent = `Best: ${personalBest.toLocaleString()}`;
+                hsDisplay.style.display = 'inline';
+                hsDisplay.style.color = '#aaa';
+            }
         }
 
         function updateAmmoUI() {
             const bar = document.getElementById('ammoBar');
             bar.innerHTML = WEAPON_KEYS.map((key, i) => {
                 const weapon = PROJECTILES[key];
-                const count = player.ammo[key] === Infinity ? '∞' : player.ammo[key];
+                const ammoCount = player.ammo[key];
+                const count = ammoCount === Infinity ? '∞' : ammoCount;
                 const selected = i === player.selectedWeapon ? 'selected' : '';
+                const lowAmmo = ammoCount !== Infinity && ammoCount <= LOW_AMMO_THRESHOLD ? 'low' : '';
                 return `
                     <div class="ammo-slot ${selected}" onclick="selectWeapon(${i})">
                         <span class="ammo-emoji">${weapon.emoji}</span>
-                        <span class="ammo-count">x${count}</span>
+                        <span class="ammo-count ${lowAmmo}">x${count}</span>
                         <span class="ammo-key">${i + 1}</span>
                     </div>
                 `;
@@ -1904,6 +2105,8 @@
             waveTransition = false;
             bossesDefeated = 0;
             mythicDropsCollected = 0;
+            dropsPityCounter = 0;
+            mythicPityCounter = 0;
 
             // Reset player
             player.x = CANVAS_WIDTH / 2;
@@ -1951,6 +2154,16 @@
             document.getElementById('finalWave').textContent = wave;
             document.getElementById('gameOverScreen').style.display = 'flex';
 
+            // Update high score
+            if (score > highScore) {
+                highScore = score;
+                try {
+                    localStorage.setItem('spaceJewblesHighScore', highScore.toString());
+                } catch (e) {
+                    console.warn('Could not save high score');
+                }
+            }
+
             // Send score to parent
             if (window.parent !== window) {
                 window.parent.postMessage({
@@ -1959,7 +2172,8 @@
                         score,
                         wave,
                         bossesDefeated,
-                        mythicDrops: mythicDropsCollected
+                        mythicDrops: mythicDropsCollected,
+                        highScore: highScore
                     }
                 }, '*');
             }
@@ -2205,8 +2419,20 @@
         function init() {
             loadPetFromURL();
             initStars();
+            initAudio();
             updatePetPreview();
             updateAmmoUI();
+
+            // Load high score from localStorage
+            try {
+                const saved = localStorage.getItem('spaceJewblesHighScore');
+                if (saved) {
+                    highScore = parseInt(saved, 10);
+                    personalBest = highScore;
+                }
+            } catch (e) {
+                console.warn('Could not load high score');
+            }
 
             // Handle responsive scaling
             handleResize();
@@ -2214,6 +2440,19 @@
             window.addEventListener('orientationchange', () => {
                 setTimeout(handleResize, 100);
             });
+
+            // Initialize audio on first user interaction
+            document.addEventListener('click', () => {
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            }, { once: true });
+
+            document.addEventListener('touchstart', () => {
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            }, { once: true });
 
             // Notify parent that game is ready
             if (window.parent !== window) {

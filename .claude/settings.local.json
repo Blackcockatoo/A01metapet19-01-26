@@ -47,7 +47,8 @@
       "Bash(npx netlify:*)",
       "Bash(netlify --version:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []
