@@ -2481,26 +2481,26 @@ const AuraliaMetaPet: React.FC<AuraliaMetaPetProps> = ({
                       <div className="flex flex-col items-center gap-2 mt-3">
                         <button
                           onClick={() => snakeState.direction !== 'down' && setSnakeState(s => ({ ...s, direction: 'up' }))}
-                          className="w-14 h-14 sm:w-12 sm:h-12 rounded-lg bg-green-800/80 border border-green-600 flex items-center justify-center text-2xl sm:text-xl active:bg-green-700 select-none touch-manipulation"
+                          className="w-12 h-12 rounded-lg bg-green-800/80 border border-green-600 flex items-center justify-center text-xl active:bg-green-700 select-none touch-manipulation"
                         >
                           ▲
                         </button>
                         <div className="flex gap-2">
                           <button
                             onClick={() => snakeState.direction !== 'right' && setSnakeState(s => ({ ...s, direction: 'left' }))}
-                            className="w-14 h-14 sm:w-12 sm:h-12 rounded-lg bg-green-800/80 border border-green-600 flex items-center justify-center text-2xl sm:text-xl active:bg-green-700 select-none touch-manipulation"
+                            className="w-12 h-12 rounded-lg bg-green-800/80 border border-green-600 flex items-center justify-center text-xl active:bg-green-700 select-none touch-manipulation"
                           >
                             ◀
                           </button>
                           <button
                             onClick={() => snakeState.direction !== 'up' && setSnakeState(s => ({ ...s, direction: 'down' }))}
-                            className="w-14 h-14 sm:w-12 sm:h-12 rounded-lg bg-green-800/80 border border-green-600 flex items-center justify-center text-2xl sm:text-xl active:bg-green-700 select-none touch-manipulation"
+                            className="w-12 h-12 rounded-lg bg-green-800/80 border border-green-600 flex items-center justify-center text-xl active:bg-green-700 select-none touch-manipulation"
                           >
                             ▼
                           </button>
                           <button
                             onClick={() => snakeState.direction !== 'left' && setSnakeState(s => ({ ...s, direction: 'right' }))}
-                            className="w-14 h-14 sm:w-12 sm:h-12 rounded-lg bg-green-800/80 border border-green-600 flex items-center justify-center text-2xl sm:text-xl active:bg-green-700 select-none touch-manipulation"
+                            className="w-12 h-12 rounded-lg bg-green-800/80 border border-green-600 flex items-center justify-center text-xl active:bg-green-700 select-none touch-manipulation"
                           >
                             ▶
                           </button>
@@ -2521,7 +2521,7 @@ const AuraliaMetaPet: React.FC<AuraliaMetaPetProps> = ({
                   {tetrisState.gameOver ? (
                     <div className="text-center py-4">
                       <p className="text-sm text-red-400 mb-2">Game Over!</p>
-                      <button onClick={resetTetrisGame} className="px-5 py-3 sm:px-4 sm:py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-base sm:text-sm active:bg-indigo-400 touch-manipulation">
+                      <button onClick={resetTetrisGame} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm active:bg-indigo-400 touch-manipulation">
                         Play Again
                       </button>
                     </div>
@@ -2557,27 +2557,27 @@ const AuraliaMetaPet: React.FC<AuraliaMetaPetProps> = ({
                       <div className="flex justify-center items-center gap-2 mt-3">
                         <button
                           onClick={() => moveTetrisPiece(-1, 0)}
-                          className="w-14 h-14 sm:w-12 sm:h-12 rounded-lg bg-indigo-800/80 border border-indigo-600 flex items-center justify-center text-2xl sm:text-xl active:bg-indigo-700 select-none touch-manipulation"
+                          className="w-12 h-12 rounded-lg bg-indigo-800/80 border border-indigo-600 flex items-center justify-center text-xl active:bg-indigo-700 select-none touch-manipulation"
                         >
                           ◀
                         </button>
                         <div className="flex flex-col gap-2">
                           <button
                             onClick={() => rotateTetrisPiece()}
-                            className="w-14 h-14 sm:w-12 sm:h-12 rounded-lg bg-indigo-800/80 border border-indigo-600 flex items-center justify-center text-xl sm:text-lg active:bg-indigo-700 select-none touch-manipulation"
+                            className="w-12 h-12 rounded-lg bg-indigo-800/80 border border-indigo-600 flex items-center justify-center text-lg active:bg-indigo-700 select-none touch-manipulation"
                           >
                             ↻
                           </button>
                           <button
                             onClick={() => moveTetrisPiece(0, 1)}
-                            className="w-14 h-14 sm:w-12 sm:h-12 rounded-lg bg-indigo-800/80 border border-indigo-600 flex items-center justify-center text-2xl sm:text-xl active:bg-indigo-700 select-none touch-manipulation"
+                            className="w-12 h-12 rounded-lg bg-indigo-800/80 border border-indigo-600 flex items-center justify-center text-xl active:bg-indigo-700 select-none touch-manipulation"
                           >
                             ▼
                           </button>
                         </div>
                         <button
                           onClick={() => moveTetrisPiece(1, 0)}
-                          className="w-14 h-14 sm:w-12 sm:h-12 rounded-lg bg-indigo-800/80 border border-indigo-600 flex items-center justify-center text-2xl sm:text-xl active:bg-indigo-700 select-none touch-manipulation"
+                          className="w-12 h-12 rounded-lg bg-indigo-800/80 border border-indigo-600 flex items-center justify-center text-xl active:bg-indigo-700 select-none touch-manipulation"
                         >
                           ▶
                         </button>

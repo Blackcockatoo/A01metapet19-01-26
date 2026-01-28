@@ -28,6 +28,7 @@ interface GenomeBarProps {
   readonly label: string;
   readonly value: number;
   readonly color: string;
+  readonly hideValue?: boolean;
 }
 
 interface FormConditionProps {
@@ -276,7 +277,7 @@ const MetaPetVisualizer = () => {
                 Marking patterns derived from genetic code
               </p>
               <div className="space-y-3">
-                <GenomeBar label="Red-60" value={red60} color="#FF4757" />
+                <GenomeBar label="Red-60" value={red60} color="#FF4757" hideValue />
                 <GenomeBar label="Blue-60" value={blue60} color="#5F9FFF" />
                 <GenomeBar label="Black-60" value={black60} color="#A29BFE" />
               </div>
@@ -346,11 +347,11 @@ const StatSlider = ({ label, value, onChange, color, icon }: StatSliderProps) =>
   </div>
 );
 
-const GenomeBar = ({ label, value, color }: GenomeBarProps) => (
+const GenomeBar = ({ label, value, color, hideValue }: GenomeBarProps) => (
   <div>
     <div className="flex justify-between mb-1">
       <span className="text-sm">{label}</span>
-      <span className="text-sm font-mono">{value.toFixed(0)}%</span>
+      <span className="text-sm font-mono">{hideValue ? '••••' : `${value.toFixed(0)}%`}</span>
     </div>
     <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
       <div

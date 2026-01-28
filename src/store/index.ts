@@ -37,6 +37,16 @@ import {
   createDefaultRitualProgress,
   type RitualProgress,
 } from '../lib/ritual/types';
+import {
+  createWitnessRecord,
+  type PetOntologyState,
+  type WitnessRecord,
+} from '../lib/witness';
+import {
+  type InvariantIssue,
+  type SystemState,
+  shouldSealSystem,
+} from '../lib/system/invariants';
 
 export type { Vitals };
 export type PetType = 'geometric' | 'auralia';
@@ -55,6 +65,11 @@ export interface MetaPetState {
   traits: DerivedTraits | null;
   evolution: EvolutionData;
   ritualProgress: RitualProgress;
+  witness: WitnessRecord;
+  petOntology: PetOntologyState;
+  systemState: SystemState;
+  sealedAt: number | null;
+  invariantIssues: InvariantIssue[];
   essence: number;
   lastRewardSource: RewardSource | null;
   lastRewardAmount: number;
@@ -69,6 +84,8 @@ export interface MetaPetState {
   lastAction: null | 'feed' | 'clean' | 'play' | 'sleep';
   lastActionAt: number;
   tickId?: ReturnType<typeof setInterval>;
+  sealSystem: (issue?: InvariantIssue) => void;
+  reportInvariantIssue: (issue: InvariantIssue) => void;
   setGenome: (genome: Genome, traits: DerivedTraits) => void;
   setPetType: (petType: PetType) => void;
   hydrate: (data: {
@@ -77,6 +94,11 @@ export interface MetaPetState {
     traits: DerivedTraits;
     evolution: EvolutionData;
     ritualProgress?: RitualProgress;
+    witness?: WitnessRecord;
+    petOntology?: PetOntologyState;
+    systemState?: SystemState;
+    sealedAt?: number | null;
+    invariantIssues?: InvariantIssue[];
     essence?: number;
     lastRewardSource?: RewardSource | null;
     lastRewardAmount?: number;
@@ -186,6 +208,8 @@ const DEFAULT_MIRROR_MODE: MirrorModeState = {
   lastReflection: null,
 };
 
+const DEFAULT_WITNESS = createWitnessRecord('meta-pet');
+
 function unlockAchievement(list: Achievement[], id: Achievement['id']): Achievement[] {
   if (list.some(entry => entry.id === id)) {
     return list;
@@ -276,6 +300,11 @@ export function createMetaPetWebStore(
     traits: null,
     evolution: initializeEvolution(),
     ritualProgress: createDefaultRitualProgress(),
+    witness: DEFAULT_WITNESS,
+    petOntology: 'living',
+    systemState: 'active',
+    sealedAt: null,
+    invariantIssues: [],
     essence: 0,
     lastRewardSource: null,
     lastRewardAmount: 0,
@@ -290,11 +319,52 @@ export function createMetaPetWebStore(
     lastAction: null,
     lastActionAt: 0,
 
+    sealSystem(issue) {
+      set(state => {
+        if (state.systemState === 'sealed') {
+          return issue
+            ? { invariantIssues: [...state.invariantIssues, issue] }
+            : {};
+        }
+        const issues = issue ? [...state.invariantIssues, issue] : state.invariantIssues;
+        return {
+          systemState: 'sealed',
+          sealedAt: issue?.detectedAt ?? Date.now(),
+          invariantIssues: issues,
+        };
+      });
+
+      const tickId = get().tickId;
+      if (tickId) {
+        cancelInterval(tickId);
+        set({ tickId: undefined });
+      }
+    },
+
+    reportInvariantIssue(issue) {
+      set(state => {
+        const issues = [...state.invariantIssues, issue];
+        if (state.systemState === 'sealed') {
+          return { invariantIssues: issues };
+        }
+        if (shouldSealSystem(issues)) {
+          return {
+            systemState: 'sealed',
+            sealedAt: issue.detectedAt,
+            invariantIssues: issues,
+          };
+        }
+        return { invariantIssues: issues };
+      });
+    },
+
     setGenome(genome, traits) {
+      if (get().systemState === 'sealed') return;
       set({ genome, traits: normalizeTraits(genome, traits) });
     },
 
     setPetType(petType) {
+      if (get().systemState === 'sealed') return;
       set({ petType });
     },
 
@@ -312,6 +382,11 @@ export function createMetaPetWebStore(
       lastReward,
       petType,
       mirrorMode,
+      witness,
+      petOntology,
+      systemState,
+      sealedAt,
+      invariantIssues,
       essence,
       lastRewardSource,
       lastRewardAmount,
@@ -322,6 +397,22 @@ export function createMetaPetWebStore(
         traits: normalizeTraits(genome, traits),
         evolution: { ...evolution },
         ritualProgress: ritualProgress ? { ...ritualProgress, history: [...ritualProgress.history] } : state.ritualProgress,
+        witness: witness ?? state.witness,
+        petOntology: petOntology ?? state.petOntology,
+        systemState: (() => {
+          const nextIssues = invariantIssues ? invariantIssues.map(issue => ({ ...issue })) : state.invariantIssues;
+          const candidateState = systemState ?? state.systemState;
+          return candidateState === 'sealed' || shouldSealSystem(nextIssues) ? 'sealed' : candidateState;
+        })(),
+        sealedAt: (() => {
+          const nextIssues = invariantIssues ? invariantIssues.map(issue => ({ ...issue })) : state.invariantIssues;
+          const candidateState = systemState ?? state.systemState;
+          const resolvedSealed = candidateState === 'sealed' || shouldSealSystem(nextIssues);
+          if (!resolvedSealed) return null;
+          if (typeof sealedAt === 'number') return sealedAt;
+          return state.sealedAt ?? Date.now();
+        })(),
+        invariantIssues: invariantIssues ? invariantIssues.map(issue => ({ ...issue })) : state.invariantIssues,
         essence: typeof essence === 'number' ? essence : state.essence,
         lastRewardSource: lastRewardSource ?? state.lastRewardSource,
         lastRewardAmount: typeof lastRewardAmount === 'number' ? lastRewardAmount : state.lastRewardAmount,
@@ -338,9 +429,11 @@ export function createMetaPetWebStore(
     },
 
     startTick() {
+      if (get().systemState === 'sealed') return;
       if (get().tickId) return;
 
       const id = scheduleInterval(() => {
+        if (get().systemState === 'sealed') return;
         const { vitals, evolution } = get();
         const result = runTick(vitals, evolution);
         set({ vitals: result.vitals, evolution: result.evolution });
@@ -358,10 +451,12 @@ export function createMetaPetWebStore(
     },
 
     setLastAction(action) {
+      if (get().systemState === 'sealed') return;
       set({ lastAction: action, lastActionAt: Date.now() });
     },
 
     addEssence({ amount, source }) {
+      if (get().systemState === 'sealed') return;
       set(state => ({
         essence: state.essence + amount,
         lastRewardSource: source,
@@ -369,6 +464,7 @@ export function createMetaPetWebStore(
     },
 
     feed() {
+      if (get().systemState === 'sealed') return;
       set(state => ({
         vitals: applyInteraction(state.vitals, 'feed'),
         evolution: gainExperience(state.evolution, 5),
@@ -377,6 +473,7 @@ export function createMetaPetWebStore(
     },
 
     clean() {
+      if (get().systemState === 'sealed') return;
       set(state => ({
         vitals: applyInteraction(state.vitals, 'clean'),
         evolution: gainExperience(state.evolution, 5),
@@ -385,6 +482,7 @@ export function createMetaPetWebStore(
     },
 
     play() {
+      if (get().systemState === 'sealed') return;
       set(state => ({
         vitals: applyInteraction(state.vitals, 'play'),
         evolution: gainExperience(state.evolution, 10),
@@ -393,6 +491,7 @@ export function createMetaPetWebStore(
     },
 
     sleep() {
+      if (get().systemState === 'sealed') return;
       set(state => ({
         vitals: applyInteraction(state.vitals, 'sleep'),
         evolution: gainExperience(state.evolution, 3),
@@ -401,6 +500,7 @@ export function createMetaPetWebStore(
     },
 
     tryEvolve() {
+      if (get().systemState === 'sealed') return false;
       const { evolution, vitals } = get();
       const vitalsAvg = getVitalsAverage(vitals);
       if (checkEvolutionEligibility(evolution, vitalsAvg)) {
@@ -412,6 +512,7 @@ export function createMetaPetWebStore(
     },
 
     recordBattle(result, opponent) {
+      if (get().systemState === 'sealed') return;
       const rewardPayloads: RewardPayloadInput[] = [];
       set(state => {
         const next: BattleStats = {
@@ -459,6 +560,7 @@ export function createMetaPetWebStore(
     },
 
     updateMiniGameScore(game, score) {
+      if (get().systemState === 'sealed') return;
       const rewardPayloads: RewardPayloadInput[] = [];
       set(state => {
         const next: MiniGameProgress = {
@@ -500,6 +602,7 @@ export function createMetaPetWebStore(
     },
 
     recordVimanaRun(score, lines, level) {
+      if (get().systemState === 'sealed') return;
       const rewardPayloads: RewardPayloadInput[] = [];
       set(state => {
         const previous = state.miniGames;
@@ -547,6 +650,7 @@ export function createMetaPetWebStore(
     },
 
     exploreCell(cellId) {
+      if (get().systemState === 'sealed') return;
       const rewardPayloads: RewardPayloadInput[] = [];
       set(state => {
         const { vimana, vitals } = state;
@@ -617,6 +721,7 @@ export function createMetaPetWebStore(
     },
 
     resolveAnomaly(cellId) {
+      if (get().systemState === 'sealed') return;
       const rewardPayloads: RewardPayloadInput[] = [];
       set(state => {
         const { vimana, vitals } = state;
@@ -680,6 +785,7 @@ export function createMetaPetWebStore(
     },
 
     recordReward(payload) {
+      if (get().systemState === 'sealed') return;
       set(state => {
         const entry: RewardPayload = {
           id: generateRewardId(),
@@ -695,6 +801,7 @@ export function createMetaPetWebStore(
     },
 
     addRitualRewards({ resonanceDelta, reward, progress }) {
+      if (get().systemState === 'sealed') return;
       set(state => {
         const moodBoost = Math.min(8, Math.floor(resonanceDelta / 4));
         const energyBoost = Math.min(6, Math.floor(reward.essenceDelta / 2));
@@ -734,6 +841,7 @@ export function createMetaPetWebStore(
     },
 
     applyReward({ essenceDelta }) {
+      if (get().systemState === 'sealed') return;
       if (!Number.isFinite(essenceDelta) || essenceDelta === 0) return;
       set(state => ({
         essence: Math.max(0, state.essence + essenceDelta),
@@ -741,6 +849,7 @@ export function createMetaPetWebStore(
     },
 
     beginMirrorMode(preset, durationMinutes = 15) {
+      if (get().systemState === 'sealed') return;
       const now = Date.now();
       set(state => ({
         mirrorMode: {
@@ -755,6 +864,7 @@ export function createMetaPetWebStore(
     },
 
     confirmMirrorCross() {
+      if (get().systemState === 'sealed') return;
       set(state => {
         if (state.mirrorMode.phase !== 'entering') return {};
         const token = state.mirrorMode.presenceToken ?? generatePresenceToken();
@@ -780,6 +890,7 @@ export function createMetaPetWebStore(
     },
 
     completeMirrorMode(outcome, note) {
+      if (get().systemState === 'sealed') return;
       set(state => {
         if (state.mirrorMode.phase === 'idle') return {};
         const moodDelta = outcome === 'anchor' ? 8 : -6;
@@ -821,6 +932,7 @@ export function createMetaPetWebStore(
     },
 
     refreshConsent(durationMinutes) {
+      if (get().systemState === 'sealed') return;
       const now = Date.now();
       set(state => ({
         mirrorMode: {
