@@ -1062,33 +1062,36 @@
         let bgGradient = null;
 
         function drawBackground() {
-            bgTime += 0.016;
-
             // Cache gradient for performance
-            if (!bgGradient) {
+            if (!bgGradient && ctx) {
                 bgGradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
                 bgGradient.addColorStop(0, '#0a0a1a');
                 bgGradient.addColorStop(0.5, '#1a0a2a');
                 bgGradient.addColorStop(1, '#0a1a2a');
             }
+
+            if (!bgGradient) return;
+
             ctx.fillStyle = bgGradient;
             ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-            // Stars - batch rendering
-            bgStars.forEach(star => {
-                star.y += star.speed;
-                star.twinkle += 0.05;
+            // Only update stars during gameplay to reduce CPU usage
+            if (gameState === 'playing') {
+                bgStars.forEach(star => {
+                    star.y += star.speed;
+                    star.twinkle += 0.05;
 
-                if (star.y > CANVAS_HEIGHT) {
-                    star.y = -5;
-                    star.x = Math.random() * CANVAS_WIDTH;
-                }
-            });
+                    if (star.y > CANVAS_HEIGHT) {
+                        star.y = -5;
+                        star.x = Math.random() * CANVAS_WIDTH;
+                    }
+                });
+            }
 
-            // Render all stars in batches
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            // Render all stars
             bgStars.forEach(star => {
                 ctx.globalAlpha = 0.5 + Math.sin(star.twinkle) * 0.3;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
                 ctx.beginPath();
                 ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
                 ctx.fill();
@@ -1101,6 +1104,8 @@
         // ============================================
 
         function fireProjectile() {
+            if (gameState !== 'playing') return;
+
             const now = Date.now();
             const actualFireRate = player.fireRate * (player.modifiers.fireRate || 1);
 
@@ -1108,6 +1113,10 @@
             if (projectiles.length >= MAX_PROJECTILES) return;
 
             const weaponKey = WEAPON_KEYS[player.selectedWeapon];
+            if (!weaponKey || !PROJECTILES[weaponKey]) {
+                console.error('Invalid weapon selected:', player.selectedWeapon);
+                return;
+            }
             const weapon = PROJECTILES[weaponKey];
 
             // Check ammo
@@ -1370,8 +1379,9 @@
                         break;
 
                     case 'zigzag':
+                        const zigzagSpeed = e.baseSpeed || e.data.speed;
                         e.x += Math.sin(e.t * 0.003) * 3 * speedMult * step;
-                        e.y += e.data.speed * 0.5 * speedMult * step;
+                        e.y += zigzagSpeed * 0.5 * speedMult * step;
                         break;
 
                     case 'sideways':
@@ -1381,8 +1391,9 @@
                         break;
 
                     case 'bounce':
+                        const bounceSpeed = e.baseSpeed || e.data.speed;
                         e.x += e.vx * speedMult * confusedMult * step;
-                        e.y += Math.abs(Math.sin(e.t * 0.004)) * 2 * speedMult * step;
+                        e.y += Math.abs(Math.sin(e.t * 0.004)) * bounceSpeed * speedMult * step;
                         if (e.x < 40 || e.x > CANVAS_WIDTH - 40) e.vx *= -1;
                         break;
 
@@ -2206,14 +2217,27 @@
         // ============================================
 
         let lastTime = 0;
+        let gameLoopInitialized = false;
 
         function gameLoop(timestamp) {
+            // Initialize lastTime on first frame
+            if (!gameLoopInitialized) {
+                lastTime = timestamp;
+                gameLoopInitialized = true;
+            }
+
             const dt = Math.min(timestamp - lastTime, 50);
             lastTime = timestamp;
 
+            // Only render if canvas context is available
+            if (!ctx) {
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+
             // Screen shake
             let shakeX = 0, shakeY = 0;
-            if (screenShake > 0) {
+            if (screenShake > 0 && gameState === 'playing') {
                 shakeX = (Math.random() - 0.5) * screenShake;
                 shakeY = (Math.random() - 0.5) * screenShake;
                 screenShake *= 0.9;
@@ -2236,14 +2260,15 @@
                 checkCollisions();
                 checkWaveComplete();
                 updateWaveTransition(dt);
+
+                drawDrops();
+                drawEnemies();
+                drawProjectiles();
+                drawParticles();
+                drawFloatingTexts();
             }
 
-            drawDrops();
-            drawEnemies();
-            drawProjectiles();
             drawPlayer(timestamp);
-            drawParticles();
-            drawFloatingTexts();
 
             ctx.restore();
 
@@ -2389,12 +2414,23 @@
         });
 
         function updatePetPreview() {
-            const previewCanvas = document.getElementById('petPreview');
-            const previewCtx = previewCanvas.getContext('2d');
-            previewCtx.clearRect(0, 0, 120, 120);
-            drawPetSprite(previewCtx, 60, 60, 40, petData, Date.now());
+            try {
+                const previewCanvas = document.getElementById('petPreview');
+                if (!previewCanvas) return;
 
-            document.getElementById('petNameDisplay').textContent = petData.petName;
+                const previewCtx = previewCanvas.getContext('2d');
+                if (!previewCtx) return;
+
+                previewCtx.clearRect(0, 0, 120, 120);
+                drawPetSprite(previewCtx, 60, 60, 40, petData, Date.now());
+
+                const nameDisplay = document.getElementById('petNameDisplay');
+                if (nameDisplay) {
+                    nameDisplay.textContent = petData.petName;
+                }
+            } catch (e) {
+                console.warn('Error updating pet preview:', e);
+            }
         }
 
         // ============================================
@@ -2405,12 +2441,14 @@
             const wrapper = document.getElementById('gameWrapper');
             const container = document.getElementById('gameContainer');
 
-            const wrapperWidth = wrapper.offsetWidth;
-            const wrapperHeight = wrapper.offsetHeight;
+            if (!wrapper || !container) return;
+
+            const wrapperWidth = wrapper.offsetWidth || 800;
+            const wrapperHeight = wrapper.offsetHeight || 600;
 
             const scaleX = wrapperWidth / CANVAS_WIDTH;
             const scaleY = wrapperHeight / CANVAS_HEIGHT;
-            const scale = Math.min(scaleX, scaleY);
+            const scale = Math.min(Math.max(scaleX, 0.1), Math.max(scaleY, 0.1), 2); // Clamp scale
 
             container.style.transform = `scale(${scale})`;
             container.style.transformOrigin = 'top left';
@@ -2459,15 +2497,18 @@
                 window.parent.postMessage({ type: 'GAME_READY' }, '*');
             }
 
-            // Animate pet preview
-            function animatePreview() {
-                if (gameState === 'start') {
+            // Animate pet preview - throttled to reduce glitching
+            let previewLastUpdate = 0;
+            function animatePreview(time) {
+                if (gameState === 'start' && time - previewLastUpdate > 100) {
                     updatePetPreview();
+                    previewLastUpdate = time;
                 }
                 requestAnimationFrame(animatePreview);
             }
-            animatePreview();
+            animatePreview(0);
 
+            // Start main game loop
             requestAnimationFrame(gameLoop);
         }
 
