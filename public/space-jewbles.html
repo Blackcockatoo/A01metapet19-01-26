@@ -1310,6 +1310,12 @@
                                     if (other !== e && Math.hypot(other.x - p.x, other.y - p.y) < aoeRadius) {
                                         other.hp -= p.weapon.damage * 0.5;
                                         createParticles(other.x, other.y, '#9370DB', 5);
+                                        if (other.hp <= 0) {
+                                            const otherIndex = enemies.indexOf(other);
+                                            if (otherIndex !== -1) {
+                                                handleEnemyDeath(other, otherIndex);
+                                            }
+                                        }
                                     }
                                 });
                                 // Sock army
@@ -1345,17 +1351,7 @@
 
                         // Check if enemy died
                         if (e.hp <= 0) {
-                            const points = Math.floor(e.data.points * (player.modifiers.scoreMult || 1));
-                            score += points;
-                            addFloatingText(e.x, e.y, `+${points}`, '#ffd700');
-                            createParticles(e.x, e.y, e.data.color, 15);
-
-                            // Drop chance
-                            rollDrop(e);
-
-                            enemies.splice(ei, 1);
-                            waveEnemiesRemaining--;
-                            updateUI();
+                            handleEnemyDeath(e, ei);
                         }
 
                         break;
@@ -1374,14 +1370,27 @@
             }
 
             // Enemies vs Player (basic collision)
-            if (player.shield <= 0) {
-                enemies.forEach(e => {
-                    if (Math.hypot(e.x - player.x, e.y - player.y) < 35) {
-                        loseLife();
-                        e.hp = 0; // Remove enemy that hit player
-                    }
-                });
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                if (Math.hypot(enemy.x - player.x, enemy.y - player.y) < 35) {
+                    loseLife();
+                    handleEnemyDeath(enemy, i);
+                }
             }
+        }
+
+        function handleEnemyDeath(enemy, index) {
+            const points = Math.floor(enemy.data.points * (player.modifiers.scoreMult || 1));
+            score += points;
+            addFloatingText(enemy.x, enemy.y, `+${points}`, '#ffd700');
+            createParticles(enemy.x, enemy.y, enemy.data.color, 15);
+
+            // Drop chance
+            rollDrop(enemy);
+
+            enemies.splice(index, 1);
+            waveEnemiesRemaining--;
+            updateUI();
         }
 
         // ============================================
