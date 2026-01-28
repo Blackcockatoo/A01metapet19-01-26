@@ -4,8 +4,13 @@ import { useState, useMemo } from 'react';
 import { useWellnessStore, getTodayHydration, getDateKey } from '@/lib/wellness';
 import { triggerHaptic } from '@/lib/haptics';
 import { Button } from '@/components/ui/button';
-import { GlassCard, GlassOverlay } from '@/components/GlassCard';
-import { Droplets, Plus, Minus, Flame, X } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Droplets, Plus, Minus, Flame, TrendingUp } from 'lucide-react';
 
 interface HydrationTrackerProps {
   isOpen: boolean;
@@ -45,17 +50,16 @@ export function HydrationTracker({ isOpen, onClose }: HydrationTrackerProps) {
   if (!enabledFeatures.hydration) return null;
 
   return (
-    <GlassOverlay isOpen={isOpen} onClose={onClose}>
-      <GlassCard className="p-6" showClose onClose={onClose}>
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center">
-            <Droplets className="w-5 h-5 text-cyan-400" />
-          </div>
-          <h2 className="text-xl font-bold text-white">Hydration</h2>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="bg-zinc-900/95 border-cyan-500/30 max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-cyan-400">
+            <Droplets className="w-5 h-5" />
+            Hydration Tracker
+          </DialogTitle>
+        </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="py-4 space-y-6">
           {/* Main progress ring */}
           <div className="flex flex-col items-center">
             <div className="relative w-32 h-32">
@@ -92,10 +96,10 @@ export function HydrationTracker({ isOpen, onClose }: HydrationTrackerProps) {
 
               {/* Center content */}
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-bold text-white">
+                <span className="text-3xl font-bold text-cyan-400">
                   {todayTotal}
                 </span>
-                <span className="text-sm text-zinc-300">
+                <span className="text-xs text-zinc-500">
                   / {hydration.dailyGoal} glasses
                 </span>
               </div>
@@ -116,65 +120,65 @@ export function HydrationTracker({ isOpen, onClose }: HydrationTrackerProps) {
               variant="outline"
               size="icon"
               onClick={() => setQuickAdd(Math.max(1, quickAdd - 1))}
-              className="border-white/20 bg-white/5 hover:bg-white/10 h-12 w-12 text-white"
+              className="border-zinc-600 h-10 w-10"
             >
-              <Minus className="w-5 h-5" />
+              <Minus className="w-4 h-4" />
             </Button>
 
-            <div className="flex items-center gap-2 px-6 py-3 bg-cyan-500/20 rounded-xl min-w-[100px] justify-center border border-cyan-500/30">
-              <Droplets className="w-6 h-6 text-cyan-400" />
-              <span className="text-2xl font-bold text-white">{quickAdd}</span>
+            <div className="flex items-center gap-2 px-4 py-2 bg-cyan-500/20 rounded-lg min-w-[80px] justify-center">
+              <Droplets className="w-5 h-5 text-cyan-400" />
+              <span className="text-xl font-bold text-cyan-300">{quickAdd}</span>
             </div>
 
             <Button
               variant="outline"
               size="icon"
               onClick={() => setQuickAdd(Math.min(5, quickAdd + 1))}
-              className="border-white/20 bg-white/5 hover:bg-white/10 h-12 w-12 text-white"
+              className="border-zinc-600 h-10 w-10"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4" />
             </Button>
           </div>
 
           <Button
             onClick={handleLogWater}
-            className="w-full h-14 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold text-lg touch-manipulation"
+            className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-medium"
           >
-            <Droplets className="w-5 h-5 mr-2" />
+            <Droplets className="w-4 h-4 mr-2" />
             Log {quickAdd} glass{quickAdd > 1 ? 'es' : ''}
           </Button>
 
           {/* Week overview */}
-          <div className="space-y-3 p-4 bg-white/5 rounded-xl border border-white/10">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-zinc-300 font-medium">This week</span>
+              <span className="text-xs text-zinc-500">This week</span>
               {hydration.streak > 0 && (
-                <div className="flex items-center gap-1.5 text-sm text-orange-400">
-                  <Flame className="w-4 h-4" />
-                  <span className="font-medium">{hydration.streak} day streak</span>
+                <div className="flex items-center gap-1 text-xs text-orange-400">
+                  <Flame className="w-3 h-3" />
+                  <span>{hydration.streak} day streak</span>
                 </div>
               )}
             </div>
 
-            <div className="flex items-end justify-between gap-2 h-16">
+            <div className="flex items-end justify-between gap-1 h-12">
               {weekData.map((day, i) => {
-                const height = Math.max(8, (day.total / hydration.dailyGoal) * 100);
+                const height = Math.max(4, (day.total / hydration.dailyGoal) * 100);
                 const isToday = i === 6;
                 const metGoal = day.total >= hydration.dailyGoal;
 
                 return (
-                  <div key={day.date} className="flex-1 flex flex-col items-center gap-1.5">
+                  <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
                     <div
                       className={`w-full rounded-t transition-all ${
                         metGoal
                           ? 'bg-gradient-to-t from-cyan-600 to-cyan-400'
                           : isToday
                           ? 'bg-cyan-500/50'
-                          : 'bg-white/20'
+                          : 'bg-zinc-700'
                       }`}
                       style={{ height: `${Math.min(height, 100)}%` }}
                     />
-                    <span className={`text-xs font-medium ${isToday ? 'text-cyan-400' : 'text-zinc-400'}`}>
+                    <span className={`text-[10px] ${isToday ? 'text-cyan-400' : 'text-zinc-600'}`}>
                       {['S', 'M', 'T', 'W', 'T', 'F', 'S'][new Date(day.date).getDay()]}
                     </span>
                   </div>
@@ -184,31 +188,31 @@ export function HydrationTracker({ isOpen, onClose }: HydrationTrackerProps) {
           </div>
 
           {/* Goal adjuster */}
-          <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
-            <span className="text-sm text-zinc-300 font-medium">Daily goal</span>
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
+            <span className="text-sm text-zinc-400">Daily goal</span>
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setHydrationGoal(Math.max(4, hydration.dailyGoal - 1))}
-                className="h-8 w-8 p-0 text-white hover:bg-white/10"
+                className="h-7 w-7 p-0"
               >
-                <Minus className="w-4 h-4" />
+                <Minus className="w-3 h-3" />
               </Button>
-              <span className="text-lg font-bold text-white w-8 text-center">{hydration.dailyGoal}</span>
+              <span className="text-sm font-medium w-8 text-center">{hydration.dailyGoal}</span>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setHydrationGoal(Math.min(16, hydration.dailyGoal + 1))}
-                className="h-8 w-8 p-0 text-white hover:bg-white/10"
+                className="h-7 w-7 p-0"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3 h-3" />
               </Button>
             </div>
           </div>
         </div>
-      </GlassCard>
-    </GlassOverlay>
+      </DialogContent>
+    </Dialog>
   );
 }
 

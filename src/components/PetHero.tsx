@@ -7,20 +7,16 @@ import { getEvolutionProgress } from '@/lib/evolution';
 import AuraliaSprite from './AuraliaSprite';
 import { PetSprite } from './PetSprite';
 import { ProgressRing } from './ProgressRing';
-import { RadialWellnessMenu, type WellnessMenuItem } from './RadialWellnessMenu';
 
 interface PetHeroProps {
   className?: string;
-  onWellnessSelect?: (item: WellnessMenuItem) => void;
 }
-
-const LONG_PRESS_DURATION = 500; // ms to trigger radial menu
 
 /**
  * Pet Hero Section - The main focal point of the app
- * Supports gesture controls, long-press radial wellness menu, and shows the pet prominently
+ * Supports gesture controls and shows the pet prominently
  */
-export function PetHero({ className = '', onWellnessSelect }: PetHeroProps) {
+export function PetHero({ className = '' }: PetHeroProps) {
   const petType = useStore(state => state.petType);
   const feed = useStore(state => state.feed);
   const play = useStore(state => state.play);
@@ -28,18 +24,14 @@ export function PetHero({ className = '', onWellnessSelect }: PetHeroProps) {
   const sleep = useStore(state => state.sleep);
   const vitals = useStore(state => state.vitals);
   const evolution = useStore(state => state.evolution);
+  const ritualProgress = useStore(state => state.ritualProgress);
   const systemState = useStore(state => state.systemState);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [gestureIndicator, setGestureIndicator] = useState<string | null>(null);
   const [tapCount, setTapCount] = useState(0);
   const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Radial menu state
-  const [isRadialMenuOpen, setIsRadialMenuOpen] = useState(false);
-  const [isLongPressing, setIsLongPressing] = useState(false);
 
   // Calculate overall progress for the ring
   const overallProgress = useMemo(() => {
@@ -61,58 +53,20 @@ export function PetHero({ className = '', onWellnessSelect }: PetHeroProps) {
     setTimeout(() => setGestureIndicator(null), 800);
   }, []);
 
-  // Clear long press timer
-  const clearLongPressTimer = useCallback(() => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-    setIsLongPressing(false);
-  }, []);
-
   // Handle touch start
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (isRadialMenuOpen || systemState === 'sealed') return;
-
     const touch = e.touches[0];
     touchStartRef.current = {
       x: touch.clientX,
       y: touch.clientY,
       time: Date.now(),
     };
-
-    // Start long press detection
-    setIsLongPressing(true);
-    longPressTimerRef.current = setTimeout(() => {
-      // Long press detected - open radial menu
-      triggerHaptic('heavy');
-      setIsRadialMenuOpen(true);
-      setIsLongPressing(false);
-      touchStartRef.current = null; // Prevent other gestures
-    }, LONG_PRESS_DURATION);
-  }, [isRadialMenuOpen, systemState]);
-
-  // Handle touch move - cancel long press if moving
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!touchStartRef.current || isRadialMenuOpen) return;
-
-    const touch = e.touches[0];
-    const dx = Math.abs(touch.clientX - touchStartRef.current.x);
-    const dy = Math.abs(touch.clientY - touchStartRef.current.y);
-
-    // Cancel long press if finger moves too much
-    if (dx > 10 || dy > 10) {
-      clearLongPressTimer();
-    }
-  }, [isRadialMenuOpen, clearLongPressTimer]);
+  }, []);
 
   // Handle touch end - detect gestures
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    clearLongPressTimer();
-
-    // If radial menu is open, don't process other gestures
-    if (isRadialMenuOpen || !touchStartRef.current) return;
     if (systemState === 'sealed') return;
+    if (!touchStartRef.current) return;
 
     const touch = e.changedTouches[0];
     const dx = touch.clientX - touchStartRef.current.x;
@@ -172,27 +126,13 @@ export function PetHero({ className = '', onWellnessSelect }: PetHeroProps) {
     }
 
     touchStartRef.current = null;
-  }, [clean, feed, play, showGesture, sleep, systemState, isRadialMenuOpen, clearLongPressTimer]);
+  }, [clean, feed, play, showGesture, sleep, systemState]);
 
-  // Handle radial menu selection
-  const handleWellnessSelect = useCallback((item: WellnessMenuItem) => {
-    setIsRadialMenuOpen(false);
-    onWellnessSelect?.(item);
-  }, [onWellnessSelect]);
-
-  // Handle radial menu close
-  const handleRadialClose = useCallback(() => {
-    setIsRadialMenuOpen(false);
-  }, []);
-
-  // Cleanup timeouts on unmount
+  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (tapTimeoutRef.current) {
         clearTimeout(tapTimeoutRef.current);
-      }
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
       }
     };
   }, []);
@@ -202,7 +142,6 @@ export function PetHero({ className = '', onWellnessSelect }: PetHeroProps) {
       ref={containerRef}
       className={`relative w-full flex flex-col items-center justify-center ${className}`}
       onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       {/* Progress Ring Container */}
@@ -226,18 +165,11 @@ export function PetHero({ className = '', onWellnessSelect }: PetHeroProps) {
         />
 
         {/* Pet Container */}
-        <div className={`relative w-64 h-64 flex items-center justify-center transition-transform duration-200 ${isLongPressing ? 'scale-95' : ''}`}>
+        <div className="relative w-64 h-64 flex items-center justify-center">
           {petType === 'geometric' ? (
             <PetSprite />
           ) : (
             <AuraliaSprite size="large" interactive />
-          )}
-
-          {/* Long Press Indicator */}
-          {isLongPressing && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-              <div className="w-20 h-20 rounded-full border-2 border-white/30 animate-ping" />
-            </div>
           )}
 
           {/* Gesture Indicator Overlay */}
@@ -249,21 +181,14 @@ export function PetHero({ className = '', onWellnessSelect }: PetHeroProps) {
             </div>
           )}
         </div>
-
-        {/* Radial Wellness Menu */}
-        <RadialWellnessMenu
-          isOpen={isRadialMenuOpen}
-          onSelect={handleWellnessSelect}
-          onClose={handleRadialClose}
-        />
       </div>
 
       {/* Gesture Hint */}
       <div className="mt-4 text-center">
-        <p className="text-zinc-400 text-sm">
+        <p className="text-zinc-500 text-xs">
           {systemState === 'sealed'
             ? 'Stillness holds • gestures are quiet'
-            : <>Swipe to care • <span className="text-purple-400">Hold</span> for wellness</>}
+            : 'Swipe to interact • Double-tap to rest'}
         </p>
       </div>
     </div>
