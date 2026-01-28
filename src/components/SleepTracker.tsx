@@ -4,7 +4,12 @@ import { useState, useMemo } from 'react';
 import { useWellnessStore, getTodaySleepHours, getDateKey } from '@/lib/wellness';
 import { triggerHaptic } from '@/lib/haptics';
 import { Button } from '@/components/ui/button';
-import { GlassCard, GlassOverlay } from '@/components/GlassCard';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Moon, Sun, Flame, Clock, Star, Minus, Plus, Bed } from 'lucide-react';
 
 interface SleepTrackerProps {
@@ -96,17 +101,16 @@ export function SleepTracker({ isOpen, onClose }: SleepTrackerProps) {
   if (!enabledFeatures.sleep) return null;
 
   return (
-    <GlassOverlay isOpen={isOpen} onClose={onClose}>
-      <GlassCard className="p-6" showClose onClose={onClose}>
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center">
-            <Moon className="w-5 h-5 text-violet-400" />
-          </div>
-          <h2 className="text-xl font-bold text-white">Sleep Sanctuary</h2>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="bg-zinc-900/95 border-violet-500/30 max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-violet-400">
+            <Moon className="w-5 h-5" />
+            Sleep Sanctuary
+          </DialogTitle>
+        </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="py-4 space-y-6">
           {/* Main progress display */}
           <div className="flex flex-col items-center">
             <div className="relative w-32 h-32">
@@ -145,15 +149,15 @@ export function SleepTracker({ isOpen, onClose }: SleepTrackerProps) {
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 {isSleeping ? (
                   <>
-                    <Moon className="w-8 h-8 text-violet-400 animate-pulse" />
-                    <span className="text-sm text-violet-300 mt-2 font-medium">Sleeping...</span>
+                    <Moon className="w-6 h-6 text-violet-400 animate-pulse" />
+                    <span className="text-xs text-violet-300 mt-1">Sleeping...</span>
                   </>
                 ) : (
                   <>
-                    <span className="text-2xl font-bold text-white">
+                    <span className="text-2xl font-bold text-violet-400">
                       {formatHours(todayHours)}
                     </span>
-                    <span className="text-sm text-zinc-300">
+                    <span className="text-xs text-zinc-500">
                       / {sleep.dailyGoal}h goal
                     </span>
                   </>
@@ -173,24 +177,24 @@ export function SleepTracker({ isOpen, onClose }: SleepTrackerProps) {
           {/* Sleep/Wake buttons */}
           <div className="space-y-3">
             {isSleeping ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {/* Quality rating before waking */}
-                <div className="space-y-3 p-4 bg-white/5 rounded-xl border border-white/10">
-                  <label className="text-sm text-zinc-300 text-center block font-medium">
+                <div className="space-y-2">
+                  <label className="text-xs text-zinc-500 text-center block">
                     How did you sleep?
                   </label>
-                  <div className="flex justify-center gap-3">
+                  <div className="flex justify-center gap-2">
                     {[1, 2, 3, 4, 5].map((rating) => (
                       <button
                         key={rating}
                         onClick={() => setQuality(rating as 1 | 2 | 3 | 4 | 5)}
-                        className={`p-2 rounded-lg transition-all touch-manipulation ${
+                        className={`p-2 rounded-lg transition-all ${
                           quality >= rating
                             ? 'text-yellow-400'
-                            : 'text-zinc-500'
+                            : 'text-zinc-600'
                         }`}
                       >
-                        <Star className={`w-7 h-7 ${quality >= rating ? 'fill-current' : ''}`} />
+                        <Star className={`w-6 h-6 ${quality >= rating ? 'fill-current' : ''}`} />
                       </button>
                     ))}
                   </div>
@@ -198,9 +202,9 @@ export function SleepTracker({ isOpen, onClose }: SleepTrackerProps) {
 
                 <Button
                   onClick={handleEndSleep}
-                  className="w-full h-14 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-semibold text-lg touch-manipulation"
+                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white"
                 >
-                  <Sun className="w-5 h-5 mr-2" />
+                  <Sun className="w-4 h-4 mr-2" />
                   Wake Up
                 </Button>
               </div>
@@ -208,18 +212,18 @@ export function SleepTracker({ isOpen, onClose }: SleepTrackerProps) {
               <>
                 <Button
                   onClick={handleStartSleep}
-                  className="w-full h-14 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-lg touch-manipulation"
+                  className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white"
                 >
-                  <Moon className="w-5 h-5 mr-2" />
+                  <Moon className="w-4 h-4 mr-2" />
                   Going to Sleep
                 </Button>
 
                 <Button
                   variant="outline"
                   onClick={() => setShowManualEntry(!showManualEntry)}
-                  className="w-full h-12 border-white/20 bg-white/5 hover:bg-white/10 text-white touch-manipulation"
+                  className="w-full border-zinc-600"
                 >
-                  <Clock className="w-5 h-5 mr-2" />
+                  <Clock className="w-4 h-4 mr-2" />
                   Log Past Sleep
                 </Button>
               </>
@@ -228,54 +232,54 @@ export function SleepTracker({ isOpen, onClose }: SleepTrackerProps) {
 
           {/* Manual entry form */}
           {showManualEntry && !isSleeping && (
-            <div className="space-y-4 p-4 bg-white/5 rounded-xl border border-white/10 animate-in fade-in">
+            <div className="space-y-4 p-4 bg-zinc-800/50 rounded-xl animate-in fade-in">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm text-zinc-300 font-medium">Slept at</label>
+                  <label className="text-xs text-zinc-500">Slept at</label>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={() => setManualSleepHour((h) => (h - 1 + 24) % 24)}
-                      className="h-10 w-10 border-white/20 bg-white/5 hover:bg-white/10 text-white touch-manipulation"
+                      className="h-8 w-8"
                     >
-                      <Minus className="w-4 h-4" />
+                      <Minus className="w-3 h-3" />
                     </Button>
-                    <span className="text-lg font-mono w-14 text-center text-white font-medium">
+                    <span className="text-lg font-mono w-12 text-center">
                       {manualSleepHour.toString().padStart(2, '0')}:00
                     </span>
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={() => setManualSleepHour((h) => (h + 1) % 24)}
-                      className="h-10 w-10 border-white/20 bg-white/5 hover:bg-white/10 text-white touch-manipulation"
+                      className="h-8 w-8"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-3 h-3" />
                     </Button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm text-zinc-300 font-medium">Woke at</label>
+                  <label className="text-xs text-zinc-500">Woke at</label>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={() => setManualWakeHour((h) => (h - 1 + 24) % 24)}
-                      className="h-10 w-10 border-white/20 bg-white/5 hover:bg-white/10 text-white touch-manipulation"
+                      className="h-8 w-8"
                     >
-                      <Minus className="w-4 h-4" />
+                      <Minus className="w-3 h-3" />
                     </Button>
-                    <span className="text-lg font-mono w-14 text-center text-white font-medium">
+                    <span className="text-lg font-mono w-12 text-center">
                       {manualWakeHour.toString().padStart(2, '0')}:00
                     </span>
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={() => setManualWakeHour((h) => (h + 1) % 24)}
-                      className="h-10 w-10 border-white/20 bg-white/5 hover:bg-white/10 text-white touch-manipulation"
+                      className="h-8 w-8"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-3 h-3" />
                     </Button>
                   </div>
                 </div>
@@ -283,19 +287,19 @@ export function SleepTracker({ isOpen, onClose }: SleepTrackerProps) {
 
               {/* Quality rating */}
               <div className="space-y-2">
-                <label className="text-sm text-zinc-300 font-medium text-center block">Sleep quality</label>
-                <div className="flex justify-center gap-3">
+                <label className="text-xs text-zinc-500">Sleep quality</label>
+                <div className="flex justify-center gap-2">
                   {[1, 2, 3, 4, 5].map((rating) => (
                     <button
                       key={rating}
                       onClick={() => setQuality(rating as 1 | 2 | 3 | 4 | 5)}
-                      className={`p-2 rounded-lg transition-all touch-manipulation ${
+                      className={`p-2 rounded-lg transition-all ${
                         quality >= rating
                           ? 'text-yellow-400'
-                          : 'text-zinc-500'
+                          : 'text-zinc-600'
                       }`}
                     >
-                      <Star className={`w-6 h-6 ${quality >= rating ? 'fill-current' : ''}`} />
+                      <Star className={`w-5 h-5 ${quality >= rating ? 'fill-current' : ''}`} />
                     </button>
                   ))}
                 </div>
@@ -303,7 +307,7 @@ export function SleepTracker({ isOpen, onClose }: SleepTrackerProps) {
 
               <Button
                 onClick={handleManualEntry}
-                className="w-full h-12 bg-violet-600 hover:bg-violet-500 font-semibold touch-manipulation"
+                className="w-full bg-violet-600 hover:bg-violet-500"
               >
                 Log Sleep
               </Button>
@@ -311,14 +315,14 @@ export function SleepTracker({ isOpen, onClose }: SleepTrackerProps) {
           )}
 
           {/* Week overview */}
-          <div className="space-y-3 p-4 bg-white/5 rounded-xl border border-white/10">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-zinc-300 font-medium">This week</span>
-              <div className="flex items-center gap-3 text-sm">
+              <span className="text-xs text-zinc-500">This week</span>
+              <div className="flex items-center gap-3 text-xs">
                 {sleep.streak > 0 && (
-                  <div className="flex items-center gap-1.5 text-orange-400">
-                    <Flame className="w-4 h-4" />
-                    <span className="font-medium">{sleep.streak}d streak</span>
+                  <div className="flex items-center gap-1 text-orange-400">
+                    <Flame className="w-3 h-3" />
+                    <span>{sleep.streak}d streak</span>
                   </div>
                 )}
                 <span className="text-zinc-400">
@@ -327,25 +331,27 @@ export function SleepTracker({ isOpen, onClose }: SleepTrackerProps) {
               </div>
             </div>
 
-            <div className="flex items-end justify-between gap-2 h-16">
+            <div className="flex items-end justify-between gap-1 h-12">
               {weekData.map((day, i) => {
-                const height = Math.max(8, (day.hours / 10) * 100);
+                const height = Math.max(4, (day.hours / 10) * 100);
                 const isToday = i === 6;
                 const metGoal = day.hours >= sleep.dailyGoal;
 
                 return (
-                  <div key={day.date} className="flex-1 flex flex-col items-center gap-1.5">
+                  <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
                     <div
                       className={`w-full rounded-t transition-all ${
                         metGoal
                           ? 'bg-gradient-to-t from-violet-600 to-violet-400'
                           : day.hours > 0
                           ? 'bg-violet-500/50'
-                          : 'bg-white/20'
+                          : isToday
+                          ? 'bg-zinc-700'
+                          : 'bg-zinc-800'
                       }`}
                       style={{ height: `${Math.min(height, 100)}%` }}
                     />
-                    <span className={`text-xs font-medium ${isToday ? 'text-violet-400' : 'text-zinc-400'}`}>
+                    <span className={`text-[10px] ${isToday ? 'text-violet-400' : 'text-zinc-600'}`}>
                       {['S', 'M', 'T', 'W', 'T', 'F', 'S'][new Date(day.date).getDay()]}
                     </span>
                   </div>
@@ -355,31 +361,31 @@ export function SleepTracker({ isOpen, onClose }: SleepTrackerProps) {
           </div>
 
           {/* Goal adjuster */}
-          <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
-            <span className="text-sm text-zinc-300 font-medium">Daily goal</span>
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
+            <span className="text-sm text-zinc-400">Daily goal</span>
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setSleepGoal(Math.max(5, sleep.dailyGoal - 1))}
-                className="h-8 w-8 p-0 text-white hover:bg-white/10"
+                className="h-7 w-7 p-0"
               >
-                <Minus className="w-4 h-4" />
+                <Minus className="w-3 h-3" />
               </Button>
-              <span className="text-lg font-bold text-white w-12 text-center">{sleep.dailyGoal}h</span>
+              <span className="text-sm font-medium w-10 text-center">{sleep.dailyGoal}h</span>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setSleepGoal(Math.min(12, sleep.dailyGoal + 1))}
-                className="h-8 w-8 p-0 text-white hover:bg-white/10"
+                className="h-7 w-7 p-0"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3 h-3" />
               </Button>
             </div>
           </div>
         </div>
-      </GlassCard>
-    </GlassOverlay>
+      </DialogContent>
+    </Dialog>
   );
 }
 
