@@ -12,8 +12,13 @@ import {
 import { WELLNESS_PROMPTS } from '@/lib/wellness/types';
 import { triggerHaptic } from '@/lib/haptics';
 import { Button } from '@/components/ui/button';
-import { GlassCard, GlassOverlay } from '@/components/GlassCard';
-import { Heart, Sparkles } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Heart, X, Sparkles } from 'lucide-react';
 
 interface WellnessSyncProps {
   isOpen: boolean;
@@ -82,72 +87,72 @@ export function WellnessSync({ isOpen, onClose, lastAction }: WellnessSyncProps)
   // Action prompt dialog (Direct mode)
   if (showPrompt && prompt && reminderMode === 'direct') {
     return (
-      <GlassOverlay isOpen={showPrompt} onClose={() => setShowPrompt(false)}>
-        <GlassCard className="p-6" showClose onClose={() => setShowPrompt(false)}>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-cyan-400" />
-            </div>
-            <h2 className="text-xl font-bold text-white">Wellness Reflection</h2>
-          </div>
+      <Dialog open={showPrompt} onOpenChange={() => setShowPrompt(false)}>
+        <DialogContent className="bg-zinc-900/95 border-cyan-500/30 max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-cyan-400">
+              <Sparkles className="w-5 h-5" />
+              Wellness Reflection
+            </DialogTitle>
+          </DialogHeader>
 
           <div className="py-4">
-            <p className="text-white text-center text-lg font-medium">
+            <p className="text-zinc-300 text-center text-lg">
               {prompt.directMessage}
             </p>
           </div>
 
-          <div className="flex gap-3 justify-center mt-4">
+          <div className="flex gap-2 justify-center">
             <Button
               variant="outline"
+              size="sm"
               onClick={() => setShowPrompt(false)}
-              className="h-12 px-6 border-white/20 bg-white/5 hover:bg-white/10 text-white touch-manipulation"
+              className="border-zinc-600"
             >
               Dismiss
             </Button>
             <Button
+              size="sm"
               onClick={() => {
                 setShowPrompt(false);
+                // Could open hydration or other tracker here
               }}
-              className="h-12 px-6 bg-cyan-600 hover:bg-cyan-500 font-semibold touch-manipulation"
+              className="bg-cyan-600 hover:bg-cyan-500"
             >
               Log Self-Care
             </Button>
           </div>
-        </GlassCard>
-      </GlassOverlay>
+        </DialogContent>
+      </Dialog>
     );
   }
 
   // Main mood check-in dialog
   return (
-    <GlassOverlay isOpen={isOpen} onClose={onClose}>
-      <GlassCard className="p-6" showClose onClose={onClose}>
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
-            <Heart className="w-5 h-5 text-purple-400" />
-          </div>
-          <h2 className="text-xl font-bold text-white">{greeting}!</h2>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="bg-zinc-900/95 border-purple-500/30 max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-purple-400">
+            <Heart className="w-5 h-5" />
+            {greeting}! How are you feeling?
+          </DialogTitle>
+        </DialogHeader>
 
-        <div className="space-y-6">
-          <p className="text-zinc-300 text-center text-lg font-medium">How are you feeling?</p>
-
+        <div className="py-4 space-y-6">
           {/* Mood selector */}
-          <div className="flex justify-center gap-3">
+          <div className="flex justify-center gap-2">
             {MOODS.map((mood) => (
               <button
                 key={mood}
                 onClick={() => handleMoodSelect(mood)}
-                className={`flex flex-col items-center p-4 rounded-xl transition-all touch-manipulation ${
+                className={`flex flex-col items-center p-3 rounded-xl transition-all touch-manipulation ${
                   selectedMood === mood
                     ? 'bg-purple-500/30 ring-2 ring-purple-400 scale-110'
-                    : 'bg-white/5 hover:bg-white/10 border border-white/10'
+                    : 'bg-zinc-800/50 hover:bg-zinc-700/50'
                 }`}
               >
-                <span className="text-3xl">{USER_MOOD_ICONS[mood]}</span>
-                <span className="text-xs text-zinc-300 mt-2 font-medium">
+                <span className="text-2xl">{USER_MOOD_ICONS[mood]}</span>
+                <span className="text-xs text-zinc-400 mt-1">
                   {USER_MOOD_LABELS[mood]}
                 </span>
               </button>
@@ -156,8 +161,8 @@ export function WellnessSync({ isOpen, onClose, lastAction }: WellnessSyncProps)
 
           {/* Selected mood feedback */}
           {selectedMood && (
-            <div className="text-center space-y-3 animate-in fade-in p-4 bg-white/5 rounded-xl border border-white/10">
-              <p className="text-white font-medium">
+            <div className="text-center space-y-2 animate-in fade-in">
+              <p className="text-zinc-300">
                 {selectedMood === 'struggling' && "It's okay to have tough days. Your companion is here for you."}
                 {selectedMood === 'low' && "Taking it slow is fine. Small steps count."}
                 {selectedMood === 'neutral' && "A steady day. That's perfectly alright."}
@@ -166,15 +171,15 @@ export function WellnessSync({ isOpen, onClose, lastAction }: WellnessSyncProps)
               </p>
 
               {/* Pet vitals mirror effect preview */}
-              <div className="flex items-center justify-center gap-4 mt-3 p-3 bg-black/20 rounded-lg">
+              <div className="flex items-center justify-center gap-4 mt-4 p-3 bg-zinc-800/50 rounded-lg">
                 <div className="text-center">
-                  <p className="text-xs text-zinc-400 font-medium">Your mood</p>
-                  <p className="text-2xl mt-1">{USER_MOOD_ICONS[selectedMood]}</p>
+                  <p className="text-xs text-zinc-500">Your mood</p>
+                  <p className="text-lg">{USER_MOOD_ICONS[selectedMood]}</p>
                 </div>
-                <span className="text-zinc-500">=</span>
+                <span className="text-zinc-600">=</span>
                 <div className="text-center">
-                  <p className="text-xs text-zinc-400 font-medium">Pet energy</p>
-                  <div className="h-3 w-20 bg-zinc-700 rounded-full overflow-hidden mt-2">
+                  <p className="text-xs text-zinc-500">Pet energy</p>
+                  <div className="h-2 w-16 bg-zinc-700 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all"
                       style={{ width: `${USER_MOOD_VALUES[selectedMood] * 20}%` }}
@@ -188,38 +193,40 @@ export function WellnessSync({ isOpen, onClose, lastAction }: WellnessSyncProps)
           {/* Optional note */}
           {selectedMood && (
             <div className="space-y-2">
-              <label className="text-sm text-zinc-300 font-medium">
+              <label className="text-xs text-zinc-500">
                 Add a note (optional)
               </label>
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="How's your day going?"
-                className="w-full bg-black/30 border border-white/10 rounded-xl p-4 text-base text-white placeholder:text-zinc-500 resize-none focus:border-purple-500/50 focus:outline-none"
+                className="w-full bg-zinc-800/50 border border-zinc-700 rounded-lg p-3 text-sm text-zinc-300 placeholder:text-zinc-600 resize-none"
                 rows={2}
               />
             </div>
           )}
         </div>
 
-        <div className="flex gap-3 justify-end mt-6">
+        <div className="flex gap-2 justify-end">
           <Button
             variant="outline"
+            size="sm"
             onClick={onClose}
-            className="h-12 px-6 border-white/20 bg-white/5 hover:bg-white/10 text-white touch-manipulation"
+            className="border-zinc-600"
           >
             Skip
           </Button>
           <Button
+            size="sm"
             onClick={handleSubmit}
             disabled={!selectedMood}
-            className="h-12 px-6 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 font-semibold touch-manipulation"
+            className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50"
           >
             Check In
           </Button>
         </div>
-      </GlassCard>
-    </GlassOverlay>
+      </DialogContent>
+    </Dialog>
   );
 }
 

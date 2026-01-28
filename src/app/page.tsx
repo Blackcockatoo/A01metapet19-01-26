@@ -71,13 +71,12 @@ import { SeedOfLifeGlyph } from '@/components/SeedOfLifeGlyph';
 import { AchievementShelf } from '@/components/AchievementShelf';
 import { QRQuickPanel } from '@/components/QRMessaging';
 import { RegistrationCertificate, CertificateButton } from '@/components/RegistrationCertificate';
-import { WellnessSync } from '@/components/WellnessSync';
-import { HydrationTracker } from '@/components/HydrationTracker';
-import { SleepTracker } from '@/components/SleepTracker';
-import { AnxietyAnchor } from '@/components/AnxietyAnchor';
-import { WellnessSettings } from '@/components/WellnessSettings';
+import { WellnessSync, QuickMoodButton } from '@/components/WellnessSync';
+import { HydrationTracker, HydrationQuickButton } from '@/components/HydrationTracker';
+import { SleepTracker, SleepStatusButton } from '@/components/SleepTracker';
+import { AnxietyAnchor, EmergencyGroundingButton } from '@/components/AnxietyAnchor';
+import { WellnessSettings, WellnessSettingsButton } from '@/components/WellnessSettings';
 import { useWellnessStore } from '@/lib/wellness';
-import type { WellnessMenuItem } from '@/components/RadialWellnessMenu';
 
 interface PetSummary {
   id: string;
@@ -249,28 +248,8 @@ export default function Home() {
   const [anxietyOpen, setAnxietyOpen] = useState(false);
   const [wellnessSettingsOpen, setWellnessSettingsOpen] = useState(false);
   const [lastWellnessAction, setLastWellnessAction] = useState<'feed' | 'clean' | 'play' | 'sleep' | null>(null);
+  const wellnessSetupCompleted = useWellnessStore(state => state.setupCompletedAt);
   const checkStreaks = useWellnessStore(state => state.checkStreaks);
-
-  // Handle radial wellness menu selection
-  const handleWellnessSelect = useCallback((item: WellnessMenuItem) => {
-    switch (item) {
-      case 'mood':
-        setWellnessSyncOpen(true);
-        break;
-      case 'water':
-        setHydrationOpen(true);
-        break;
-      case 'sleep':
-        setSleepOpen(true);
-        break;
-      case 'calm':
-        setAnxietyOpen(true);
-        break;
-      case 'settings':
-        setWellnessSettingsOpen(true);
-        break;
-    }
-  }, []);
 
   const debouncedSave = useMemo(() => createDebouncedSave(1_000), []);
 
@@ -1183,8 +1162,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Pet Hero with Progress Rings and Radial Wellness Menu */}
-          <PetHero className="py-4" onWellnessSelect={handleWellnessSelect} />
+          {/* Pet Hero with Progress Rings */}
+          <PetHero className="py-4" />
 
           {/* Quick Actions */}
           <FloatingActions />
@@ -1200,6 +1179,15 @@ export default function Home() {
               <Award className="w-4 h-4 mr-2" />
               View Certificate
             </Button>
+          </div>
+
+          {/* Wellness Quick Bar */}
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-4 px-4">
+            <QuickMoodButton onClick={() => setWellnessSyncOpen(true)} />
+            <HydrationQuickButton onClick={() => setHydrationOpen(true)} />
+            <SleepStatusButton onClick={() => setSleepOpen(true)} />
+            <EmergencyGroundingButton onClick={() => setAnxietyOpen(true)} />
+            <WellnessSettingsButton onClick={() => setWellnessSettingsOpen(true)} />
           </div>
         </div>
 
