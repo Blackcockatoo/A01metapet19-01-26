@@ -34,6 +34,10 @@ export default function SpaceJewblesPage() {
   const miniGames = useStore(s => s.miniGames);
   const safeMiniGames = useMemo(() => miniGames ?? createDefaultMiniGameProgress(), [miniGames]);
   const recordSpaceJewblesRun = useStore(s => s.recordSpaceJewblesRun);
+  const formatScore = useCallback((value?: number) => {
+    const safeValue = typeof value === 'number' && Number.isFinite(value) ? value : 0;
+    return safeValue.toLocaleString();
+  }, []);
 
   // Generate genome seed for consistency
   const genomeSeed = useMemo(() => {
