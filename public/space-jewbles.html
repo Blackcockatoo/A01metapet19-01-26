@@ -566,6 +566,16 @@
         const BOSS_WAVE_INTERVAL = 10;
         const LOW_AMMO_THRESHOLD = 3;
 
+        // Physics & gameplay constants
+        const PLAYER_BOUNDARY_MARGIN = 30;
+        const ENEMY_BOUNDARY_MARGIN = 40;
+        const BOSS_BOUNDARY_MARGIN = 80;
+        const BOUNCE_BOUNDARY_MARGIN = 20;
+        const HOMING_RANGE = 200;
+        const CONFUSION_RADIUS = 80;
+        const DROP_PICKUP_RADIUS = 40;
+        const PLAYER_HIT_RADIUS = 35;
+
         // Difficulty scaling
         const DIFFICULTY_CONFIG = {
             speedMultPerWave: 0.02,
@@ -573,6 +583,42 @@
             spawnMultPerWave: 0.1,
             maxSpeedMult: 2.5,
             maxHpMult: 3.0
+        };
+
+        // Initial player state - single source of truth
+        const INITIAL_AMMO = {
+            banana: Infinity,
+            boot: 10,
+            book: 10,
+            chicken: 8,
+            donut: 5,
+            toilet_paper: 5,
+            cosmic_sock: 2
+        };
+
+        const INITIAL_MODIFIERS = {
+            multiShot: 1,
+            fireRate: 1,
+            speed: 1,
+            homing: false,
+            bounceTP: 0,
+            aoeMultiplier: 1,
+            sockArmy: false,
+            scoreMult: 1,
+            infiniteAmmo: false
+        };
+
+        // Default modifier values for reset
+        const MODIFIER_DEFAULTS = {
+            multiShot: 1,
+            fireRate: 1,
+            speed: 1,
+            homing: false,
+            bounceTP: 0,
+            aoeMultiplier: 1,
+            sockArmy: false,
+            scoreMult: 1,
+            infiniteAmmo: false
         };
 
         // Projectile Types
@@ -694,25 +740,9 @@
             baseFireRate: 250,
             lastFire: 0,
             selectedWeapon: 0,
-            ammo: {
-                banana: Infinity,
-                boot: 10,
-                book: 10,
-                chicken: 8,
-                donut: 5,
-                toilet_paper: 5,
-                cosmic_sock: 2
-            },
+            ammo: { ...INITIAL_AMMO },
             shield: 0,
-            modifiers: {
-                multiShot: 1,
-                homing: false,
-                bounceTP: 0,
-                aoeMultiplier: 1,
-                sockArmy: false,
-                scoreMult: 1,
-                infiniteAmmo: false
-            }
+            modifiers: { ...INITIAL_MODIFIERS }
         };
 
         // Entity Arrays
@@ -742,9 +772,8 @@
         const PITY_THRESHOLD = 50; // Guaranteed rare+ after 50 kills
         const MYTHIC_PITY_THRESHOLD = 200; // Guaranteed mythic after 200 kills
 
-        // High score tracking
+        // High score tracking (single variable - loaded from localStorage)
         let highScore = 0;
-        let personalBest = 0;
 
         // ============================================
         // AUDIO SYSTEM
@@ -1507,7 +1536,7 @@
                             case 'squeak':
                                 // Confuse nearby enemies
                                 enemies.forEach(other => {
-                                    if (Math.hypot(other.x - e.x, other.y - e.y) < 80) {
+                                    if (Math.hypot(other.x - e.x, other.y - e.y) < CONFUSION_RADIUS) {
                                         other.confused = 2000;
                                     }
                                 });
@@ -1583,8 +1612,9 @@
                 const d = drops[i];
                 const dx = d.x - player.x;
                 const dy = d.y - player.y;
+                const pickupRadiusSq = DROP_PICKUP_RADIUS * DROP_PICKUP_RADIUS;
 
-                if (dx * dx + dy * dy < 1600) { // 40 * 40
+                if (dx * dx + dy * dy < pickupRadiusSq) {
                     collectDrop(d);
                     drops.splice(i, 1);
                 }
@@ -1947,12 +1977,8 @@
             for (let i = activePowerups.length - 1; i >= 0; i--) {
                 const p = activePowerups[i];
                 if (now >= p.endTime) {
-                    // Reset modifier
-                    if (p.modifier === 'speed') player.modifiers.speed = 1;
-                    else if (p.modifier === 'scoreMult') player.modifiers.scoreMult = 1;
-                    else if (p.modifier === 'infiniteAmmo') player.modifiers.infiniteAmmo = false;
-                    else player.modifiers[p.modifier] = false;
-
+                    // Reset modifier to default value
+                    player.modifiers[p.modifier] = MODIFIER_DEFAULTS[p.modifier];
                     activePowerups.splice(i, 1);
                 }
             }
@@ -2032,16 +2058,14 @@
             document.getElementById('waveValue').textContent = wave;
             document.getElementById('livesDisplay').innerHTML = '❤️'.repeat(lives);
 
-            // Update high score display
-            if (score > personalBest) {
-                personalBest = score;
-                const hsDisplay = document.getElementById('highScoreDisplay');
-                hsDisplay.textContent = `NEW BEST!`;
+            // Update high score display (single DOM query)
+            const hsDisplay = document.getElementById('highScoreDisplay');
+            if (score > highScore) {
+                hsDisplay.textContent = 'NEW BEST!';
                 hsDisplay.style.display = 'inline';
                 hsDisplay.style.color = '#ffd700';
-            } else if (personalBest > 0) {
-                const hsDisplay = document.getElementById('highScoreDisplay');
-                hsDisplay.textContent = `Best: ${personalBest.toLocaleString()}`;
+            } else if (highScore > 0) {
+                hsDisplay.textContent = `Best: ${highScore.toLocaleString()}`;
                 hsDisplay.style.display = 'inline';
                 hsDisplay.style.color = '#aaa';
             }
@@ -2104,10 +2128,21 @@
         // GAME FLOW
         // ============================================
 
+        // Screen visibility management
+        function showScreen(screenId) {
+            const screens = ['startScreen', 'gameOverScreen', 'pauseScreen'];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = id === screenId ? 'flex' : 'none';
+            });
+        }
+
+        function hideAllScreens() {
+            showScreen(null);
+        }
+
         function startGame() {
-            document.getElementById('startScreen').style.display = 'none';
-            document.getElementById('gameOverScreen').style.display = 'none';
-            document.getElementById('pauseScreen').style.display = 'none';
+            hideAllScreens();
 
             // Reset game state
             score = 0;
@@ -2119,27 +2154,11 @@
             dropsPityCounter = 0;
             mythicPityCounter = 0;
 
-            // Reset player
+            // Reset player using constants
             player.x = CANVAS_WIDTH / 2;
             player.shield = 0;
-            player.ammo = {
-                banana: Infinity,
-                boot: 10,
-                book: 10,
-                chicken: 8,
-                donut: 5,
-                toilet_paper: 5,
-                cosmic_sock: 2
-            };
-            player.modifiers = {
-                multiShot: 1,
-                homing: false,
-                bounceTP: 0,
-                aoeMultiplier: 1,
-                sockArmy: false,
-                scoreMult: 1,
-                infiniteAmmo: false
-            };
+            player.ammo = { ...INITIAL_AMMO };
+            player.modifiers = { ...INITIAL_MODIFIERS };
             player.selectedWeapon = 0;
 
             // Clear entities
@@ -2163,7 +2182,7 @@
             gameState = 'gameover';
             document.getElementById('finalScore').textContent = score.toLocaleString();
             document.getElementById('finalWave').textContent = wave;
-            document.getElementById('gameOverScreen').style.display = 'flex';
+            showScreen('gameOverScreen');
 
             // Update high score
             if (score > highScore) {
@@ -2179,13 +2198,7 @@
             if (window.parent !== window) {
                 window.parent.postMessage({
                     type: 'GAME_RESULT',
-                    payload: {
-                        score,
-                        wave,
-                        bossesDefeated,
-                        mythicDrops: mythicDropsCollected,
-                        highScore: highScore
-                    }
+                    payload: { score, wave, bossesDefeated, mythicDrops: mythicDropsCollected, highScore }
                 }, '*');
             }
         }
@@ -2193,23 +2206,21 @@
         function togglePause() {
             if (gameState === 'playing') {
                 gameState = 'paused';
-                document.getElementById('pauseScreen').style.display = 'flex';
+                showScreen('pauseScreen');
             } else if (gameState === 'paused') {
                 gameState = 'playing';
-                document.getElementById('pauseScreen').style.display = 'none';
+                hideAllScreens();
             }
         }
 
         function quitToMenu() {
             gameState = 'start';
-            document.getElementById('pauseScreen').style.display = 'none';
-            document.getElementById('startScreen').style.display = 'flex';
+            showScreen('startScreen');
         }
 
         function showStartScreen() {
             gameState = 'start';
-            document.getElementById('gameOverScreen').style.display = 'none';
-            document.getElementById('startScreen').style.display = 'flex';
+            showScreen('startScreen');
         }
 
         // ============================================
@@ -2384,31 +2395,20 @@
             }
         }
 
+        // Helper to assign pet properties from source object
+        function assignPetProperties(source) {
+            const props = ['bodyType', 'primaryColor', 'secondaryColor', 'pattern', 'texture', 'size', 'features'];
+            props.forEach(prop => {
+                if (source[prop] !== undefined) petData[prop] = source[prop];
+            });
+        }
+
         window.addEventListener('message', (e) => {
             if (e.data && e.data.type === 'PET_DATA') {
                 const data = e.data.payload;
                 // Handle both physical nested and flat formats
-                if (data.physical) {
-                    petData.bodyType = data.physical.bodyType || petData.bodyType;
-                    petData.primaryColor = data.physical.primaryColor || petData.primaryColor;
-                    petData.secondaryColor = data.physical.secondaryColor || petData.secondaryColor;
-                    petData.pattern = data.physical.pattern || petData.pattern;
-                    petData.texture = data.physical.texture || petData.texture;
-                    petData.size = data.physical.size || petData.size;
-                    petData.features = data.physical.features || petData.features;
-                } else {
-                    // Flat format from page component
-                    petData.bodyType = data.bodyType || petData.bodyType;
-                    petData.primaryColor = data.primaryColor || petData.primaryColor;
-                    petData.secondaryColor = data.secondaryColor || petData.secondaryColor;
-                    petData.pattern = data.pattern || petData.pattern;
-                    petData.texture = data.texture || petData.texture;
-                    petData.size = data.size || petData.size;
-                    petData.features = data.features || petData.features;
-                }
-                if (data.petName) {
-                    petData.petName = data.petName;
-                }
+                assignPetProperties(data.physical || data);
+                if (data.petName) petData.petName = data.petName;
                 updatePetPreview();
             }
         });
@@ -2466,7 +2466,6 @@
                 const saved = localStorage.getItem('spaceJewblesHighScore');
                 if (saved) {
                     highScore = parseInt(saved, 10);
-                    personalBest = highScore;
                 }
             } catch (e) {
                 console.warn('Could not load high score');
