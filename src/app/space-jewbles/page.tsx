@@ -19,11 +19,13 @@ const isValidGameStat = (value: unknown): value is number =>
 
 export default function SpaceJewblesPage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const loadTimeoutRef = useRef<number | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [isIframeFocused, setIsIframeFocused] = useState(false);
   const [lastResult, setLastResult] = useState<GameResult | null>(null);
   const [newUnlocks, setNewUnlocks] = useState<string[]>([]);
   const [showUnlockAnimation, setShowUnlockAnimation] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Get pet data from store
   const traits = useStore(s => s.traits);
@@ -136,7 +138,21 @@ export default function SpaceJewblesPage() {
     return () => window.removeEventListener('message', handleMessage);
   }, [petData, recordSpaceJewblesRun, miniGames]);
 
+  const clearLoadTimeout = useCallback(() => {
+    if (loadTimeoutRef.current) {
+      window.clearTimeout(loadTimeoutRef.current);
+      loadTimeoutRef.current = null;
+    }
+  }, []);
+
+  const handleGameLoadFailure = useCallback((message: string) => {
+    clearLoadTimeout();
+    setGameStarted(false);
+    setLoadError(message);
+  }, [clearLoadTimeout]);
+
   const handleStartGame = useCallback(() => {
+    setLoadError(null);
     setGameStarted(true);
     setIsIframeFocused(false);
     setLastResult(null);
@@ -144,6 +160,7 @@ export default function SpaceJewblesPage() {
   }, []);
 
   const handlePlayAgain = useCallback(() => {
+    setLoadError(null);
     setGameStarted(true);
     setIsIframeFocused(false);
     setLastResult(null);
@@ -153,6 +170,22 @@ export default function SpaceJewblesPage() {
       iframeRef.current.src = iframeRef.current.src;
     }
   }, []);
+
+  useEffect(() => {
+    if (!gameStarted) {
+      clearLoadTimeout();
+      return;
+    }
+
+    clearLoadTimeout();
+    loadTimeoutRef.current = window.setTimeout(() => {
+      handleGameLoadFailure('Game loading timed out. Please try again.');
+    }, 10000);
+
+    return () => {
+      clearLoadTimeout();
+    };
+  }, [clearLoadTimeout, gameStarted, handleGameLoadFailure]);
 
   // Calculate progress towards rewards
   const rewardProgress = useMemo(() => ({
@@ -243,6 +276,28 @@ export default function SpaceJewblesPage() {
               <p className="text-slate-400 mb-6">
                 Defend the cosmos with your pet and absurd weaponry!
               </p>
+
+              {loadError && (
+                <div className="bg-red-500/10 border border-red-400/40 text-red-200 rounded-xl p-4 mb-6 space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-red-200">Couldn&apos;t load Space Jewbles</h3>
+                    <p className="text-sm text-red-100/80 mt-1">{loadError}</p>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      onClick={handleStartGame}
+                      className="w-full bg-red-500/80 hover:bg-red-500 text-white"
+                    >
+                      Retry
+                    </Button>
+                    <Link href="/pet">
+                      <Button variant="ghost" className="w-full text-red-200 hover:text-white">
+                        Back to Pet
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              )}
 
               {lastResult && (
                 <div
@@ -357,6 +412,8 @@ export default function SpaceJewblesPage() {
             className="absolute inset-0 w-full h-full border-0"
             title="Space Jewbles Game"
             allow="autoplay"
+            onLoad={clearLoadTimeout}
+            onError={() => handleGameLoadFailure('Failed to load the game. Please try again.')}
           />
         )}
       </div>
