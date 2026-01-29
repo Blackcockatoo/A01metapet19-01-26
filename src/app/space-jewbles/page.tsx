@@ -64,11 +64,11 @@ export default function SpaceJewblesPage() {
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
       if (event.data?.type === 'GAME_READY') {
+        const targetWindow = iframeRef.current?.contentWindow;
+        if (!targetWindow) return;
         // Send pet data to the game
-        iframeRef.current?.contentWindow?.postMessage(
-          { type: 'PET_DATA', payload: petData },
-          '*'
-        );
+        targetWindow.postMessage({ type: 'PET_DATA', payload: petData }, '*');
+        targetWindow.postMessage({ type: 'START_GAME' }, '*');
       } else if (event.data?.type === 'GAME_RESULT') {
         const result = event.data.payload as GameResult;
         setLastResult(result);
@@ -296,7 +296,7 @@ export default function SpaceJewblesPage() {
         ) : (
           <iframe
             ref={iframeRef}
-            src="/space-jewbles.html?autostart=1"
+            src="/space-jewbles.html"
             className="absolute inset-0 w-full h-full border-0"
             title="Space Jewbles Game"
             allow="autoplay"
