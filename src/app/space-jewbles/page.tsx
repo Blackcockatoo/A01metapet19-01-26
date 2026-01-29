@@ -27,6 +27,13 @@ export default function SpaceJewblesPage() {
   const [newUnlocks, setNewUnlocks] = useState<string[]>([]);
   const [showUnlockAnimation, setShowUnlockAnimation] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const iframeSrc = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return '/space-jewbles.html';
+    }
+    const origin = window.location.origin;
+    return `/space-jewbles.html?allowedOrigin=${encodeURIComponent(origin)}`;
+  }, []);
 
   // Get pet data from store
   const traits = useStore(s => s.traits);
@@ -253,7 +260,7 @@ export default function SpaceJewblesPage() {
           <div className="flex items-center gap-2 text-amber-400">
             <Trophy className="w-4 h-4" />
             <span aria-live="polite">
-              High: {formatScore(safeMiniGames?.spaceJewblesHighScore)}
+              High: {safeMiniGames.spaceJewblesHighScore.toLocaleString()}
             </span>
           </div>
           <div className="flex items-center gap-2 text-cyan-400">
@@ -341,7 +348,7 @@ export default function SpaceJewblesPage() {
               <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
                 <div className="bg-slate-800/30 rounded-lg p-3">
                   <div className="text-amber-400 font-bold text-xl">
-                    {formatScore(safeMiniGames?.spaceJewblesHighScore)}
+                    {safeMiniGames.spaceJewblesHighScore.toLocaleString()}
                   </div>
                   <div className="text-slate-500">High Score</div>
                 </div>
@@ -418,7 +425,7 @@ export default function SpaceJewblesPage() {
         ) : (
           <iframe
             ref={iframeRef}
-            src="/space-jewbles.html"
+            src={iframeSrc}
             className="absolute inset-0 w-full h-full border-0"
             title="Space Jewbles Game"
             allow="autoplay"
