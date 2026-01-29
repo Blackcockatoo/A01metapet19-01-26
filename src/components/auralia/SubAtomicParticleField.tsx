@@ -141,7 +141,10 @@ export function SubAtomicParticleField({
           className="particle-orbit"
           style={{
             transformOrigin: `${size / 2}px ${size / 2}px`,
-            animation: reduceMotion ? 'none' : `particle-orbit ${particle.duration}s linear infinite`,
+            animationName: reduceMotion ? 'none' : 'particle-orbit',
+            animationDuration: reduceMotion ? '0s' : `${particle.duration}s`,
+            animationTimingFunction: 'linear',
+            animationIterationCount: 'infinite',
             animationDelay: reduceMotion ? '0s' : `-${particle.delay}s`,
             animationPlayState: isVisible ? 'running' : 'paused',
             willChange: reduceMotion ? 'auto' : 'transform',
@@ -155,7 +158,10 @@ export function SubAtomicParticleField({
             opacity={particle.opacity}
             className="particle-twinkle"
             style={{
-              animation: reduceMotion ? 'none' : `particle-twinkle ${particle.twinkle}s ease-in-out infinite`,
+              animationName: reduceMotion ? 'none' : 'particle-twinkle',
+              animationDuration: reduceMotion ? '0s' : `${particle.twinkle}s`,
+              animationTimingFunction: 'ease-in-out',
+              animationIterationCount: 'infinite',
               animationDelay: reduceMotion ? '0s' : `${particle.twinkleDelay}s`,
               animationPlayState: isVisible ? 'running' : 'paused',
               filter: reduceMotion ? 'none' : 'blur(0.4px)',
