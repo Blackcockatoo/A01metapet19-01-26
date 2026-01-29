@@ -17,6 +17,7 @@ interface GameResult {
 export default function SpaceJewblesPage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [gameStarted, setGameStarted] = useState(false);
+  const [isIframeFocused, setIsIframeFocused] = useState(false);
   const [lastResult, setLastResult] = useState<GameResult | null>(null);
   const [newUnlocks, setNewUnlocks] = useState<string[]>([]);
   const [showUnlockAnimation, setShowUnlockAnimation] = useState(false);
@@ -104,12 +105,14 @@ export default function SpaceJewblesPage() {
 
   const handleStartGame = useCallback(() => {
     setGameStarted(true);
+    setIsIframeFocused(false);
     setLastResult(null);
     setNewUnlocks([]);
   }, []);
 
   const handlePlayAgain = useCallback(() => {
     setGameStarted(true);
+    setIsIframeFocused(false);
     setLastResult(null);
     setNewUnlocks([]);
     // Force iframe reload
@@ -124,6 +127,12 @@ export default function SpaceJewblesPage() {
     banana: { current: miniGames.spaceJewblesBossesDefeated, target: 5, label: 'Cosmic Banana' },
     mythic: { current: miniGames.spaceJewblesMythicDrops, target: 3, label: 'Mythic Aura' },
   }), [miniGames]);
+
+  useEffect(() => {
+    if (gameStarted && iframeRef.current) {
+      iframeRef.current.focus();
+    }
+  }, [gameStarted]);
 
   return (
     <div className="w-screen min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 flex flex-col overflow-hidden">
@@ -294,13 +303,28 @@ export default function SpaceJewblesPage() {
             </div>
           </div>
         ) : (
-          <iframe
-            ref={iframeRef}
-            src="/space-jewbles.html?autostart=1"
-            className="absolute inset-0 w-full h-full border-0"
-            title="Space Jewbles Game"
-            allow="autoplay"
-          />
+          <>
+            <iframe
+              ref={iframeRef}
+              src="/space-jewbles.html?autostart=1"
+              className="absolute inset-0 w-full h-full border-0"
+              title="Space Jewbles Game"
+              allow="autoplay"
+              tabIndex={0}
+              onLoad={() => iframeRef.current?.focus()}
+              onFocus={() => setIsIframeFocused(true)}
+              onBlur={() => setIsIframeFocused(false)}
+            />
+            {!isIframeFocused && (
+              <button
+                type="button"
+                onClick={() => iframeRef.current?.focus()}
+                className="absolute top-4 right-4 rounded-full bg-slate-900/80 border border-slate-600 px-3 py-1 text-xs text-slate-200 shadow-lg hover:bg-slate-800/90"
+              >
+                Click to focus
+              </button>
+            )}
+          </>
         )}
       </div>
 
