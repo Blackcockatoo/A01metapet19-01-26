@@ -289,7 +289,7 @@ export default function SpaceJewblesPage() {
               </Button>
 
               <p className="text-slate-500 text-xs mt-4">
-                Arrow Keys / WASD to move | Space to fire | 1-7 to switch weapons
+                Arrow Keys / WASD to move | Space to fire | 1-7 to switch weapons | Mobile: use on-screen touch controls (tap to focus if input stalls)
               </p>
             </div>
           </div>
