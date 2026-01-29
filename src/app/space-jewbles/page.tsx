@@ -27,6 +27,13 @@ export default function SpaceJewblesPage() {
   const [newUnlocks, setNewUnlocks] = useState<string[]>([]);
   const [showUnlockAnimation, setShowUnlockAnimation] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const iframeSrc = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return '/space-jewbles.html';
+    }
+    const origin = window.location.origin;
+    return `/space-jewbles.html?allowedOrigin=${encodeURIComponent(origin)}`;
+  }, []);
 
   // Get pet data from store
   const traits = useStore(s => s.traits);
@@ -418,7 +425,7 @@ export default function SpaceJewblesPage() {
         ) : (
           <iframe
             ref={iframeRef}
-            src="/space-jewbles.html"
+            src={iframeSrc}
             className="absolute inset-0 w-full h-full border-0"
             title="Space Jewbles Game"
             allow="autoplay"
