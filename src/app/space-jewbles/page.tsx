@@ -296,7 +296,7 @@ export default function SpaceJewblesPage() {
         ) : (
           <iframe
             ref={iframeRef}
-            src="/space-jewbles.html"
+            src="/space-jewbles.html?autostart=1"
             className="absolute inset-0 w-full h-full border-0"
             title="Space Jewbles Game"
             allow="autoplay"

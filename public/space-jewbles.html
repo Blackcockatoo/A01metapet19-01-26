@@ -2367,6 +2367,8 @@
         // PET DATA LOADING
         // ============================================
 
+        let shouldAutoStart = false;
+
         function loadPetFromURL() {
             const params = new URLSearchParams(window.location.search);
 
@@ -2393,6 +2395,11 @@
             }
             if (params.has('petName')) {
                 petData.petName = decodeURIComponent(params.get('petName'));
+            }
+
+            const autoStartParam = params.get('autostart') || params.get('autoStart');
+            if (autoStartParam) {
+                shouldAutoStart = autoStartParam === '1' || autoStartParam.toLowerCase() === 'true';
             }
         }
 
@@ -2491,6 +2498,10 @@
                     audioContext.resume();
                 }
             }, { once: true });
+
+            if (shouldAutoStart) {
+                startGame();
+            }
 
             // Notify parent that game is ready
             if (window.parent !== window) {
