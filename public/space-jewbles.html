@@ -510,7 +510,7 @@
                     <canvas id="petPreview" width="120" height="120"></canvas>
                 </div>
                 <p id="petNameDisplay" style="color: #00ffff; font-size: 20px; margin-bottom: 20px;">Loading Pet...</p>
-                <button class="btn" onclick="startGame()">START GAME</button>
+                <button class="btn" id="startGameBtn">START GAME</button>
                 <div class="controls-info">
                     <span>Arrow Keys</span> or <span>WASD</span> Move<br>
                     <span>SPACE</span> Fire &nbsp; <span>1-7</span> Select Weapon<br>
@@ -524,15 +524,15 @@
                 <h1 style="color: #ff6b6b;">GAME OVER</h1>
                 <div class="final-score">Score: <span id="finalScore">0</span></div>
                 <div class="wave-reached">Wave <span id="finalWave">1</span> Reached</div>
-                <button class="btn" onclick="startGame()">PLAY AGAIN</button>
-                <button class="btn btn-secondary" onclick="showStartScreen()">MAIN MENU</button>
+                <button class="btn" id="playAgainBtn">PLAY AGAIN</button>
+                <button class="btn btn-secondary" id="mainMenuBtn">MAIN MENU</button>
             </div>
 
             <!-- Pause Screen -->
             <div id="pauseScreen">
                 <h1 style="font-size: 42px;">PAUSED</h1>
-                <button class="btn" onclick="togglePause()">RESUME</button>
-                <button class="btn btn-secondary" onclick="quitToMenu()">QUIT</button>
+                <button class="btn" id="resumeBtn">RESUME</button>
+                <button class="btn btn-secondary" id="quitBtn">QUIT</button>
             </div>
         </div>
     </div>
@@ -2087,7 +2087,7 @@
                 const selected = i === player.selectedWeapon ? 'selected' : '';
                 const lowAmmo = ammoCount !== Infinity && ammoCount <= LOW_AMMO_THRESHOLD ? 'low' : '';
                 return `
-                    <div class="ammo-slot ${selected}" onclick="selectWeapon(${i})">
+                    <div class="ammo-slot ${selected}" data-weapon-index="${i}">
                         <span class="ammo-emoji">${weapon.emoji}</span>
                         <span class="ammo-count ${lowAmmo}">x${count}</span>
                         <span class="ammo-key">${i + 1}</span>
@@ -2100,8 +2100,49 @@
             selector.innerHTML = WEAPON_KEYS.map((key, i) => {
                 const weapon = PROJECTILES[key];
                 const selected = i === player.selectedWeapon ? 'selected' : '';
-                return `<button class="weapon-btn ${selected}" onclick="selectWeapon(${i})">${weapon.emoji}</button>`;
+                return `<button class="weapon-btn ${selected}" data-weapon-index="${i}" type="button">${weapon.emoji}</button>`;
             }).join('');
+        }
+
+        function initUIControls() {
+            const startGameBtn = document.getElementById('startGameBtn');
+            if (startGameBtn) startGameBtn.addEventListener('click', startGame);
+
+            const playAgainBtn = document.getElementById('playAgainBtn');
+            if (playAgainBtn) playAgainBtn.addEventListener('click', startGame);
+
+            const mainMenuBtn = document.getElementById('mainMenuBtn');
+            if (mainMenuBtn) mainMenuBtn.addEventListener('click', showStartScreen);
+
+            const resumeBtn = document.getElementById('resumeBtn');
+            if (resumeBtn) resumeBtn.addEventListener('click', togglePause);
+
+            const quitBtn = document.getElementById('quitBtn');
+            if (quitBtn) quitBtn.addEventListener('click', quitToMenu);
+
+            const bar = document.getElementById('ammoBar');
+            if (bar) {
+                bar.addEventListener('click', (event) => {
+                    const target = event.target.closest('.ammo-slot');
+                    if (!target || !bar.contains(target)) return;
+                    const index = Number(target.dataset.weaponIndex);
+                    if (!Number.isNaN(index)) {
+                        selectWeapon(index);
+                    }
+                });
+            }
+
+            const selector = document.getElementById('weaponSelector');
+            if (selector) {
+                selector.addEventListener('click', (event) => {
+                    const target = event.target.closest('.weapon-btn');
+                    if (!target || !selector.contains(target)) return;
+                    const index = Number(target.dataset.weaponIndex);
+                    if (!Number.isNaN(index)) {
+                        selectWeapon(index);
+                    }
+                });
+            }
         }
 
         function updateActivePowerupsUI() {
@@ -2530,6 +2571,7 @@
             initAudio();
             updatePetPreview();
             updateAmmoUI();
+            initUIControls();
 
             // Load high score from localStorage when running standalone
             if (!isEmbedded) {
