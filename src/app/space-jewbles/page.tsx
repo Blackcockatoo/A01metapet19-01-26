@@ -64,11 +64,24 @@ export default function SpaceJewblesPage() {
   // Handle messages from the game iframe
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
+      const iframeWindow = iframeRef.current?.contentWindow;
+      const expectedOrigin = window.location.origin;
+
+      if (!iframeWindow) {
+        return;
+      }
+
+      if (event.origin !== expectedOrigin || event.source !== iframeWindow) {
+        return;
+      }
+
       if (event.data?.type === 'GAME_READY') {
+        const targetWindow = iframeRef.current?.contentWindow;
+        if (!targetWindow) return;
         // Send pet data to the game
         iframeRef.current?.contentWindow?.postMessage(
           { type: 'PET_DATA', payload: petData },
-          '*'
+          expectedOrigin
         );
       } else if (event.data?.type === 'GAME_RESULT') {
         const result = event.data.payload as GameResult;
@@ -303,28 +316,13 @@ export default function SpaceJewblesPage() {
             </div>
           </div>
         ) : (
-          <>
-            <iframe
-              ref={iframeRef}
-              src="/space-jewbles.html?autostart=1"
-              className="absolute inset-0 w-full h-full border-0"
-              title="Space Jewbles Game"
-              allow="autoplay"
-              tabIndex={0}
-              onLoad={() => iframeRef.current?.focus()}
-              onFocus={() => setIsIframeFocused(true)}
-              onBlur={() => setIsIframeFocused(false)}
-            />
-            {!isIframeFocused && (
-              <button
-                type="button"
-                onClick={() => iframeRef.current?.focus()}
-                className="absolute top-4 right-4 rounded-full bg-slate-900/80 border border-slate-600 px-3 py-1 text-xs text-slate-200 shadow-lg hover:bg-slate-800/90"
-              >
-                Click to focus
-              </button>
-            )}
-          </>
+          <iframe
+            ref={iframeRef}
+            src="/space-jewbles.html"
+            className="absolute inset-0 w-full h-full border-0"
+            title="Space Jewbles Game"
+            allow="autoplay"
+          />
         )}
       </div>
 

@@ -715,6 +715,10 @@
             petName: 'Space Pet'
         };
 
+        const isEmbedded = window.parent !== window;
+        let hasPetData = false;
+        let pendingStart = false;
+
         // ============================================
         // GAME STATE
         // ============================================
@@ -2143,6 +2147,11 @@
         }
 
         function startGame() {
+            if (isEmbedded && !hasPetData) {
+                pendingStart = true;
+                return;
+            }
+
             hideAllScreens();
 
             // Reset game state
@@ -2403,6 +2412,38 @@
             }
         }
 
+        const allowedMessageOrigins = new Set();
+
+        function configureAllowedMessageOrigins() {
+            const params = new URLSearchParams(window.location.search);
+            const allowlistParam = params.get('allowedOrigins') || params.get('allowedOrigin');
+
+            if (allowlistParam) {
+                allowlistParam
+                    .split(',')
+                    .map(origin => origin.trim())
+                    .filter(Boolean)
+                    .forEach(origin => allowedMessageOrigins.add(origin));
+            }
+
+            if (document.referrer) {
+                try {
+                    const parentOrigin = new URL(document.referrer).origin;
+                    if (parentOrigin && parentOrigin !== 'null') {
+                        allowedMessageOrigins.add(parentOrigin);
+                    }
+                } catch (e) {
+                    console.warn('Unable to parse parent origin from referrer.', e);
+                }
+            }
+        }
+
+        function isAllowedMessageOrigin(origin) {
+            return allowedMessageOrigins.has(origin);
+        }
+
+        configureAllowedMessageOrigins();
+
         // Helper to assign pet properties from source object
         function assignPetProperties(source) {
             const props = ['bodyType', 'primaryColor', 'secondaryColor', 'pattern', 'texture', 'size', 'features'];
@@ -2412,12 +2453,29 @@
         }
 
         window.addEventListener('message', (e) => {
+            if (!isAllowedMessageOrigin(e.origin)) {
+                console.warn('Ignored message from unauthorized origin:', e.origin);
+                return;
+            }
             if (e.data && e.data.type === 'PET_DATA') {
                 const data = e.data.payload;
                 // Handle both physical nested and flat formats
                 assignPetProperties(data.physical || data);
                 if (data.petName) petData.petName = data.petName;
+                hasPetData = true;
                 updatePetPreview();
+                if (pendingStart) {
+                    startGame();
+                    pendingStart = false;
+                }
+            }
+
+            if (e.data.type === 'START_GAME') {
+                pendingStart = true;
+                if (!isEmbedded || hasPetData) {
+                    startGame();
+                    pendingStart = false;
+                }
             }
         });
 
