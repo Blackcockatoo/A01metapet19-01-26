@@ -14,6 +14,9 @@ interface GameResult {
   mythicDrops: number;
 }
 
+const isValidGameStat = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value) && value >= 0;
+
 export default function SpaceJewblesPage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [gameStarted, setGameStarted] = useState(false);
@@ -84,23 +87,40 @@ export default function SpaceJewblesPage() {
           expectedOrigin
         );
       } else if (event.data?.type === 'GAME_RESULT') {
-        const result = event.data.payload as GameResult;
-        setLastResult(result);
+        const result = event.data.payload as Partial<GameResult>;
+        if (
+          !isValidGameStat(result.score)
+          || !isValidGameStat(result.wave)
+          || !isValidGameStat(result.bossesDefeated)
+          || !isValidGameStat(result.mythicDrops)
+        ) {
+          console.warn('Invalid Space Jewbles result payload received.', event.data.payload);
+          return;
+        }
+
+        const safeResult: GameResult = {
+          score: result.score,
+          wave: result.wave,
+          bossesDefeated: result.bossesDefeated,
+          mythicDrops: result.mythicDrops,
+        };
+
+        setLastResult(safeResult);
         setGameStarted(false);
 
         // Record the run in the store
         recordSpaceJewblesRun(
-          result.score,
-          result.wave,
-          result.bossesDefeated,
-          result.mythicDrops
+          safeResult.score,
+          safeResult.wave,
+          safeResult.bossesDefeated,
+          safeResult.mythicDrops
         );
 
         // Check for addon rewards with updated totals
         const updatedStats = {
-          maxWave: Math.max(miniGames.spaceJewblesMaxWave, result.wave),
-          bossesDefeated: miniGames.spaceJewblesBossesDefeated + result.bossesDefeated,
-          mythicDrops: miniGames.spaceJewblesMythicDrops + result.mythicDrops,
+          maxWave: Math.max(miniGames.spaceJewblesMaxWave, safeResult.wave),
+          bossesDefeated: miniGames.spaceJewblesBossesDefeated + safeResult.bossesDefeated,
+          mythicDrops: miniGames.spaceJewblesMythicDrops + safeResult.mythicDrops,
         };
 
         const rewards = await checkSpaceJewblesRewards(updatedStats);
