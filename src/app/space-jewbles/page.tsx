@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Trophy, Zap, Target, Skull, Gift, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { checkSpaceJewblesRewards } from '@/lib/addons/starter';
+import { createDefaultMiniGameProgress } from '@/lib/progression/types';
 
 interface GameResult {
   score: number;
@@ -31,7 +32,12 @@ export default function SpaceJewblesPage() {
   const traits = useStore(s => s.traits);
   const genome = useStore(s => s.genome);
   const miniGames = useStore(s => s.miniGames);
+  const safeMiniGames = useMemo(() => miniGames ?? createDefaultMiniGameProgress(), [miniGames]);
   const recordSpaceJewblesRun = useStore(s => s.recordSpaceJewblesRun);
+  const formatScore = useCallback((value?: number) => {
+    const safeValue = typeof value === 'number' && Number.isFinite(value) ? value : 0;
+    return safeValue.toLocaleString();
+  }, []);
 
   // Generate genome seed for consistency
   const genomeSeed = useMemo(() => {
@@ -52,6 +58,8 @@ export default function SpaceJewblesPage() {
         primaryColor: '#00FFFF',
         secondaryColor: '#FF00FF',
         pattern: 'Solid',
+        texture: 'Smooth',
+        size: 1,
         features: [],
         genomeSeed,
       };
@@ -61,6 +69,8 @@ export default function SpaceJewblesPage() {
       primaryColor: traits.physical.primaryColor,
       secondaryColor: traits.physical.secondaryColor,
       pattern: traits.physical.pattern,
+      texture: traits.physical.texture,
+      size: traits.physical.size,
       features: traits.physical.features,
       genomeSeed,
     };
@@ -120,9 +130,9 @@ export default function SpaceJewblesPage() {
 
         // Check for addon rewards with updated totals
         const updatedStats = {
-          maxWave: Math.max(miniGames.spaceJewblesMaxWave, safeResult.wave),
-          bossesDefeated: miniGames.spaceJewblesBossesDefeated + safeResult.bossesDefeated,
-          mythicDrops: miniGames.spaceJewblesMythicDrops + safeResult.mythicDrops,
+          maxWave: Math.max(safeMiniGames.spaceJewblesMaxWave, safeResult.wave),
+          bossesDefeated: safeMiniGames.spaceJewblesBossesDefeated + safeResult.bossesDefeated,
+          mythicDrops: safeMiniGames.spaceJewblesMythicDrops + safeResult.mythicDrops,
         };
 
         const rewards = await checkSpaceJewblesRewards(updatedStats);
@@ -136,7 +146,7 @@ export default function SpaceJewblesPage() {
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [petData, recordSpaceJewblesRun, miniGames]);
+  }, [petData, recordSpaceJewblesRun, safeMiniGames]);
 
   const clearLoadTimeout = useCallback(() => {
     if (loadTimeoutRef.current) {
@@ -189,10 +199,10 @@ export default function SpaceJewblesPage() {
 
   // Calculate progress towards rewards
   const rewardProgress = useMemo(() => ({
-    badge: { current: miniGames.spaceJewblesMaxWave, target: 10, label: 'Champion Badge' },
-    banana: { current: miniGames.spaceJewblesBossesDefeated, target: 5, label: 'Cosmic Banana' },
-    mythic: { current: miniGames.spaceJewblesMythicDrops, target: 3, label: 'Mythic Aura' },
-  }), [miniGames]);
+    badge: { current: safeMiniGames.spaceJewblesMaxWave, target: 10, label: 'Champion Badge' },
+    banana: { current: safeMiniGames.spaceJewblesBossesDefeated, target: 5, label: 'Cosmic Banana' },
+    mythic: { current: safeMiniGames.spaceJewblesMythicDrops, target: 3, label: 'Mythic Aura' },
+  }), [safeMiniGames]);
 
   useEffect(() => {
     if (gameStarted && iframeRef.current) {
@@ -243,12 +253,12 @@ export default function SpaceJewblesPage() {
           <div className="flex items-center gap-2 text-amber-400">
             <Trophy className="w-4 h-4" />
             <span aria-live="polite">
-              High: {miniGames.spaceJewblesHighScore.toLocaleString()}
+              High: {formatScore(safeMiniGames?.spaceJewblesHighScore)}
             </span>
           </div>
           <div className="flex items-center gap-2 text-cyan-400">
             <Zap className="w-4 h-4" />
-            <span aria-live="polite">Wave: {miniGames.spaceJewblesMaxWave}</span>
+            <span aria-live="polite">Wave: {safeMiniGames.spaceJewblesMaxWave}</span>
           </div>
         </div>
       </div>
@@ -331,19 +341,19 @@ export default function SpaceJewblesPage() {
               <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
                 <div className="bg-slate-800/30 rounded-lg p-3">
                   <div className="text-amber-400 font-bold text-xl">
-                    {miniGames.spaceJewblesHighScore.toLocaleString()}
+                    {formatScore(safeMiniGames?.spaceJewblesHighScore)}
                   </div>
                   <div className="text-slate-500">High Score</div>
                 </div>
                 <div className="bg-slate-800/30 rounded-lg p-3">
                   <div className="text-cyan-400 font-bold text-xl">
-                    {miniGames.spaceJewblesMaxWave}
+                    {safeMiniGames.spaceJewblesMaxWave}
                   </div>
                   <div className="text-slate-500">Max Wave</div>
                 </div>
                 <div className="bg-slate-800/30 rounded-lg p-3">
                   <div className="text-red-400 font-bold text-xl">
-                    {miniGames.spaceJewblesBossesDefeated}
+                    {safeMiniGames.spaceJewblesBossesDefeated}
                   </div>
                   <div className="text-slate-500">Bosses</div>
                 </div>

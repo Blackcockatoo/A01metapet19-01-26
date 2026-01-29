@@ -170,7 +170,8 @@ export async function awardSpaceJewblesAddon(
       userKeys.privateKey
     );
 
-    const { addAddon } = useAddonStore.getState();
+    const { addAddon, setOwnerPublicKey } = useAddonStore.getState();
+    setOwnerPublicKey(userKeys.publicKey);
     const added = await addAddon(addon);
 
     if (added) {
