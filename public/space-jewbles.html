@@ -2456,7 +2456,7 @@
             }
         }
 
-        const allowedMessageOrigins = new Set();
+        const allowedMessageOrigins = new Set([window.location.origin]);
 
         function configureAllowedMessageOrigins() {
             const params = new URLSearchParams(window.location.search);
@@ -2483,6 +2483,9 @@
         }
 
         function isAllowedMessageOrigin(origin) {
+            if (origin === window.location.origin) {
+                return true;
+            }
             return allowedMessageOrigins.has(origin);
         }
 
