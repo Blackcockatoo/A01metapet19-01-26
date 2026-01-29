@@ -129,7 +129,11 @@ export default function SpaceJewblesPage() {
     <div className="w-screen min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 flex flex-col overflow-hidden">
       {/* Unlock Animation Overlay */}
       {showUnlockAnimation && newUnlocks.length > 0 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 animate-fade-in">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 animate-fade-in"
+          aria-live="polite"
+          role="status"
+        >
           <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-3xl p-8 border-2 border-amber-400 shadow-2xl animate-bounce-in">
             <div className="text-center">
               <Sparkles className="w-16 h-16 text-amber-400 mx-auto mb-4 animate-pulse" />
@@ -163,17 +167,24 @@ export default function SpaceJewblesPage() {
         <div className="flex gap-4 text-sm">
           <div className="flex items-center gap-2 text-amber-400">
             <Trophy className="w-4 h-4" />
-            <span>High: {miniGames.spaceJewblesHighScore.toLocaleString()}</span>
+            <span aria-live="polite">
+              High: {miniGames.spaceJewblesHighScore.toLocaleString()}
+            </span>
           </div>
           <div className="flex items-center gap-2 text-cyan-400">
             <Zap className="w-4 h-4" />
-            <span>Wave: {miniGames.spaceJewblesMaxWave}</span>
+            <span aria-live="polite">Wave: {miniGames.spaceJewblesMaxWave}</span>
           </div>
         </div>
       </div>
 
       {/* Game Area */}
       <div className="flex-1 relative">
+        <p className="sr-only" aria-live="polite">
+          {newUnlocks.length > 0
+            ? `New addon unlocked: ${newUnlocks.join(', ')}.`
+            : ''}
+        </p>
         {!gameStarted ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
             {/* Title Screen / Results */}
@@ -192,7 +203,11 @@ export default function SpaceJewblesPage() {
               </p>
 
               {lastResult && (
-                <div className="bg-slate-800/50 rounded-xl p-4 mb-6 space-y-3">
+                <div
+                  className="bg-slate-800/50 rounded-xl p-4 mb-6 space-y-3"
+                  aria-live="polite"
+                  role="status"
+                >
                   <h3 className="text-lg font-semibold text-cyan-300">Last Run</h3>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="flex items-center gap-2 justify-center">
