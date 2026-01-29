@@ -253,7 +253,7 @@ export default function SpaceJewblesPage() {
           <div className="flex items-center gap-2 text-amber-400">
             <Trophy className="w-4 h-4" />
             <span aria-live="polite">
-              High: {formatScore(safeMiniGames?.spaceJewblesHighScore)}
+              High: {safeMiniGames.spaceJewblesHighScore.toLocaleString()}
             </span>
           </div>
           <div className="flex items-center gap-2 text-cyan-400">
@@ -341,7 +341,7 @@ export default function SpaceJewblesPage() {
               <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
                 <div className="bg-slate-800/30 rounded-lg p-3">
                   <div className="text-amber-400 font-bold text-xl">
-                    {formatScore(safeMiniGames?.spaceJewblesHighScore)}
+                    {safeMiniGames.spaceJewblesHighScore.toLocaleString()}
                   </div>
                   <div className="text-slate-500">High Score</div>
                 </div>
