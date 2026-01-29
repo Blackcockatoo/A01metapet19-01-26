@@ -17,6 +17,7 @@ interface GameResult {
 export default function SpaceJewblesPage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [gameStarted, setGameStarted] = useState(false);
+  const [isIframeFocused, setIsIframeFocused] = useState(false);
   const [lastResult, setLastResult] = useState<GameResult | null>(null);
   const [newUnlocks, setNewUnlocks] = useState<string[]>([]);
   const [showUnlockAnimation, setShowUnlockAnimation] = useState(false);
@@ -117,12 +118,14 @@ export default function SpaceJewblesPage() {
 
   const handleStartGame = useCallback(() => {
     setGameStarted(true);
+    setIsIframeFocused(false);
     setLastResult(null);
     setNewUnlocks([]);
   }, []);
 
   const handlePlayAgain = useCallback(() => {
     setGameStarted(true);
+    setIsIframeFocused(false);
     setLastResult(null);
     setNewUnlocks([]);
     // Force iframe reload
@@ -137,6 +140,12 @@ export default function SpaceJewblesPage() {
     banana: { current: miniGames.spaceJewblesBossesDefeated, target: 5, label: 'Cosmic Banana' },
     mythic: { current: miniGames.spaceJewblesMythicDrops, target: 3, label: 'Mythic Aura' },
   }), [miniGames]);
+
+  useEffect(() => {
+    if (gameStarted && iframeRef.current) {
+      iframeRef.current.focus();
+    }
+  }, [gameStarted]);
 
   return (
     <div className="w-screen min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 flex flex-col overflow-hidden">
