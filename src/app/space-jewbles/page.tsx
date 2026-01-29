@@ -52,6 +52,8 @@ export default function SpaceJewblesPage() {
         primaryColor: '#00FFFF',
         secondaryColor: '#FF00FF',
         pattern: 'Solid',
+        texture: 'Smooth',
+        size: 1,
         features: [],
         genomeSeed,
       };
@@ -61,6 +63,8 @@ export default function SpaceJewblesPage() {
       primaryColor: traits.physical.primaryColor,
       secondaryColor: traits.physical.secondaryColor,
       pattern: traits.physical.pattern,
+      texture: traits.physical.texture,
+      size: traits.physical.size,
       features: traits.physical.features,
       genomeSeed,
     };
