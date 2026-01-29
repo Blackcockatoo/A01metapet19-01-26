@@ -63,12 +63,25 @@ export default function SpaceJewblesPage() {
   // Handle messages from the game iframe
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
+      const iframeWindow = iframeRef.current?.contentWindow;
+      const expectedOrigin = window.location.origin;
+
+      if (!iframeWindow) {
+        return;
+      }
+
+      if (event.origin !== expectedOrigin || event.source !== iframeWindow) {
+        return;
+      }
+
       if (event.data?.type === 'GAME_READY') {
         const targetWindow = iframeRef.current?.contentWindow;
         if (!targetWindow) return;
         // Send pet data to the game
-        targetWindow.postMessage({ type: 'PET_DATA', payload: petData }, '*');
-        targetWindow.postMessage({ type: 'START_GAME' }, '*');
+        iframeRef.current?.contentWindow?.postMessage(
+          { type: 'PET_DATA', payload: petData },
+          expectedOrigin
+        );
       } else if (event.data?.type === 'GAME_RESULT') {
         const result = event.data.payload as GameResult;
         setLastResult(result);
