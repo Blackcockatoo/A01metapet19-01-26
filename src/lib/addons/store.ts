@@ -57,7 +57,11 @@ export const useAddonStore = create<AddonStore>()(
 
         // Check if it's for the current owner
         const { ownerPublicKey } = get();
-        if (addon.ownership.ownerPublicKey !== ownerPublicKey) {
+        const resolvedOwnerKey = ownerPublicKey || addon.ownership.ownerPublicKey;
+        if (!ownerPublicKey) {
+          set({ ownerPublicKey: resolvedOwnerKey });
+        }
+        if (addon.ownership.ownerPublicKey !== resolvedOwnerKey) {
           console.error('Addon is not owned by current user');
           return false;
         }

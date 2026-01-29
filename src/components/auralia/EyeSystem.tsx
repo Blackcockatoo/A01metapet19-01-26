@@ -481,7 +481,10 @@ export function EyeRenderer({
     }
 
     return (
-      <g transform={`scale(1, ${verticalScale})`} transform-origin={`${finalX} ${finalY}`}>
+      <g
+        transform={`scale(1, ${verticalScale})`}
+        style={{ transformOrigin: `${finalX} ${finalY}` }}
+      >
         {/* Sclera (dark background) */}
         <circle cx={finalX} cy={finalY} r={irisSize + 2} fill="#0d1321" opacity="0.8" />
 

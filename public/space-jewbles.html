@@ -309,13 +309,14 @@
             position: fixed;
             left: 0;
             right: 0;
-            bottom: 0;
+            bottom: env(safe-area-inset-bottom);
             z-index: 200;
             display: none;
             align-items: center;
             justify-content: space-between;
-            padding: 12px 16px calc(12px + env(safe-area-inset-bottom)) 16px;
+            padding: 8px 12px 12px 12px;
             pointer-events: auto;
+            opacity: 0.85;
         }
 
         body.touch #touchControls {
@@ -329,13 +330,13 @@
         }
 
         .touch-btn {
-            width: 70px;
-            height: 70px;
+            width: 60px;
+            height: 60px;
             border-radius: 16px;
             border: 2px solid rgba(255,255,255,0.25);
             background: rgba(0,0,0,0.7);
             color: #fff;
-            font-size: 28px;
+            font-size: 24px;
             font-weight: bold;
             box-shadow: 0 8px 20px rgba(0,0,0,0.5);
             backdrop-filter: blur(8px);
@@ -348,9 +349,9 @@
         }
 
         .touch-btn.fire {
-            width: 85px;
-            height: 85px;
-            font-size: 32px;
+            width: 72px;
+            height: 72px;
+            font-size: 28px;
             background: linear-gradient(135deg, rgba(0,170,255,0.8) 0%, rgba(0,100,255,0.8) 100%);
             border-color: rgba(255,255,255,0.4);
         }
@@ -368,7 +369,7 @@
         /* Weapon Selector (Touch) */
         #weaponSelector {
             position: fixed;
-            bottom: 100px;
+            bottom: 92px;
             left: 50%;
             transform: translateX(-50%);
             display: none;
@@ -513,7 +514,7 @@
                 <button class="btn" id="startGameBtn">START GAME</button>
                 <div class="controls-info">
                     <span>Arrow Keys</span> or <span>WASD</span> Move<br>
-                    <span>SPACE</span> Fire &nbsp; <span>1-7</span> Select Weapon<br>
+                    <span>SPACE</span> Fire &nbsp; <span>1-7</span> Select Weapon &nbsp; <span>Alt</span> Cycle Weapon<br>
                     <span>P</span> Pause<br>
                     Mobile: use on-screen controls (tap to focus if input stalls)
                 </div>
@@ -638,11 +639,11 @@
 
         // Enemy Types
         const ENEMY_TYPES = {
-            gremlin: { emoji: '👾', hp: 20, points: 100, speed: 1, pattern: 'standard', color: '#7FFF00' },
-            pickle: { emoji: '🥒', hp: 15, points: 150, speed: 1.5, pattern: 'zigzag', color: '#32CD32' },
-            crab: { emoji: '🦀', hp: 40, points: 250, speed: 0.8, pattern: 'sideways', color: '#FF6347' },
-            potato: { emoji: '🥔', hp: 60, points: 400, speed: 0.5, pattern: 'bounce', color: '#D2691E' },
-            boss: { emoji: '🍌', hp: 300, points: 5000, speed: 0.4, pattern: 'boss', color: '#FFD700', isBoss: true }
+            gremlin: { emoji: '👽😢', hp: 20, points: 100, speed: 1, pattern: 'standard', color: '#7FFF00' },
+            pickle: { emoji: '👽😢', hp: 15, points: 150, speed: 1.5, pattern: 'zigzag', color: '#32CD32' },
+            crab: { emoji: '👽😢', hp: 40, points: 250, speed: 0.8, pattern: 'sideways', color: '#FF6347' },
+            potato: { emoji: '👽😢', hp: 60, points: 400, speed: 0.5, pattern: 'bounce', color: '#D2691E' },
+            boss: { emoji: '👽😭', hp: 300, points: 5000, speed: 0.4, pattern: 'boss', color: '#FFD700', isBoss: true }
         };
 
         // Drop Tiers
@@ -2356,6 +2357,14 @@
                 if (weaponIdx >= 0 && weaponIdx < WEAPON_KEYS.length) {
                     selectWeapon(weaponIdx);
                 }
+            }
+
+            if (e.code === 'AltLeft') {
+                selectWeapon((player.selectedWeapon - 1 + WEAPON_KEYS.length) % WEAPON_KEYS.length);
+            }
+
+            if (e.code === 'AltRight') {
+                selectWeapon((player.selectedWeapon + 1) % WEAPON_KEYS.length);
             }
 
             // Pause
