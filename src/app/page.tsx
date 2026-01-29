@@ -1139,7 +1139,7 @@ export default function Home() {
                 onChange={event => setPetName(event.target.value)}
                 onBlur={() => void handleNameBlur()}
                 placeholder="Name your companion"
-                className="text-2xl font-bold text-center bg-transparent border-none text-white placeholder:text-zinc-500 focus:outline-none focus:ring-0 max-w-[200px]"
+                className="w-full max-w-[280px] text-2xl font-bold text-center bg-transparent border-none text-white placeholder:text-zinc-500 focus:outline-none focus:ring-0 sm:max-w-[360px] md:max-w-[420px]"
               />
             </div>
             <div className="flex items-center justify-center gap-2">
