@@ -183,9 +183,48 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: rgba(0, 0, 0, 0.92);
+            background: radial-gradient(ellipse at center, rgba(0,40,60,0.95) 0%, rgba(5,5,20,0.98) 70%);
             backdrop-filter: blur(10px);
             z-index: 100;
+        }
+
+        #startScreen::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -60%);
+            width: 280px;
+            height: 280px;
+            background: radial-gradient(circle, rgba(0,200,255,0.15) 0%, rgba(100,0,200,0.1) 40%, transparent 70%);
+            border-radius: 50%;
+            animation: portalPulse 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        #startScreen::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -60%);
+            width: 200px;
+            height: 200px;
+            border: 2px solid rgba(0,200,255,0.3);
+            border-radius: 50%;
+            animation: portalRing 6s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes portalPulse {
+            0%, 100% { opacity: 0.6; transform: translate(-50%, -60%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -60%) scale(1.1); }
+        }
+
+        @keyframes portalRing {
+            0% { transform: translate(-50%, -60%) rotate(0deg) scale(1); opacity: 0.5; }
+            50% { opacity: 0.8; }
+            100% { transform: translate(-50%, -60%) rotate(360deg) scale(1); opacity: 0.5; }
         }
 
         #gameOverScreen, #pauseScreen {
@@ -193,78 +232,97 @@
         }
 
         h1 {
-            font-size: 52px;
-            color: #00ffff;
+            font-size: 48px;
+            color: #00e5ff;
             text-shadow:
-                0 0 20px #00aaff,
-                0 0 40px #0066ff,
-                0 0 60px #0033ff;
-            margin-bottom: 10px;
-            letter-spacing: 4px;
+                0 0 10px #00ffff,
+                0 0 30px #00aaff,
+                0 0 50px #0066ff;
+            margin-bottom: 8px;
+            letter-spacing: 6px;
+            position: relative;
+            z-index: 1;
         }
 
         .subtitle {
-            font-size: 18px;
-            color: #aaa;
-            margin-bottom: 30px;
+            font-size: 16px;
+            color: #88aacc;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
         }
 
         .pet-preview {
-            width: 120px;
-            height: 120px;
-            margin: 20px 0;
+            width: 140px;
+            height: 140px;
+            margin: 15px 0;
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+            z-index: 1;
+            background: radial-gradient(circle, rgba(0,150,200,0.2) 0%, transparent 70%);
+            border-radius: 50%;
         }
 
         .btn {
-            padding: 15px 50px;
-            font-size: 22px;
+            padding: 14px 45px;
+            font-size: 20px;
             font-weight: bold;
             color: #fff;
-            background: linear-gradient(135deg, #00aaff 0%, #0066ff 100%);
-            border: none;
+            background: linear-gradient(135deg, #00ccff 0%, #0077cc 50%, #005599 100%);
+            border: 2px solid rgba(0,200,255,0.4);
             border-radius: 50px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(0, 100, 255, 0.4);
+            box-shadow:
+                0 8px 25px rgba(0, 150, 255, 0.4),
+                inset 0 1px 0 rgba(255,255,255,0.2);
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
             margin: 10px;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+            position: relative;
+            z-index: 1;
         }
 
         .btn:hover:not(:active) {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(0, 150, 255, 0.6);
+            transform: translateY(-2px);
+            box-shadow:
+                0 12px 35px rgba(0, 200, 255, 0.5),
+                inset 0 1px 0 rgba(255,255,255,0.3);
+            border-color: rgba(0,255,255,0.6);
         }
 
         .btn:active {
-            transform: translateY(-1px);
-            box-shadow: 0 5px 20px rgba(0, 100, 255, 0.6);
+            transform: translateY(0);
+            box-shadow: 0 4px 15px rgba(0, 100, 255, 0.5);
         }
 
         .btn-secondary {
-            background: linear-gradient(135deg, #444 0%, #222 100%);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(135deg, #334 0%, #223 100%);
+            border-color: rgba(100,100,120,0.4);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
         }
 
         .controls-info {
-            margin-top: 30px;
-            color: #666;
+            margin-top: 25px;
+            color: #556;
             text-align: center;
             line-height: 2;
-            font-size: 14px;
+            font-size: 13px;
+            position: relative;
+            z-index: 1;
         }
 
         .controls-info span {
-            color: #00ffff;
-            background: rgba(0,255,255,0.15);
+            color: #00ddff;
+            background: rgba(0,180,255,0.12);
             padding: 3px 10px;
             border-radius: 4px;
             margin: 0 3px;
+            border: 1px solid rgba(0,180,255,0.2);
         }
 
         .final-score {
@@ -506,13 +564,13 @@
                 <h1>SPACE JEWBLES</h1>
                 <p class="subtitle">Your Pet vs The Cosmos</p>
                 <div class="pet-preview">
-                    <canvas id="petPreview" width="120" height="120"></canvas>
+                    <canvas id="petPreview" width="140" height="140"></canvas>
                 </div>
-                <p id="petNameDisplay" style="color: #00ffff; font-size: 20px; margin-bottom: 20px;">Loading Pet...</p>
+                <p id="petNameDisplay" style="color: #00ddff; font-size: 18px; margin-bottom: 15px; position: relative; z-index: 1; text-shadow: 0 0 10px rgba(0,200,255,0.5);">Loading Pet...</p>
                 <button class="btn" onclick="startGame()">START GAME</button>
                 <div class="controls-info">
-                    <span>Arrow Keys</span> or <span>WASD</span> Move<br>
-                    <span>SPACE</span> Fire &nbsp; <span>1-7</span> Select Weapon<br>
+                    <span>Arrows</span> or <span>WASD</span> Move<br>
+                    <span>SPACE</span> Fire &nbsp; <span>1-7</span> Weapon<br>
                     <span>P</span> Pause
                 </div>
             </div>
@@ -2403,6 +2461,9 @@
             });
         }
 
+        // Track if embedded in parent app
+        const isEmbedded = window.parent !== window;
+
         window.addEventListener('message', (e) => {
             if (e.data && e.data.type === 'PET_DATA') {
                 const data = e.data.payload;
@@ -2410,6 +2471,11 @@
                 assignPetProperties(data.physical || data);
                 if (data.petName) petData.petName = data.petName;
                 updatePetPreview();
+
+                // Auto-start when embedded (skip double start screen)
+                if (isEmbedded && gameState === 'start') {
+                    setTimeout(() => startGame(), 50);
+                }
             }
         });
 
@@ -2421,8 +2487,8 @@
                 const previewCtx = previewCanvas.getContext('2d');
                 if (!previewCtx) return;
 
-                previewCtx.clearRect(0, 0, 120, 120);
-                drawPetSprite(previewCtx, 60, 60, 40, petData, Date.now());
+                previewCtx.clearRect(0, 0, 140, 140);
+                drawPetSprite(previewCtx, 70, 70, 45, petData, Date.now());
 
                 const nameDisplay = document.getElementById('petNameDisplay');
                 if (nameDisplay) {
