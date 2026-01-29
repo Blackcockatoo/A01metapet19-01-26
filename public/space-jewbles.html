@@ -778,7 +778,8 @@
         const PITY_THRESHOLD = 50; // Guaranteed rare+ after 50 kills
         const MYTHIC_PITY_THRESHOLD = 200; // Guaranteed mythic after 200 kills
 
-        // High score tracking (single variable - loaded from localStorage)
+        // High score tracking (single variable - loaded from localStorage when standalone)
+        const isEmbedded = window.parent !== window;
         let highScore = 0;
 
         // ============================================
@@ -2198,10 +2199,12 @@
             // Update high score
             if (score > highScore) {
                 highScore = score;
-                try {
-                    localStorage.setItem('spaceJewblesHighScore', highScore.toString());
-                } catch (e) {
-                    console.warn('Could not save high score');
+                if (!isEmbedded) {
+                    try {
+                        localStorage.setItem('spaceJewblesHighScore', highScore.toString());
+                    } catch (e) {
+                        console.warn('Could not save high score');
+                    }
                 }
             }
 
@@ -2528,14 +2531,16 @@
             updatePetPreview();
             updateAmmoUI();
 
-            // Load high score from localStorage
-            try {
-                const saved = localStorage.getItem('spaceJewblesHighScore');
-                if (saved) {
-                    highScore = parseInt(saved, 10);
+            // Load high score from localStorage when running standalone
+            if (!isEmbedded) {
+                try {
+                    const saved = localStorage.getItem('spaceJewblesHighScore');
+                    if (saved) {
+                        highScore = parseInt(saved, 10);
+                    }
+                } catch (e) {
+                    console.warn('Could not load high score');
                 }
-            } catch (e) {
-                console.warn('Could not load high score');
             }
 
             // Handle responsive scaling
