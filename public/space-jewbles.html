@@ -2562,16 +2562,21 @@
                 window.parent.postMessage({ type: 'GAME_READY' }, '*');
             }
 
-            // Animate pet preview - throttled to reduce glitching
-            let previewLastUpdate = 0;
-            function animatePreview(time) {
-                if (gameState === 'start' && time - previewLastUpdate > 100) {
-                    updatePetPreview();
-                    previewLastUpdate = time;
+            // Auto-start immediately if embedded in parent app
+            if (isEmbedded) {
+                startGame();
+            } else {
+                // Animate pet preview only for standalone mode
+                let previewLastUpdate = 0;
+                function animatePreview(time) {
+                    if (gameState === 'start' && time - previewLastUpdate > 100) {
+                        updatePetPreview();
+                        previewLastUpdate = time;
+                    }
+                    requestAnimationFrame(animatePreview);
                 }
-                requestAnimationFrame(animatePreview);
+                animatePreview(0);
             }
-            animatePreview(0);
 
             // Start main game loop
             requestAnimationFrame(gameLoop);
