@@ -145,7 +145,7 @@ export const useQRMessagingStore = create<QRMessagingStore>()(
 
       deleteConversation: (id: string) => {
         const { conversations, activeConversationId } = get();
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+         
         const { [id]: deleted, ...rest } = conversations;
 
         set({

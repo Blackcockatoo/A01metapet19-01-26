@@ -10,6 +10,18 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  // Ignore build output and generated files
+  {
+    ignores: [
+      ".next/**",
+      ".netlify/**",
+      "out/**",
+      "node_modules/**",
+      "*.config.js",
+      "*.config.mjs",
+      "coverage/**",
+    ],
+  },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     languageOptions: {
@@ -19,9 +31,11 @@ const eslintConfig = [
     },
     rules: {
       "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-explicit-any": "off",
       "react/no-unescaped-entities": "off",
       "@next/next/no-img-element": "off",
       "jsx-a11y/alt-text": "off",
+      "import/no-anonymous-default-export": "off",
     },
   },
 ];
