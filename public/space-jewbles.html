@@ -477,6 +477,65 @@
             .btn { font-size: 18px; padding: 12px 35px; }
             .controls-info { font-size: 12px; }
         }
+
+        /* Touch Control Responsive Sizing */
+        @media (max-width: 600px) {
+            .touch-btn {
+                width: 80px !important;
+                height: 80px !important;
+                font-size: 28px !important;
+            }
+            .touch-btn.fire {
+                width: 96px !important;
+                height: 96px !important;
+                font-size: 32px !important;
+            }
+            .weapon-btn {
+                width: 60px !important;
+                height: 60px !important;
+                font-size: 24px !important;
+            }
+            #touchControls {
+                opacity: 0.7 !important;
+                padding: 12px 16px 16px 16px !important;
+            }
+            #weaponSelector {
+                bottom: 112px !important;
+            }
+        }
+
+        @media (min-width: 601px) and (max-width: 1024px) {
+            .touch-btn {
+                width: 70px !important;
+                height: 70px !important;
+                font-size: 26px !important;
+            }
+            .touch-btn.fire {
+                width: 88px !important;
+                height: 88px !important;
+                font-size: 30px !important;
+            }
+            .weapon-btn {
+                width: 55px !important;
+                height: 55px !important;
+                font-size: 22px !important;
+            }
+            #touchControls {
+                opacity: 0.75 !important;
+            }
+            #weaponSelector {
+                bottom: 100px !important;
+            }
+        }
+
+        @media (orientation: portrait) and (max-width: 600px) {
+            #weaponSelector {
+                flex-wrap: wrap;
+                max-width: 220px;
+                justify-content: center;
+                gap: 6px !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -494,6 +553,11 @@
                 <div class="hud-item lives" id="livesDisplay"></div>
             </div>
 
+            <!-- Combo Display -->
+            <div id="comboDisplay" style="position: absolute; top: 60px; left: 20px; display: none; font-size: 24px; font-weight: bold; text-shadow: 0 0 10px rgba(255,255,0,0.8); pointer-events: none; z-index: 15;">
+                COMBO: <span id="comboValue" style="color: #ffff00;">0</span> <span id="comboMultiplier" style="font-size: 18px;"></span>
+            </div>
+
             <!-- Ammo Bar -->
             <div id="ammoBar"></div>
 
@@ -505,6 +569,11 @@
 
             <!-- Start Screen -->
             <div id="startScreen">
+                <div style="position: absolute; top: 10px; right: 10px; z-index: 100;">
+                    <button onclick="toggleHaptics()" style="font-size: 24px; background: transparent; border: none; cursor: pointer; padding: 8px;">
+                        <span id="hapticIcon">📳</span>
+                    </button>
+                </div>
                 <h1>SPACE JEWBLES</h1>
                 <p class="subtitle">Your Pet vs The Cosmos</p>
                 <div class="pet-preview">
@@ -738,7 +807,7 @@
         // Player
         const player = {
             x: CANVAS_WIDTH / 2,
-            y: CANVAS_HEIGHT - 70,
+            y: currentLayout.playerSpawnY || (CANVAS_HEIGHT - 70),
             width: 50,
             height: 50,
             speed: 5,
@@ -762,8 +831,49 @@
 
         // Visual Effects
         let screenShake = 0;
+        let screenShakeDecay = 0.9;
+        let freezeFramesRemaining = 0;
         let bgStars = [];
         let bgTime = 0;
+
+        // Performance monitoring
+        let avgFrameTime = 16.667;
+        let lowPerformanceMode = false;
+
+        function checkPerformance(dt) {
+            avgFrameTime = avgFrameTime * 0.95 + dt * 0.05;
+
+            if (avgFrameTime > 25 && !lowPerformanceMode) {
+                lowPerformanceMode = true;
+                console.log('Enabling low performance mode');
+            } else if (avgFrameTime < 20 && lowPerformanceMode) {
+                lowPerformanceMode = false;
+                console.log('Disabling low performance mode');
+            }
+        }
+
+        // Enhanced Screen Shake Profiles
+        const ShakeProfiles = {
+            shoot: { intensity: 1, decay: 0.85 },
+            hit: { intensity: 2, decay: 0.88 },
+            kill: { intensity: 4, decay: 0.90 },
+            explosion: { intensity: 6, decay: 0.92 },
+            damage: { intensity: 12, decay: 0.88 },
+            bossHit: { intensity: 8, decay: 0.90 },
+            waveComplete: { intensity: 10, decay: 0.93 }
+        };
+
+        function applyScreenShake(profile) {
+            const shakeProfile = ShakeProfiles[profile];
+            if (!shakeProfile) return;
+
+            screenShake = Math.max(screenShake, shakeProfile.intensity);
+            screenShakeDecay = shakeProfile.decay;
+        }
+
+        function impactFreeze(frames) {
+            freezeFramesRemaining = Math.max(freezeFramesRemaining, frames);
+        }
 
         // Input
         const keys = {};
@@ -781,6 +891,73 @@
 
         // High score tracking (single variable - loaded from localStorage when standalone)
         let highScore = 0;
+
+        // Combo System
+        let comboStreak = 0;
+        let comboTimer = 0;
+        const COMBO_TIMEOUT = 2000; // 2 seconds between kills
+        const COMBO_TIERS = [
+            { kills: 5, mult: 1.2, name: 'Nice!', color: '#ffff00' },
+            { kills: 10, mult: 1.5, name: 'Great!', color: '#ff8800' },
+            { kills: 20, mult: 2.0, name: 'Amazing!', color: '#ff00ff' },
+            { kills: 50, mult: 3.0, name: 'LEGENDARY!', color: '#00ffff' }
+        ];
+
+        function getComboMultiplier() {
+            for (let i = COMBO_TIERS.length - 1; i >= 0; i--) {
+                if (comboStreak >= COMBO_TIERS[i].kills) {
+                    return COMBO_TIERS[i];
+                }
+            }
+            return { mult: 1.0, name: '', color: '#ffffff' };
+        }
+
+        // ============================================
+        // RESPONSIVE LAYOUT SYSTEM
+        // ============================================
+
+        const DeviceLayouts = {
+            phonePortrait: {
+                maxWidth: 600,
+                buttonSize: 80,
+                fireSize: 96,
+                weaponSize: 60,
+                controlsBottom: 120,
+                playerSpawnY: 480,
+                opacity: 0.7
+            },
+            tabletLandscape: {
+                minWidth: 600,
+                maxWidth: 1024,
+                buttonSize: 70,
+                fireSize: 88,
+                weaponSize: 55,
+                controlsBottom: 100,
+                playerSpawnY: 500,
+                opacity: 0.75
+            },
+            desktop: {
+                minWidth: 1024,
+                buttonSize: 65,
+                fireSize: 82,
+                weaponSize: 50,
+                controlsBottom: 80,
+                playerSpawnY: 530,
+                opacity: 0.8
+            }
+        };
+
+        function calculateResponsiveLayout() {
+            const width = window.innerWidth;
+            const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+
+            if (width < 600) return DeviceLayouts.phonePortrait;
+            if (width < 1024) return DeviceLayouts.tabletLandscape;
+            return DeviceLayouts.desktop;
+        }
+
+        // Get initial layout
+        let currentLayout = calculateResponsiveLayout();
 
         // ============================================
         // AUDIO SYSTEM
@@ -874,6 +1051,78 @@
                     osc.stop(now + 0.5);
                     break;
             }
+        }
+
+        function playTone(frequency, duration, type = 'sine', volume = 0.3) {
+            if (!soundEnabled || !audioContext) return;
+
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            const now = audioContext.currentTime;
+
+            osc.type = type;
+            osc.frequency.setValueAtTime(frequency, now);
+            gain.gain.setValueAtTime(volume, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+            osc.start(now);
+            osc.stop(now + duration);
+        }
+
+        function playComboSound(tier) {
+            const baseFreq = 440;
+            const frequencies = {
+                'Nice!': baseFreq,
+                'Great!': baseFreq * 1.2,
+                'Amazing!': baseFreq * 1.5,
+                'LEGENDARY!': baseFreq * 2
+            };
+
+            playTone(frequencies[tier] || baseFreq, 0.15, 'sine', 0.2);
+        }
+
+        function playWaveCompleteSound() {
+            const notes = [440, 554, 659, 880]; // A, C#, E, A (major chord)
+            notes.forEach((freq, i) => {
+                setTimeout(() => playTone(freq, 0.2, 'sine', 0.15), i * 100);
+            });
+        }
+
+        // ============================================
+        // HAPTIC FEEDBACK SYSTEM
+        // ============================================
+
+        const HapticPatterns = {
+            shoot: [10],
+            hit: [20],
+            kill: [30],
+            explosion: [40, 20, 60],
+            powerupCollect: [20, 10, 20],
+            damage: [10, 50, 10, 50],
+            waveComplete: [30, 20, 30, 20, 50],
+            bossDeath: [60, 30, 60, 30, 80],
+            shieldBreak: [40, 30, 40]
+        };
+
+        let hapticsEnabled = localStorage.getItem('hapticsEnabled') !== 'false';
+
+        function triggerHaptic(pattern) {
+            if (!hapticsEnabled || !('vibrate' in navigator)) return;
+            navigator.vibrate(HapticPatterns[pattern] || [10]);
+        }
+
+        function toggleHaptics() {
+            hapticsEnabled = !hapticsEnabled;
+            localStorage.setItem('hapticsEnabled', hapticsEnabled);
+            const icon = document.getElementById('hapticIcon');
+            if (icon) {
+                icon.textContent = hapticsEnabled ? '📳' : '📴';
+            }
+            if (hapticsEnabled) triggerHaptic('hit');
         }
 
         // ============================================
@@ -1189,13 +1438,11 @@
                 });
             }
 
-            // Screen shake for boot
-            if (weaponKey === 'boot') {
-                screenShake = Math.max(screenShake, 3);
-            }
-
             // Play shoot sound
             playSound('shoot', 0.2);
+
+            // Haptic feedback
+            triggerHaptic('shoot');
 
             updateAmmoUI();
         }
@@ -1242,6 +1489,25 @@
 
         function drawProjectiles() {
             projectiles.forEach(p => {
+                // Draw trail for fast-moving projectiles (skip in low performance mode)
+                const speed = Math.hypot(p.vx, p.vy);
+                if (speed > 8 && !lowPerformanceMode) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.3;
+                    ctx.font = '24px serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+
+                    for (let i = 1; i <= 3; i++) {
+                        const trailX = p.x - p.vx * i * 2;
+                        const trailY = p.y - p.vy * i * 2;
+                        ctx.globalAlpha = 0.3 / i;
+                        ctx.fillText(p.weapon.emoji, trailX, trailY);
+                    }
+                    ctx.restore();
+                }
+
+                // Draw main projectile
                 ctx.save();
                 ctx.translate(p.x, p.y);
                 ctx.rotate(p.rotation);
@@ -1531,6 +1797,7 @@
                         // Hit!
                         e.hp -= p.weapon.damage;
                         playSound('hit', 0.15);
+                        triggerHaptic('hit');
 
                         // Apply effects
                         switch (p.weapon.effect) {
@@ -1538,7 +1805,7 @@
                                 e.vx += (Math.random() - 0.5) * 10;
                                 break;
                             case 'stomp':
-                                screenShake = Math.max(screenShake, 8);
+                                applyScreenShake('explosion');
                                 break;
                             case 'squeak':
                                 // Confuse nearby enemies
@@ -1587,11 +1854,12 @@
                                     }
                                 }
                                 createParticles(p.x, p.y, '#9370DB', 20);
-                                screenShake = Math.max(screenShake, 10);
+                                applyScreenShake('explosion');
                                 break;
                         }
 
-                        createParticles(p.x, p.y, p.weapon.color, 8);
+                        // Create weapon-specific particles
+                        createWeaponParticles(p.x, p.y, p.type);
                         addFloatingText(e.x, e.y - 20, `-${p.weapon.damage}`, '#ff6b6b');
 
                         p.piercing--;
@@ -1646,13 +1914,44 @@
                 return;
             }
 
-            const points = Math.floor(enemy.data.points * (player.modifiers.scoreMult || 1));
+            // Combo system
+            const previousTier = getComboMultiplier();
+            comboStreak++;
+            comboTimer = COMBO_TIMEOUT;
+
+            const comboTier = getComboMultiplier();
+
+            // Play sound when reaching a new combo tier
+            if (comboTier.name && (!previousTier.name || comboTier.kills > previousTier.kills)) {
+                playComboSound(comboTier.name);
+            }
+
+            const basePoints = Math.floor(enemy.data.points * (player.modifiers.scoreMult || 1));
+            const points = Math.floor(basePoints * comboTier.mult);
+
             score += points;
-            addFloatingText(enemy.x, enemy.y, `+${points}`, '#ffd700');
+
+            // Show combo multiplier in floating text
+            if (comboTier.mult > 1.0) {
+                addFloatingText(enemy.x, enemy.y, `+${points} (x${comboTier.mult.toFixed(1)})`, comboTier.color, 'large');
+            } else {
+                addFloatingText(enemy.x, enemy.y, `+${points}`, '#ffd700');
+            }
+
             createParticles(enemy.x, enemy.y, enemy.data.color, 15);
 
             // Play explosion sound
             playSound('explosion', enemy.data.isBoss ? 0.5 : 0.25);
+
+            // Haptic feedback and screen effects
+            if (enemy.data.isBoss) {
+                triggerHaptic('bossDeath');
+                applyScreenShake('bossHit');
+                impactFreeze(6); // 100ms freeze at 60fps
+            } else {
+                triggerHaptic('kill');
+                applyScreenShake('kill');
+            }
 
             // Track boss kills
             if (enemy.data.isBoss) {
@@ -1802,6 +2101,7 @@
             // Track mythic drops
             if (item.rarity === 'mythic') {
                 mythicDropsCollected++;
+                impactFreeze(5); // 80ms freeze for mythic
             }
 
             // Play sound based on rarity
@@ -1810,6 +2110,9 @@
             } else {
                 playSound('pickup', 0.3);
             }
+
+            // Haptic feedback
+            triggerHaptic('powerupCollect');
 
             // Show drop banner
             showDropBanner(item, drop.tier);
@@ -1875,22 +2178,56 @@
         // PARTICLES & EFFECTS
         // ============================================
 
-        function createParticles(x, y, color, count) {
+        // Particle pooling for performance
+        const particlePool = [];
+        const MAX_POOL_SIZE = 200;
+
+        function getParticle() {
+            return particlePool.pop() || {};
+        }
+
+        function recycleParticle(particle) {
+            if (particlePool.length < MAX_POOL_SIZE) {
+                particlePool.push(particle);
+            }
+        }
+
+        function createParticles(x, y, color, count, spread = 1) {
             // Limit particle count for performance
             if (particles.length > MAX_PARTICLES) return;
 
+            // Reduce particle count in low performance mode
+            if (lowPerformanceMode) {
+                count = Math.floor(count * 0.5);
+            }
+
             const actualCount = Math.min(count, MAX_PARTICLES - particles.length);
             for (let i = 0; i < actualCount; i++) {
-                particles.push({
-                    x: x,
-                    y: y,
-                    vx: (Math.random() - 0.5) * 8,
-                    vy: (Math.random() - 0.5) * 8,
-                    life: 1,
-                    color: color,
-                    size: Math.random() * 4 + 2
-                });
+                const particle = getParticle();
+                particle.x = x;
+                particle.y = y;
+                particle.vx = (Math.random() - 0.5) * 8 * spread;
+                particle.vy = (Math.random() - 0.5) * 8 * spread;
+                particle.life = 1;
+                particle.color = color;
+                particle.size = Math.random() * 4 + 2;
+                particles.push(particle);
             }
+        }
+
+        function createWeaponParticles(x, y, weaponType) {
+            const weaponEffects = {
+                'banana': { color: '#ffff00', count: 20, spread: 2 },
+                'boot': { color: '#8b4513', count: 15, spread: 1.5 },
+                'book': { color: '#ffffff', count: 12, spread: 1.2 },
+                'chicken': { color: '#ffffff', count: 25, spread: 2.5 },
+                'donut': { color: '#ff69b4', count: 30, spread: 2 },
+                'toilet_paper': { color: '#ffffff', count: 20, spread: 3 },
+                'cosmic_sock': { color: '#9333ea', count: 35, spread: 2.5 }
+            };
+
+            const effect = weaponEffects[weaponType] || { color: '#ffffff', count: 15, spread: 1.5 };
+            createParticles(x, y, effect.color, effect.count, effect.spread);
         }
 
         function updateParticles(dt) {
@@ -1904,7 +2241,8 @@
                 p.life -= 0.03 * step;
 
                 if (p.life <= 0) {
-                    particles.splice(i, 1);
+                    const removed = particles.splice(i, 1)[0];
+                    recycleParticle(removed);
                 }
             }
         }
@@ -1921,14 +2259,22 @@
             });
         }
 
-        function addFloatingText(x, y, text, color) {
+        function addFloatingText(x, y, text, color, size = 'normal') {
+            const sizes = {
+                small: 16,
+                normal: 20,
+                large: 28,
+                huge: 36
+            };
+
             floatingTexts.push({
                 x: x,
                 y: y,
                 text: text,
                 color: color,
                 life: 1,
-                vy: -2
+                vy: -2,
+                fontSize: sizes[size] || sizes.normal
             });
         }
 
@@ -1951,7 +2297,7 @@
                 ctx.save();
                 ctx.globalAlpha = t.life;
                 ctx.fillStyle = t.color;
-                ctx.font = 'bold 16px Arial';
+                ctx.font = `bold ${t.fontSize || 20}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.fillText(t.text, t.x, t.y);
                 ctx.restore();
@@ -2015,13 +2361,15 @@
                 createParticles(player.x, player.y, '#00ffff', 20);
                 showNotification('Shield blocked!', '#00ffff');
                 playSound('hit', 0.3);
+                triggerHaptic('shieldBreak');
                 return;
             }
 
             lives--;
-            screenShake = 15;
+            applyScreenShake('damage');
             createParticles(player.x, player.y, '#ff0000', 30);
             playSound('damage', 0.4);
+            triggerHaptic('damage');
             updateUI();
 
             if (lives <= 0) {
@@ -2040,6 +2388,28 @@
                 waveTransition = true;
                 waveTransitionTimer = 2000;
                 wave++;
+
+                // Celebration effects
+                triggerHaptic('waveComplete');
+                applyScreenShake('waveComplete');
+                impactFreeze(4); // 60ms freeze for wave complete
+                playWaveCompleteSound();
+
+                // Celebration particles in a ring
+                for (let i = 0; i < 50; i++) {
+                    const angle = (Math.PI * 2 * i) / 50;
+                    const radius = 100;
+                    createParticles(
+                        CANVAS_WIDTH / 2 + Math.cos(angle) * radius,
+                        CANVAS_HEIGHT / 2 + Math.sin(angle) * radius,
+                        '#00ffff',
+                        3,
+                        1.5
+                    );
+                }
+
+                // Wave complete text
+                addFloatingText(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 50, 'WAVE COMPLETE!', '#00ffff', 'huge');
                 showNotification(`Wave ${wave} incoming!`, '#00ff88', 1500);
             }
         }
@@ -2075,6 +2445,20 @@
                 hsDisplay.textContent = `Best: ${highScore.toLocaleString()}`;
                 hsDisplay.style.display = 'inline';
                 hsDisplay.style.color = '#aaa';
+            }
+
+            // Combo display
+            const comboDisplay = document.getElementById('comboDisplay');
+            if (comboStreak >= 3) {
+                comboDisplay.style.display = 'block';
+                document.getElementById('comboValue').textContent = comboStreak;
+                const tier = getComboMultiplier();
+                const multText = document.getElementById('comboMultiplier');
+                multText.textContent = tier.name;
+                multText.style.color = tier.color;
+                document.getElementById('comboValue').style.color = tier.color;
+            } else {
+                comboDisplay.style.display = 'none';
             }
         }
 
@@ -2206,6 +2590,8 @@
             mythicDropsCollected = 0;
             dropsPityCounter = 0;
             mythicPityCounter = 0;
+            comboStreak = 0;
+            comboTimer = 0;
 
             // Reset player using constants
             player.x = CANVAS_WIDTH / 2;
@@ -2301,13 +2687,33 @@
                 return;
             }
 
+            // Freeze frames (impact freeze effect)
+            if (freezeFramesRemaining > 0) {
+                freezeFramesRemaining--;
+                // Skip updates but still render
+                drawBackground();
+                if (gameState === 'playing') {
+                    drawDrops();
+                    drawEnemies();
+                    drawProjectiles();
+                    drawParticles();
+                    drawFloatingTexts();
+                }
+                drawPlayer(timestamp);
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+
             // Screen shake
             let shakeX = 0, shakeY = 0;
             if (screenShake > 0 && gameState === 'playing') {
                 shakeX = (Math.random() - 0.5) * screenShake;
                 shakeY = (Math.random() - 0.5) * screenShake;
-                screenShake *= 0.9;
-                if (screenShake < 0.5) screenShake = 0;
+                screenShake *= screenShakeDecay;
+                if (screenShake < 0.5) {
+                    screenShake = 0;
+                    screenShakeDecay = 0.9; // Reset to default
+                }
             }
 
             ctx.save();
@@ -2317,6 +2723,9 @@
             drawBackground();
 
             if (gameState === 'playing') {
+                // Performance monitoring
+                checkPerformance(dt);
+
                 updatePlayer(dt);
                 updateProjectiles(dt);
                 updateEnemies(dt);
@@ -2326,6 +2735,20 @@
                 checkCollisions();
                 checkWaveComplete();
                 updateWaveTransition(dt);
+
+                // Update combo timer
+                if (comboTimer > 0) {
+                    comboTimer -= dt;
+                    if (comboTimer <= 0) {
+                        if (comboStreak >= 5) {
+                            // Show combo break notification
+                            addFloatingText(CANVAS_WIDTH / 2, 100, 'Combo Broken!', '#ff0000', 'normal');
+                            triggerHaptic('shieldBreak');
+                        }
+                        comboStreak = 0;
+                        updateUI();
+                    }
+                }
 
                 drawDrops();
                 drawEnemies();
@@ -2565,6 +2988,9 @@
 
             if (!wrapper || !container) return;
 
+            // Update responsive layout
+            currentLayout = calculateResponsiveLayout();
+
             const wrapperWidth = wrapper.offsetWidth || 800;
             const wrapperHeight = wrapper.offsetHeight || 600;
 
@@ -2574,6 +3000,11 @@
 
             container.style.transform = `scale(${scale})`;
             container.style.transformOrigin = 'top left';
+
+            // Update player spawn position if not currently in gameplay
+            if (gameState === 'start' || gameState === 'gameover') {
+                player.y = currentLayout.playerSpawnY || (CANVAS_HEIGHT - 70);
+            }
         }
 
         function init() {
