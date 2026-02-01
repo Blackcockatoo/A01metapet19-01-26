@@ -20,14 +20,58 @@ import type { HeptaPayload } from '../types';
 
 const PRESET_MAP = { stealth: 0, standard: 1, radiant: 2 } as const;
 const VAULT_MAP = { red: 0, blue: 1, black: 2 } as const;
+const ROTATION_MAP = { CW: 0, CCW: 1 } as const;
 
 /**
- * Pack payload + compute MAC-28 → 30 base-7 digits
+ * Privacy masking rules:
+ * - stealth: mask vault, rotation, and tail (replace with zeros)
+ * - standard: keep vault, mask rotation and tail
+ * - radiant: keep all data visible
+ */
+function applyPrivacyMask(payload: HeptaPayload): {
+  vault: number;
+  rotation: number;
+  tail: [number, number, number, number];
+} {
+  const preset = payload.preset;
+
+  if (preset === 'stealth') {
+    // Stealth: hide everything - use zeros
+    return {
+      vault: 0, // Masked to 'red' (0)
+      rotation: 0, // Masked to 'CW' (0)
+      tail: [0, 0, 0, 0], // All zeros
+    };
+  }
+
+  if (preset === 'standard') {
+    // Standard: keep vault, hide rotation and tail
+    return {
+      vault: VAULT_MAP[payload.vault],
+      rotation: 0, // Masked to 'CW' (0)
+      tail: [0, 0, 0, 0], // All zeros
+    };
+  }
+
+  // Radiant: expose all data
+  return {
+    vault: VAULT_MAP[payload.vault],
+    rotation: ROTATION_MAP[payload.rotation],
+    tail: payload.tail.map(t => t & 0x3f) as [number, number, number, number],
+  };
+}
+
+/**
+ * Pack payload + compute MAC-20 → 30 base-7 digits
+ * Applies privacy masking based on the preset before encoding.
  */
 export async function packPayload(
   payload: HeptaPayload,
   hmacKey: CryptoKey
 ): Promise<number[]> {
+  // Apply privacy masking
+  const masked = applyPrivacyMask(payload);
+
   // Encode payload to bits
   let bits = 0n;
   let pos = 0;
@@ -39,9 +83,9 @@ export async function packPayload(
 
   writeBits(payload.version, 3);
   writeBits(PRESET_MAP[payload.preset], 2);
-  writeBits(VAULT_MAP[payload.vault], 2);
-  writeBits(payload.rotation === 'CW' ? 0 : 1, 1);
-  payload.tail.forEach(t => writeBits(t & 0x3f, 6)); // 6 bits each
+  writeBits(masked.vault, 2);
+  writeBits(masked.rotation, 1);
+  masked.tail.forEach(t => writeBits(t, 6)); // 6 bits each
   writeBits(payload.epoch13 & 0x1fff, 13);
   writeBits(payload.nonce14 & 0x3fff, 14);
 
@@ -139,16 +183,28 @@ export async function unpackPayload(
 
   const presets: PrivacyPreset[] = ['stealth', 'standard', 'radiant'];
   const vaults: Vault[] = ['red', 'blue', 'black'];
+  const preset = presets[presetIdx];
+
+  // Determine which fields are actually meaningful based on preset
+  // Masked fields will be zeros but we return them anyway for structure consistency
+  const isMasked = {
+    vault: preset === 'stealth',
+    rotation: preset === 'stealth' || preset === 'standard',
+    tail: preset === 'stealth' || preset === 'standard',
+  };
 
   return {
     version: 1,
-    preset: presets[presetIdx],
+    preset,
+    // Return actual decoded values, but consumers should check preset to know if they're meaningful
     vault: vaults[vaultIdx],
     rotation: rotBit === 0 ? 'CW' : 'CCW',
     tail,
     epoch13,
     nonce14,
-  };
+    // Include masking info for consumers
+    _masked: isMasked,
+  } as HeptaPayload;
 }
 
 type PrivacyPreset = 'stealth' | 'standard' | 'radiant';

@@ -7,7 +7,7 @@
 import type { PetType, Vitals, MirrorModeState } from '@/lib/store';
 import type { Genome, DerivedTraits, GenomeHash } from '@/lib/genome';
 import type { EvolutionData } from '@/lib/evolution';
-import type { HeptaDigits, PrimeTailID, Rotation, Vault } from '@/lib/identity/types';
+import type { HeptaDigits, PrimeTailID, PrivacyPreset, Rotation, Vault } from '@/lib/identity/types';
 import { createDefaultRitualProgress, type RitualProgress } from '@/lib/ritual/types';
 import {
   createWitnessRecord,
@@ -64,6 +64,8 @@ export interface PetSaveData {
   vimana: VimanaState;
   crest: PrimeTailID;
   heptaDigits: HeptaDigits;
+  /** Current privacy preset - tracked separately for easy updates */
+  privacyPreset?: PrivacyPreset;
   lastSaved: number;
   createdAt: number;
 }

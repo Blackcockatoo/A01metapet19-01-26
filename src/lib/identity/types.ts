@@ -20,6 +20,12 @@ export interface HeptaPayload {
   tail: [number, number, number, number];
   epoch13: number; // 13-bit epoch (minutes mod 8192)
   nonce14: number; // 14-bit nonce
+  /** Indicates which fields are masked based on the preset (set during decode) */
+  _masked?: {
+    vault: boolean;
+    rotation: boolean;
+    tail: boolean;
+  };
 }
 
 export type HeptaDigits = readonly number[]; // 42 base-7 digits (0..6)

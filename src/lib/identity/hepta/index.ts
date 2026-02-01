@@ -1,4 +1,4 @@
-import type { HeptaPayload, HeptaDigits } from '../types';
+import type { HeptaPayload, HeptaDigits, PrivacyPreset, PrimeTailID } from '../types';
 import { packPayload, unpackPayload } from './codec';
 import { eccEncode, eccDecode, isValidHeptaCode, ECC_CONSTANTS } from './ecc';
 
@@ -25,6 +25,41 @@ export async function heptaEncode42(
   }
 
   return Object.freeze(digits42);
+}
+
+/**
+ * Create a HeptaPayload from a PrimeTailID crest with the specified preset.
+ * Generates fresh epoch and nonce values.
+ */
+export function createHeptaPayload(
+  crest: PrimeTailID,
+  preset: PrivacyPreset
+): HeptaPayload {
+  const minutes = Math.floor(Date.now() / 60000) % 8192;
+  const nonce = Math.floor(Math.random() * 16384);
+
+  return {
+    version: 1,
+    preset,
+    vault: crest.vault,
+    rotation: crest.rotation,
+    tail: [...crest.tail] as [number, number, number, number],
+    epoch13: minutes,
+    nonce14: nonce,
+  };
+}
+
+/**
+ * Regenerate HeptaCode with a new privacy preset.
+ * Use this when the user changes their privacy setting.
+ */
+export async function regenerateWithPreset(
+  crest: PrimeTailID,
+  newPreset: PrivacyPreset,
+  hmacKey: CryptoKey
+): Promise<HeptaDigits> {
+  const payload = createHeptaPayload(crest, newPreset);
+  return heptaEncode42(payload, hmacKey);
 }
 
 /**
