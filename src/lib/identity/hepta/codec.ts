@@ -1,7 +1,7 @@
 import type { HeptaPayload } from '../types';
 
 /**
- * Pack HeptaPayload into 30 base-7 digits + MAC-28 → total 30 data digits
+ * Pack HeptaPayload into 30 base-7 digits + MAC-20 → total 30 data digits
  *
  * Bit layout:
  * - version: 3 bits (always 1)
@@ -11,8 +11,11 @@ import type { HeptaPayload } from '../types';
  * - tail[0..3]: 6 bits each = 24 bits (0..59)
  * - epoch13: 13 bits
  * - nonce14: 14 bits
- * - mac: 28 bits (from HMAC-SHA256, truncated)
- * Total: 3+2+2+1+24+13+14+28 = 87 bits → pack into base-7
+ * - mac: 20 bits (from HMAC-SHA256, truncated)
+ * Total: 3+2+2+1+24+13+14+20 = 79 bits → pack into base-7
+ *
+ * Math: 7^30 ≈ 2.25×10^25 > 2^79 ≈ 6.04×10^23 ✓
+ * This ensures no data loss during base-7 conversion.
  */
 
 const PRESET_MAP = { stealth: 0, standard: 1, radiant: 2 } as const;
@@ -52,13 +55,13 @@ export async function packPayload(
 
   const mac = await crypto.subtle.sign('HMAC', hmacKey, dataBytes);
   const macU8 = new Uint8Array(mac);
-  const mac28 = (macU8[0] | (macU8[1] << 8) | (macU8[2] << 16) | (macU8[3] << 24)) & 0x0fffffff;
+  // Use 20 bits of MAC (fits in 30 base-7 digits with headroom)
+  const mac20 = (macU8[0] | (macU8[1] << 8) | ((macU8[2] & 0x0f) << 16)) & 0x0fffff;
 
-  writeBits(mac28, 28);
+  writeBits(mac20, 20);
 
-  // Now bits = 87 bits total
-  // Convert to base-7: 87 bits / log2(7) ≈ 30.9 → need 31 digits, but we target 30
-  // So pack into exactly 30 base-7 digits (7^30 > 2^87)
+  // Now bits = 79 bits total
+  // 7^30 ≈ 2.25×10^25 > 2^79 ≈ 6.04×10^23, so 30 digits is sufficient
 
   const digits: number[] = [];
   let remaining = bits;
@@ -106,7 +109,7 @@ export async function unpackPayload(
   ];
   const epoch13 = readBits(13);
   const nonce14 = readBits(14);
-  const mac28 = readBits(28);
+  const mac20 = readBits(20);
 
   // Verify MAC
   const dataBytes = new Uint8Array(8);
@@ -130,9 +133,9 @@ export async function unpackPayload(
 
   const mac = await crypto.subtle.sign('HMAC', hmacKey, dataBytes);
   const macU8 = new Uint8Array(mac);
-  const computedMac28 = (macU8[0] | (macU8[1] << 8) | (macU8[2] << 16) | (macU8[3] << 24)) & 0x0fffffff;
+  const computedMac20 = (macU8[0] | (macU8[1] << 8) | ((macU8[2] & 0x0f) << 16)) & 0x0fffff;
 
-  if (mac28 !== computedMac28) return null; // MAC mismatch
+  if (mac20 !== computedMac20) return null; // MAC mismatch
 
   const presets: PrivacyPreset[] = ['stealth', 'standard', 'radiant'];
   const vaults: Vault[] = ['red', 'blue', 'black'];
