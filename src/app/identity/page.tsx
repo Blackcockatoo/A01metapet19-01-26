@@ -119,6 +119,7 @@ export default function IdentityPage() {
                 placeholder="you@metapet.com"
                 className="w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
+              <p className="text-xs text-slate-500">Stored locally in this browser; not transmitted.</p>
               {emailError && <p className="text-xs text-rose-400">{emailError}</p>}
             </div>
 
