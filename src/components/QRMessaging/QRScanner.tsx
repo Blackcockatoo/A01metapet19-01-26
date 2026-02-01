@@ -1,15 +1,15 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import jsQR from 'jsqr';
 import { Button } from '@/components/ui/button';
-import { Camera, CameraOff, RotateCcw, Check, Copy } from 'lucide-react';
+import { Camera, CameraOff, RotateCcw, Check, Copy, Keyboard, X } from 'lucide-react';
 import {
   useQRMessagingStore,
   decodeMoss60,
   isMoss60Format,
   type EncodingFormat,
 } from '@/lib/qr-messaging';
+import { createScanSession, type PreprocessingStrategy } from '@/lib/qr';
 
 interface QRScannerProps {
   compact?: boolean;
@@ -21,6 +21,7 @@ export function QRScanner({ compact = false, onScan }: QRScannerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const scanSessionRef = useRef(createScanSession({ debug: false }));
 
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,9 +29,13 @@ export function QRScanner({ compact = false, onScan }: QRScannerProps) {
     raw: string;
     decoded: string;
     format: EncodingFormat;
+    strategy?: PreprocessingStrategy;
   } | null>(null);
   const [copied, setCopied] = useState(false);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [manualInput, setManualInput] = useState('');
+  const [scanAttempts, setScanAttempts] = useState(0);
 
   const { addScannedQR } = useQRMessagingStore();
 
@@ -64,44 +69,51 @@ export function QRScanner({ compact = false, onScan }: QRScannerProps) {
     ctx.drawImage(video, 0, 0);
 
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const code = jsQR(imageData.data, imageData.width, imageData.height);
 
-    if (code) {
-      let decoded = code.data;
+    // Use enhanced scanner with multiple preprocessing strategies
+    const scanResult = scanSessionRef.current.scanFrame(imageData);
+
+    // Track attempts to show manual entry hint after many failures
+    setScanAttempts(prev => prev + 1);
+
+    if (scanResult) {
+      let decoded = scanResult.data;
       let format: EncodingFormat = 'text';
 
       // Handle MOSS60 format
-      if (isMoss60Format(code.data)) {
+      if (isMoss60Format(scanResult.data)) {
         try {
-          decoded = decodeMoss60(code.data);
+          decoded = decodeMoss60(scanResult.data);
           format = 'base60';
         } catch (e) {
           decoded = `Error decoding: ${e instanceof Error ? e.message : 'Unknown error'}`;
         }
-      } else if (code.data.startsWith('{') || code.data.startsWith('[')) {
+      } else if (scanResult.data.startsWith('{') || scanResult.data.startsWith('[')) {
         format = 'json';
-      } else if (/^[0-9a-fA-F]+$/.test(code.data)) {
+      } else if (/^[0-9a-fA-F]+$/.test(scanResult.data)) {
         format = 'hex';
       }
 
-      const scanResult = {
-        raw: code.data,
+      const result = {
+        raw: scanResult.data,
         decoded,
         format,
+        strategy: scanResult.strategy,
       };
 
-      setResult(scanResult);
+      setResult(result);
+      setScanAttempts(0);
 
       // Store in history
       addScannedQR({
-        raw: code.data,
+        raw: scanResult.data,
         decoded,
         format,
         timestamp: Date.now(),
         success: true,
       });
 
-      onScan?.(code.data, decoded);
+      onScan?.(scanResult.data, decoded);
 
       // Stop scanning after successful scan
       stopScanning();
@@ -111,6 +123,8 @@ export function QRScanner({ compact = false, onScan }: QRScannerProps) {
   const startScanning = useCallback(async () => {
     setError(null);
     setResult(null);
+    setScanAttempts(0);
+    scanSessionRef.current.reset();
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -163,6 +177,55 @@ export function QRScanner({ compact = false, onScan }: QRScannerProps) {
     }
   }, [result]);
 
+  const handleManualSubmit = useCallback(() => {
+    if (!manualInput.trim()) {
+      setError('Please enter a code');
+      return;
+    }
+
+    const rawData = manualInput.trim();
+    let decoded = rawData;
+    let format: EncodingFormat = 'text';
+
+    // Handle MOSS60 format
+    if (isMoss60Format(rawData)) {
+      try {
+        decoded = decodeMoss60(rawData);
+        format = 'base60';
+      } catch (e) {
+        setError(`Error decoding: ${e instanceof Error ? e.message : 'Unknown error'}`);
+        return;
+      }
+    } else if (rawData.startsWith('{') || rawData.startsWith('[')) {
+      format = 'json';
+    } else if (/^[0-9a-fA-F]+$/.test(rawData)) {
+      format = 'hex';
+    }
+
+    const scanResult = {
+      raw: rawData,
+      decoded,
+      format,
+      strategy: 'none' as PreprocessingStrategy,
+    };
+
+    setResult(scanResult);
+    setShowManualEntry(false);
+    setManualInput('');
+    setError(null);
+
+    // Store in history
+    addScannedQR({
+      raw: rawData,
+      decoded,
+      format,
+      timestamp: Date.now(),
+      success: true,
+    });
+
+    onScan?.(rawData, decoded);
+  }, [manualInput, addScannedQR, onScan]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -197,7 +260,33 @@ export function QRScanner({ compact = false, onScan }: QRScannerProps) {
               <RotateCcw className="w-4 h-4" />
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowManualEntry(!showManualEntry)}
+          >
+            <Keyboard className="w-4 h-4" />
+          </Button>
         </div>
+
+        {/* Compact Manual Entry */}
+        {showManualEntry && (
+          <div className="rounded-lg border border-purple-500/30 bg-purple-500/5 p-2 space-y-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={manualInput}
+                onChange={(e) => setManualInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
+                placeholder="Enter code..."
+                className="flex-1 px-2 py-1 bg-slate-950/60 border border-slate-700 rounded text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-purple-500"
+              />
+              <Button size="sm" onClick={handleManualSubmit}>
+                <Check className="w-3 h-3" />
+              </Button>
+            </div>
+          </div>
+        )}
 
         {scanning && (
           <div className="relative rounded-lg overflow-hidden border border-cyan-500/50">
@@ -265,7 +354,71 @@ export function QRScanner({ compact = false, onScan }: QRScannerProps) {
             Flip Camera
           </Button>
         )}
+        <Button
+          variant="outline"
+          onClick={() => setShowManualEntry(!showManualEntry)}
+          className="gap-2"
+        >
+          <Keyboard className="w-5 h-5" />
+          Manual
+        </Button>
       </div>
+
+      {/* Manual Entry Form */}
+      {showManualEntry && (
+        <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-purple-200 flex items-center gap-2">
+              <Keyboard className="w-4 h-4" />
+              Manual Code Entry
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowManualEntry(false)}
+              className="h-6 w-6 p-0"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+          <p className="text-xs text-zinc-500">
+            Enter a HeptaCode, MOSS60 code, or any text data manually if the camera scanner cannot read your QR code.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={manualInput}
+              onChange={(e) => setManualInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
+              placeholder="Enter code here..."
+              className="flex-1 px-3 py-2 bg-slate-950/60 border border-slate-700 rounded-lg text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-purple-500"
+            />
+            <Button onClick={handleManualSubmit} className="gap-2">
+              <Check className="w-4 h-4" />
+              Submit
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Scan difficulty hint */}
+      {scanning && scanAttempts > 50 && !result && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+          <p className="text-xs text-amber-400">
+            Having trouble scanning? Try adjusting lighting, holding the camera steady, or use{' '}
+            <button
+              onClick={() => {
+                stopScanning();
+                setShowManualEntry(true);
+              }}
+              className="underline hover:text-amber-300"
+            >
+              manual entry
+            </button>{' '}
+            instead.
+          </p>
+        </div>
+      )}
 
       {/* Video Display */}
       <div
@@ -365,10 +518,15 @@ export function QRScanner({ compact = false, onScan }: QRScannerProps) {
       )}
 
       {/* Info */}
-      <div className="rounded-lg border border-slate-700 bg-slate-950/40 p-4">
+      <div className="rounded-lg border border-slate-700 bg-slate-950/40 p-4 space-y-2">
         <p className="text-xs text-zinc-500">
           Point your camera at a QR code to scan. MOSS60-encoded QR codes will be
           automatically decoded from Base-60 format.
+        </p>
+        <p className="text-xs text-zinc-600">
+          Enhanced scanner: Automatically tries multiple image processing strategies
+          for QR codes with logos, low contrast, or difficult lighting. Use manual
+          entry if scanning fails.
         </p>
       </div>
     </div>
