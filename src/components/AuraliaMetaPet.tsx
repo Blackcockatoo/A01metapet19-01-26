@@ -198,11 +198,14 @@ interface AuraliaMetaPetProps {
   addonEditMode?: boolean;
   /** Callback when edit mode changes internally */
   onAddonEditModeChange?: (enabled: boolean) => void;
+  /** Show advanced tuning/controls */
+  showAdvanced?: boolean;
 }
 
 const AuraliaMetaPet: React.FC<AuraliaMetaPetProps> = ({
   addonEditMode: externalEditMode,
   onAddonEditModeChange,
+  showAdvanced = false,
 }) => {
   const [seedName, setSeedName] = useState<string>("AURALIA");
   const [field, setField] = useState<Field>(() => initField("AURALIA"));
@@ -1782,7 +1785,7 @@ const AuraliaMetaPet: React.FC<AuraliaMetaPetProps> = ({
       `}</style>
 
       {/* Debug Overlay */}
-      {showDebugOverlay && (
+      {showAdvanced && showDebugOverlay && (
         <div className="fixed top-4 right-4 z-50 bg-black/90 border border-yellow-600/50 rounded-lg p-4 font-mono text-xs text-green-400 max-w-xs">
           <h4 className="text-yellow-400 font-bold mb-2">Debug Overlay</h4>
           <div className="space-y-1">
@@ -1801,29 +1804,33 @@ const AuraliaMetaPet: React.FC<AuraliaMetaPetProps> = ({
       )}
 
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-6 md:mb-8">
-          <h1 className="text-3xl md:text-5xl font-light mb-2" style={{ background: `linear-gradient(135deg, ${currentForm.primaryGold}, ${currentForm.tealAccent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Auralia Guardian
-          </h1>
-          <div className="h-px bg-gradient-to-r from-transparent via-yellow-600 to-transparent opacity-50 max-w-md mx-auto" />
-          <p className="text-xs md:text-sm text-gray-400 mt-3 font-light">
-            MossPrimeSeed • Genome-driven metamorphosis • Living mathematics
-          </p>
-        </div>
-        <div className="mb-6 max-w-md mx-auto flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 bg-gray-900/80 rounded-xl p-4 border border-yellow-600/20">
-            <label className="text-sm font-light text-gray-400 block mb-2">Guardian Seed Name</label>
-            <input type="text" value={seedName} onChange={(e) => setSeedName(e.target.value.toUpperCase())} className="w-full bg-gray-950 border border-yellow-600/30 rounded-lg px-4 py-2 text-center font-mono text-yellow-500 focus:outline-none focus:border-yellow-600" placeholder="AURALIA" />
-          </div>
-          <div className="bg-gray-900/80 rounded-xl p-4 border border-yellow-600/20">
-            <label className="text-sm font-light text-gray-400 block mb-2">Audio</label>
-            <button onClick={() => setAudioEnabled(!audioEnabled)} className="px-4 py-2 rounded-lg bg-gray-950 border border-yellow-600/30 hover:border-yellow-600 transition-colors" aria-pressed={audioEnabled} aria-label="Toggle audio">
-              {audioEnabled ? '🔊' : '🔇'}
-            </button>
-          </div>
-        </div>
+        {showAdvanced && (
+          <>
+            <div className="text-center mb-6 md:mb-8">
+              <h1 className="text-3xl md:text-5xl font-light mb-2" style={{ background: `linear-gradient(135deg, ${currentForm.primaryGold}, ${currentForm.tealAccent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                Auralia Guardian
+              </h1>
+              <div className="h-px bg-gradient-to-r from-transparent via-yellow-600 to-transparent opacity-50 max-w-md mx-auto" />
+              <p className="text-xs md:text-sm text-gray-400 mt-3 font-light">
+                MossPrimeSeed • Genome-driven metamorphosis • Living mathematics
+              </p>
+            </div>
+            <div className="mb-6 max-w-md mx-auto flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 bg-gray-900/80 rounded-xl p-4 border border-yellow-600/20">
+                <label className="text-sm font-light text-gray-400 block mb-2">Guardian Seed Name</label>
+                <input type="text" value={seedName} onChange={(e) => setSeedName(e.target.value.toUpperCase())} className="w-full bg-gray-950 border border-yellow-600/30 rounded-lg px-4 py-2 text-center font-mono text-yellow-500 focus:outline-none focus:border-yellow-600" placeholder="AURALIA" />
+              </div>
+              <div className="bg-gray-900/80 rounded-xl p-4 border border-yellow-600/20">
+                <label className="text-sm font-light text-gray-400 block mb-2">Audio</label>
+                <button onClick={() => setAudioEnabled(!audioEnabled)} className="px-4 py-2 rounded-lg bg-gray-950 border border-yellow-600/30 hover:border-yellow-600 transition-colors" aria-pressed={audioEnabled} aria-label="Toggle audio">
+                  {audioEnabled ? '🔊' : '🔇'}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <div className={`grid grid-cols-1 ${showAdvanced ? 'lg:grid-cols-2' : ''} gap-8 items-start`}>
           <div className="bg-gray-900/80 rounded-2xl p-8 border border-yellow-600/20 lg:sticky lg:top-4">
           <div 
             className="aspect-square bg-gradient-to-br from-blue-950/30 to-gray-900/30 rounded-xl flex items-center justify-center relative overflow-hidden"
@@ -2189,95 +2196,100 @@ const AuraliaMetaPet: React.FC<AuraliaMetaPetProps> = ({
               </svg>
             </div>
             
-            {/* Annoyance/Mood indicator */}
-            {annoyanceLevel > 0 && (
-              <div className="mt-4 p-3 bg-red-950/70 rounded-lg border border-red-600/40 backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-red-300 font-medium">
-                    {annoyanceLevel > 80 ? '😡 Very Annoyed!' : annoyanceLevel > 50 ? '😠 Getting Annoyed' : '😐 Slightly Bothered'}
-                  </span>
-                  <span className="text-xs text-red-400">{annoyanceLevel}%</span>
-                </div>
-                <div className="h-2 bg-red-950 rounded-full overflow-hidden border border-red-800/50">
-                  <div
-                    className="h-full bg-gradient-to-r from-orange-500 to-red-600 transition-all duration-300"
-                    style={{ width: `${annoyanceLevel}%` }}
-                  />
-                </div>
-                <p className="text-xs text-red-300/70 mt-2 italic">
-                  {annoyanceLevel > 80 ? 'Leave me alone for a bit!' : annoyanceLevel > 50 ? 'Be more gentle please...' : 'I need a little space'}
-                </p>
-              </div>
-            )}
-
-            <div className="mt-6 text-center p-4 bg-gray-950/70 rounded-lg border border-yellow-600/30 backdrop-blur-sm shadow-lg">
-              <p key={whisper.key} className="text-base text-yellow-200 italic font-light leading-relaxed transition-opacity duration-500">
-                <span className="text-yellow-400/60">"</span>
-                {whisper.text}
-                <span className="text-yellow-400/60">"</span>
-              </p>
-            </div>
-
-            <div className="mt-6 p-4 bg-gray-950/50 rounded-lg border border-yellow-600/20">
-              <h3 className="text-lg font-semibold text-yellow-400 mb-2">Guardian Status: {currentForm.name}</h3>
-              <p className="text-sm text-gray-400">{currentForm.description}</p>
-              <div className="mt-3 space-y-1">
-                <p className="text-sm text-gray-400">AI Mode: <span className={`font-mono ${aiState.mode === 'dreaming' ? 'text-purple-400 animate-pulse' : 'text-yellow-500'}`}>{aiState.mode}</span></p>
-                {aiState.gbsp && (
-                  <>
-                    <p className="text-sm text-gray-400">
-                      Feeling: <span className={`font-mono ${
-                        aiState.gbsp.emotionalState === 'serene' ? 'text-green-400' :
-                        aiState.gbsp.emotionalState === 'ecstatic' ? 'text-yellow-300 animate-pulse' :
-                        aiState.gbsp.emotionalState === 'overwhelmed' ? 'text-red-400' :
-                        aiState.gbsp.emotionalState === 'yearning' ? 'text-purple-400' :
-                        aiState.gbsp.emotionalState === 'mischievous' ? 'text-emerald-400' :
-                        aiState.gbsp.emotionalState === 'affectionate' ? 'text-pink-400' :
-                        'text-cyan-400'
-                      }`}>{aiState.gbsp.emotionalState}</span>
-                    </p>
-                    <p className="text-sm text-gray-400">
-                      Comfort: <span className={`font-mono ${
-                        aiState.gbsp.comfort.source === 'harmonized' ? 'text-green-400' :
-                        aiState.gbsp.comfort.source === 'seeking' ? 'text-yellow-400' :
-                        aiState.gbsp.comfort.source === 'unsettled' ? 'text-orange-400' :
-                        'text-red-400'
-                      }`}>{aiState.gbsp.comfort.source} ({Math.round(aiState.gbsp.comfort.overall * 100)}%)</span>
-                    </p>
-                    {aiState.gbsp.comfort.unmetNeeds.length > 0 && (
-                      <p className="text-sm text-gray-400">
-                        Needs: <span className="font-mono text-orange-300">{aiState.gbsp.comfort.unmetNeeds.join(', ')}</span>
-                      </p>
-                    )}
-                  </>
-                )}
-                <p className="text-sm text-gray-400">Time: <span className="font-mono text-teal-400">{timeOfDay}</span></p>
-                <p className="text-sm text-gray-400">Dreams: <span className="font-mono text-purple-400">{dreamCount}</span> | Interactions: <span className="font-mono text-cyan-400">{totalInteractions}</span></p>
-                <p className="text-sm text-gray-400">Sigils Activated: <span className="font-mono text-green-400">{activatedPoints.size}/7</span></p>
-                {interaction.isHeld && (
-                  <p className="text-sm text-pink-400 animate-pulse">Holding guardian...</p>
-                )}
-              </div>
-            </div>
-
-            {bondHistory.length > 0 && (
-              <div className="mt-6 p-4 bg-gray-950/50 rounded-lg border border-yellow-600/20 max-h-48 overflow-y-auto">
-                <h3 className="text-lg font-semibold text-yellow-400 mb-3">Bond Chronicle</h3>
-                <div className="space-y-2">
-                  {bondHistory.slice(-10).reverse().map((entry, i) => (
-                    <div key={`${entry.timestamp}-${i}`} className="text-xs text-gray-400 border-l-2 border-teal-600/30 pl-2">
-                      <span className="text-teal-400 font-mono">{new Date(entry.timestamp).toLocaleTimeString()}</span>
-                      <span className="mx-2 text-gray-500">•</span>
-                      <span>{entry.event}</span>
-                      <span className="ml-2 text-yellow-500">({entry.bond})</span>
+            {showAdvanced && (
+              <>
+                {/* Annoyance/Mood indicator */}
+                {annoyanceLevel > 0 && (
+                  <div className="mt-4 p-3 bg-red-950/70 rounded-lg border border-red-600/40 backdrop-blur-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-red-300 font-medium">
+                        {annoyanceLevel > 80 ? '😡 Very Annoyed!' : annoyanceLevel > 50 ? '😠 Getting Annoyed' : '😐 Slightly Bothered'}
+                      </span>
+                      <span className="text-xs text-red-400">{annoyanceLevel}%</span>
                     </div>
-                  ))}
+                    <div className="h-2 bg-red-950 rounded-full overflow-hidden border border-red-800/50">
+                      <div
+                        className="h-full bg-gradient-to-r from-orange-500 to-red-600 transition-all duration-300"
+                        style={{ width: `${annoyanceLevel}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-red-300/70 mt-2 italic">
+                      {annoyanceLevel > 80 ? 'Leave me alone for a bit!' : annoyanceLevel > 50 ? 'Be more gentle please...' : 'I need a little space'}
+                    </p>
+                  </div>
+                )}
+
+                <div className="mt-6 text-center p-4 bg-gray-950/70 rounded-lg border border-yellow-600/30 backdrop-blur-sm shadow-lg">
+                  <p key={whisper.key} className="text-base text-yellow-200 italic font-light leading-relaxed transition-opacity duration-500">
+                    <span className="text-yellow-400/60">"</span>
+                    {whisper.text}
+                    <span className="text-yellow-400/60">"</span>
+                  </p>
                 </div>
-              </div>
+
+                <div className="mt-6 p-4 bg-gray-950/50 rounded-lg border border-yellow-600/20">
+                  <h3 className="text-lg font-semibold text-yellow-400 mb-2">Guardian Status: {currentForm.name}</h3>
+                  <p className="text-sm text-gray-400">{currentForm.description}</p>
+                  <div className="mt-3 space-y-1">
+                    <p className="text-sm text-gray-400">AI Mode: <span className={`font-mono ${aiState.mode === 'dreaming' ? 'text-purple-400 animate-pulse' : 'text-yellow-500'}`}>{aiState.mode}</span></p>
+                    {aiState.gbsp && (
+                      <>
+                        <p className="text-sm text-gray-400">
+                          Feeling: <span className={`font-mono ${
+                            aiState.gbsp.emotionalState === 'serene' ? 'text-green-400' :
+                            aiState.gbsp.emotionalState === 'ecstatic' ? 'text-yellow-300 animate-pulse' :
+                            aiState.gbsp.emotionalState === 'overwhelmed' ? 'text-red-400' :
+                            aiState.gbsp.emotionalState === 'yearning' ? 'text-purple-400' :
+                            aiState.gbsp.emotionalState === 'mischievous' ? 'text-emerald-400' :
+                            aiState.gbsp.emotionalState === 'affectionate' ? 'text-pink-400' :
+                            'text-cyan-400'
+                          }`}>{aiState.gbsp.emotionalState}</span>
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          Comfort: <span className={`font-mono ${
+                            aiState.gbsp.comfort.source === 'harmonized' ? 'text-green-400' :
+                            aiState.gbsp.comfort.source === 'seeking' ? 'text-yellow-400' :
+                            aiState.gbsp.comfort.source === 'unsettled' ? 'text-orange-400' :
+                            'text-red-400'
+                          }`}>{aiState.gbsp.comfort.source} ({Math.round(aiState.gbsp.comfort.overall * 100)}%)</span>
+                        </p>
+                        {aiState.gbsp.comfort.unmetNeeds.length > 0 && (
+                          <p className="text-sm text-gray-400">
+                            Needs: <span className="font-mono text-orange-300">{aiState.gbsp.comfort.unmetNeeds.join(', ')}</span>
+                          </p>
+                        )}
+                      </>
+                    )}
+                    <p className="text-sm text-gray-400">Time: <span className="font-mono text-teal-400">{timeOfDay}</span></p>
+                    <p className="text-sm text-gray-400">Dreams: <span className="font-mono text-purple-400">{dreamCount}</span> | Interactions: <span className="font-mono text-cyan-400">{totalInteractions}</span></p>
+                    <p className="text-sm text-gray-400">Sigils Activated: <span className="font-mono text-green-400">{activatedPoints.size}/7</span></p>
+                    {interaction.isHeld && (
+                      <p className="text-sm text-pink-400 animate-pulse">Holding guardian...</p>
+                    )}
+                  </div>
+                </div>
+
+                {bondHistory.length > 0 && (
+                  <div className="mt-6 p-4 bg-gray-950/50 rounded-lg border border-yellow-600/20 max-h-48 overflow-y-auto">
+                    <h3 className="text-lg font-semibold text-yellow-400 mb-3">Bond Chronicle</h3>
+                    <div className="space-y-2">
+                      {bondHistory.slice(-10).reverse().map((entry, i) => (
+                        <div key={`${entry.timestamp}-${i}`} className="text-xs text-gray-400 border-l-2 border-teal-600/30 pl-2">
+                          <span className="text-teal-400 font-mono">{new Date(entry.timestamp).toLocaleTimeString()}</span>
+                          <span className="mx-2 text-gray-500">•</span>
+                          <span>{entry.event}</span>
+                          <span className="ml-2 text-yellow-500">({entry.bond})</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
-          <div className="space-y-6">
+          {showAdvanced && (
+            <div className="space-y-6">
             <div className="bg-gray-900/80 rounded-2xl p-6 border border-yellow-600/20">
               <h3 className="text-xl font-semibold text-yellow-400 mb-4">Essence Attunement</h3>
               <div className="space-y-4">
@@ -2876,7 +2888,8 @@ const AuraliaMetaPet: React.FC<AuraliaMetaPetProps> = ({
                 </button>
               </div>
             </div>
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
