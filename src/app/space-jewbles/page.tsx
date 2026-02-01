@@ -29,10 +29,10 @@ export default function SpaceJewblesPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const iframeSrc = useMemo(() => {
     if (typeof window === 'undefined') {
-      return '/space-jewbles.html';
+      return '/space-jewbles-game.html';
     }
     const origin = window.location.origin;
-    return `/space-jewbles.html?allowedOrigin=${encodeURIComponent(origin)}`;
+    return `/space-jewbles-game.html?allowedOrigin=${encodeURIComponent(origin)}`;
   }, []);
 
   // Get pet data from store
