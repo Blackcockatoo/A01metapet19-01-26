@@ -7,6 +7,7 @@ import { UpgradeSystem } from '../systems/UpgradeSystem';
 import { SaveManager } from '../utils/saveManager';
 import { NarrativeSystem } from '../systems/NarrativeSystem';
 import { StoryBeat } from '../data/storyBeats';
+import { getAudioSettings } from '../utils/audioSettings';
 
 export class GameScene extends Phaser.Scene {
   // Systems
@@ -40,6 +41,9 @@ export class GameScene extends Phaser.Scene {
   private upgradePanel!: Phaser.GameObjects.Container;
   private upgradeButton!: Phaser.GameObjects.Container;
   private showingUpgrades: boolean = false;
+  private audioPanel!: Phaser.GameObjects.Container;
+  private audioButton!: Phaser.GameObjects.Container;
+  private showingAudioSettings: boolean = false;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -90,6 +94,7 @@ export class GameScene extends Phaser.Scene {
     // Create UI
     this.createUI();
     this.createUpgradeButton();
+    this.createAudioButton();
 
     // Listen for auto-fire
     this.events.on('autoFire', () => {
@@ -206,8 +211,11 @@ export class GameScene extends Phaser.Scene {
       features: this.petData?.features || [],
     };
 
-    this.pet = this.petRenderer.createPetSprite(petTraits, this.petData?.genomeSeed || 0, 60);
-    this.pet.setPosition(width / 2, height - 100);
+    // Create larger pet sprite (180px instead of 60px)
+    this.pet = this.petRenderer.createPetSprite(petTraits, this.petData?.genomeSeed || 0, 180);
+
+    // Position lower to accommodate larger size
+    this.pet.setPosition(width / 2, height - 150);
 
     this.petBonuses = this.petRenderer.calculateTraitBonuses(petTraits);
 
@@ -215,14 +223,8 @@ export class GameScene extends Phaser.Scene {
     const damageBonus = this.upgradeSystem.getEffect('damage');
     this.weaponSystem.setDamageMultiplier(this.petBonuses.damage * damageBonus);
 
-    this.tweens.add({
-      targets: this.pet,
-      y: height - 110,
-      duration: 1500,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut',
-    });
+    // Add breathing and floating animations
+    this.petRenderer.addPetAnimations(this.pet);
   }
 
   private createUI() {
@@ -433,6 +435,219 @@ export class GameScene extends Phaser.Scene {
       const autoFireInterval = this.upgradeSystem.getEffect('autoFireSpeed');
       this.idleSystem.setAutoFireInterval(autoFireInterval);
     }
+  }
+
+  private createAudioButton() {
+    const width = this.cameras.main.width;
+    const audioSettings = getAudioSettings();
+
+    // Position below upgrade button
+    this.audioButton = this.add.container(width - 80, 160);
+
+    const bg = this.add.circle(0, 0, 30, 0x4488ff, 0.9);
+    const icon = this.add.text(0, 0, audioSettings.getSettings().muted ? '🔇' : '🔊', {
+      font: '24px Arial',
+    });
+    icon.setOrigin(0.5);
+
+    this.audioButton.add([bg, icon]);
+    this.audioButton.setSize(60, 60);
+    this.audioButton.setInteractive();
+
+    this.audioButton.on('pointerdown', () => {
+      this.toggleAudioPanel();
+    });
+
+    // Listen for settings changes to update icon
+    audioSettings.addListener((settings) => {
+      icon.setText(settings.muted ? '🔇' : '🔊');
+    });
+  }
+
+  private toggleAudioPanel() {
+    if (this.showingAudioSettings) {
+      this.hideAudioPanel();
+    } else {
+      this.showAudioPanel();
+    }
+  }
+
+  private showAudioPanel() {
+    this.showingAudioSettings = true;
+
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+    const audioSettings = getAudioSettings();
+    const settings = audioSettings.getSettings();
+
+    this.audioPanel = this.add.container(width / 2, height / 2);
+
+    const panelWidth = Math.min(400, width - 40);
+    const panelHeight = 350;
+
+    // Background
+    const bg = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x1a1a2e, 0.95);
+    bg.setStrokeStyle(2, 0x4488ff);
+    this.audioPanel.add(bg);
+
+    // Title
+    const title = this.add.text(0, -panelHeight / 2 + 30, 'AUDIO SETTINGS', {
+      font: 'bold 28px Arial',
+      color: '#4488ff',
+    });
+    title.setOrigin(0.5);
+    this.audioPanel.add(title);
+
+    let yPos = -panelHeight / 2 + 80;
+
+    // Volume slider
+    const volumeLabel = this.add.text(-panelWidth / 2 + 30, yPos, 'Master Volume', {
+      font: 'bold 18px Arial',
+      color: '#ffffff',
+    });
+    this.audioPanel.add(volumeLabel);
+
+    const volumeValue = this.add.text(panelWidth / 2 - 30, yPos, `${Math.round(settings.volume * 100)}%`, {
+      font: 'bold 18px Arial',
+      color: '#ffaa00',
+    });
+    volumeValue.setOrigin(1, 0);
+    this.audioPanel.add(volumeValue);
+
+    yPos += 35;
+
+    // Volume slider bar
+    const sliderBg = this.add.rectangle(0, yPos, panelWidth - 60, 20, 0x333333, 1);
+    sliderBg.setInteractive();
+    this.audioPanel.add(sliderBg);
+
+    const sliderFill = this.add.rectangle(
+      -(panelWidth - 60) / 2 + (settings.volume * (panelWidth - 60)) / 2,
+      yPos,
+      settings.volume * (panelWidth - 60),
+      20,
+      0x4488ff,
+      1
+    );
+    sliderFill.setOrigin(0, 0.5);
+    this.audioPanel.add(sliderFill);
+
+    const sliderHandle = this.add.circle(
+      -(panelWidth - 60) / 2 + settings.volume * (panelWidth - 60),
+      yPos,
+      15,
+      0xffffff,
+      1
+    );
+    sliderHandle.setInteractive();
+    this.audioPanel.add(sliderHandle);
+
+    // Drag handler for slider
+    this.input.setDraggable(sliderHandle);
+    sliderHandle.on('drag', (pointer: any, dragX: number) => {
+      const minX = -(panelWidth - 60) / 2;
+      const maxX = (panelWidth - 60) / 2;
+      const clampedX = Phaser.Math.Clamp(dragX, minX, maxX);
+
+      sliderHandle.x = clampedX;
+      const volume = (clampedX - minX) / (maxX - minX);
+
+      audioSettings.setVolume(volume);
+      volumeValue.setText(`${Math.round(volume * 100)}%`);
+
+      sliderFill.width = volume * (panelWidth - 60);
+      sliderFill.x = minX + sliderFill.width / 2;
+    });
+
+    yPos += 50;
+
+    // Mute toggle
+    this.createToggle(
+      'Mute All',
+      settings.muted,
+      -panelWidth / 2 + 30,
+      yPos,
+      panelWidth - 60,
+      (enabled) => audioSettings.setMuted(enabled)
+    );
+
+    yPos += 50;
+
+    // Music toggle
+    this.createToggle(
+      'Music',
+      settings.musicEnabled,
+      -panelWidth / 2 + 30,
+      yPos,
+      panelWidth - 60,
+      (enabled) => audioSettings.setMusicEnabled(enabled)
+    );
+
+    yPos += 50;
+
+    // SFX toggle
+    this.createToggle(
+      'Sound Effects',
+      settings.sfxEnabled,
+      -panelWidth / 2 + 30,
+      yPos,
+      panelWidth - 60,
+      (enabled) => audioSettings.setSfxEnabled(enabled)
+    );
+
+    // Close button
+    const closeBtn = this.add.rectangle(panelWidth / 2 - 30, -panelHeight / 2 + 30, 40, 40, 0xff0000, 0.8);
+    const closeX = this.add.text(panelWidth / 2 - 30, -panelHeight / 2 + 30, 'X', {
+      font: 'bold 24px Arial',
+      color: '#ffffff',
+    });
+    closeX.setOrigin(0.5);
+    closeBtn.setInteractive();
+    closeBtn.on('pointerdown', () => this.hideAudioPanel());
+
+    this.audioPanel.add([closeBtn, closeX]);
+  }
+
+  private createToggle(
+    label: string,
+    initialState: boolean,
+    x: number,
+    y: number,
+    width: number,
+    onChange: (enabled: boolean) => void
+  ) {
+    const toggleLabel = this.add.text(x, y, label, {
+      font: 'bold 18px Arial',
+      color: '#ffffff',
+    });
+    this.audioPanel.add(toggleLabel);
+
+    const toggleBg = this.add.rectangle(x + width - 50, y + 5, 50, 25, initialState ? 0x00ff00 : 0x666666, 0.8);
+    toggleBg.setInteractive();
+    this.audioPanel.add(toggleBg);
+
+    const toggleText = this.add.text(x + width - 50, y + 5, initialState ? 'ON' : 'OFF', {
+      font: 'bold 14px Arial',
+      color: '#ffffff',
+    });
+    toggleText.setOrigin(0.5);
+    this.audioPanel.add(toggleText);
+
+    toggleBg.on('pointerdown', () => {
+      const newState = !initialState;
+      initialState = newState;
+
+      toggleBg.setFillStyle(newState ? 0x00ff00 : 0x666666, 0.8);
+      toggleText.setText(newState ? 'ON' : 'OFF');
+      onChange(newState);
+    });
+  }
+
+  private hideAudioPanel() {
+    if (this.audioPanel) {
+      this.audioPanel.destroy();
+    }
+    this.showingAudioSettings = false;
   }
 
   private autoFireAttack() {

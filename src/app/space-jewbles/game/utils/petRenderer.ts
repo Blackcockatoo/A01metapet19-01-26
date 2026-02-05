@@ -69,32 +69,140 @@ export class PetRenderer {
     return container;
   }
 
+  /**
+   * Add idle animations to pet container
+   */
+  addPetAnimations(container: Phaser.GameObjects.Container): void {
+    // Breathing animation - gentle scale pulse
+    this.scene.tweens.add({
+      targets: container,
+      scaleX: 1.05,
+      scaleY: 1.05,
+      duration: 2000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+
+    // Subtle floating animation
+    const baseY = container.y;
+    this.scene.tweens.add({
+      targets: container,
+      y: baseY - 10,
+      duration: 3000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+
+    // Eye blinking - find eye objects and animate
+    const eyes = container.getAll().filter((obj, index) => index >= container.length - 2);
+    if (eyes.length >= 2) {
+      this.scene.time.addEvent({
+        delay: Phaser.Math.Between(3000, 6000),
+        callback: () => {
+          eyes.forEach((eye) => {
+            this.scene.tweens.add({
+              targets: eye,
+              scaleY: 0.1,
+              duration: 100,
+              yoyo: true,
+              ease: 'Linear',
+            });
+          });
+
+          // Schedule next blink
+          this.scene.time.addEvent({
+            delay: Phaser.Math.Between(3000, 6000),
+            callback: () => {},
+            loop: true,
+          });
+        },
+        loop: true,
+      });
+    }
+  }
+
   private createBody(bodyType: string, color: string, size: number): Phaser.GameObjects.Graphics {
     const graphics = this.scene.add.graphics();
     const fillColor = this.hexToNumber(color);
 
+    // Add gradient effect for more depth
     graphics.fillStyle(fillColor, 1);
 
     switch (bodyType) {
       case 'Spherical':
         graphics.fillCircle(0, 0, size / 2);
+        // Add highlight
+        graphics.fillStyle(fillColor, 0.3);
+        graphics.fillCircle(-size / 6, -size / 6, size / 4);
         break;
+
       case 'Cubic':
         graphics.fillRect(-size / 2, -size / 2, size, size);
+        // Add shading
+        graphics.fillStyle(0x000000, 0.15);
+        graphics.fillRect(-size / 2, size / 4, size, size / 4);
         break;
+
       case 'Pyramidal':
         graphics.fillTriangle(
-          0,
-          -size / 2, // top
-          -size / 2,
-          size / 2, // bottom left
-          size / 2,
-          size / 2 // bottom right
+          0, -size / 2,
+          -size / 2, size / 2,
+          size / 2, size / 2
+        );
+        // Add highlight on top
+        graphics.fillStyle(fillColor, 0.3);
+        graphics.fillTriangle(
+          0, -size / 2,
+          -size / 4, 0,
+          size / 4, 0
         );
         break;
+
+      case 'Cylindrical':
+        // Cylinder (vertical ellipse with depth)
+        graphics.fillEllipse(0, 0, size / 2, size / 1.5);
+        graphics.fillStyle(0x000000, 0.1);
+        graphics.fillEllipse(0, -size / 3, size / 2, size / 10);
+        break;
+
+      case 'Toroidal':
+        // Donut shape
+        graphics.fillCircle(0, 0, size / 2);
+        graphics.fillStyle(0x000000, 1);
+        graphics.fillCircle(0, 0, size / 4);
+        graphics.fillStyle(fillColor, 0.5);
+        graphics.fillCircle(0, 0, size / 4);
+        break;
+
+      case 'Crystalline':
+        // Crystal/gem shape (hexagon)
+        const points: Phaser.Geom.Point[] = [];
+        for (let i = 0; i < 6; i++) {
+          const angle = (Math.PI / 3) * i - Math.PI / 2;
+          points.push(
+            new Phaser.Geom.Point(
+              Math.cos(angle) * size / 2,
+              Math.sin(angle) * size / 2
+            )
+          );
+        }
+        graphics.fillPoints(points, true);
+        // Add facets
+        graphics.fillStyle(fillColor, 0.4);
+        for (let i = 0; i < 6; i++) {
+          if (i % 2 === 0) {
+            graphics.fillTriangle(0, 0, points[i].x, points[i].y, points[(i + 1) % 6].x, points[(i + 1) % 6].y);
+          }
+        }
+        break;
+
       default:
         // Default to spherical
         graphics.fillCircle(0, 0, size / 2);
+        graphics.fillStyle(fillColor, 0.3);
+        graphics.fillCircle(-size / 6, -size / 6, size / 4);
     }
 
     return graphics;
@@ -109,22 +217,55 @@ export class PetRenderer {
     const graphics = this.scene.add.graphics();
     const fillColor = this.hexToNumber(color);
 
-    graphics.fillStyle(fillColor, 0.5);
-
     switch (pattern) {
       case 'Striped':
-        // Vertical stripes
+        // Vertical stripes with gradient effect
         for (let i = -size / 2; i < size / 2; i += size / 5) {
+          graphics.fillStyle(fillColor, 0.6);
           graphics.fillRect(i, -size / 2, size / 10, size);
+          // Add highlight to stripes
+          graphics.fillStyle(fillColor, 0.3);
+          graphics.fillRect(i, -size / 2, size / 20, size);
         }
         break;
+
       case 'Spotted':
-        // Random spots based on seed
+        // Random spots based on seed with varying sizes
         Phaser.Math.RND.sow([seed.toString()]);
         for (let i = 0; i < 5; i++) {
           const x = Phaser.Math.Between(-size / 3, size / 3);
           const y = Phaser.Math.Between(-size / 3, size / 3);
-          graphics.fillCircle(x, y, size / 8);
+          const spotSize = Phaser.Math.Between(size / 10, size / 6);
+
+          graphics.fillStyle(fillColor, 0.6);
+          graphics.fillCircle(x, y, spotSize);
+          // Add highlight to spots
+          graphics.fillStyle(fillColor, 0.3);
+          graphics.fillCircle(x - spotSize / 3, y - spotSize / 3, spotSize / 2);
+        }
+        break;
+
+      case 'Gradient':
+        // Radial gradient effect using multiple circles
+        for (let i = 0; i < 5; i++) {
+          const alpha = 0.5 - (i * 0.08);
+          const circleSize = (size / 2) * (1 - i * 0.15);
+          graphics.fillStyle(fillColor, alpha);
+          graphics.fillCircle(0, 0, circleSize);
+        }
+        break;
+
+      case 'Marbled':
+        // Organic marble pattern
+        Phaser.Math.RND.sow([seed.toString()]);
+        for (let i = 0; i < 8; i++) {
+          const x = Phaser.Math.Between(-size / 2, size / 2);
+          const y = Phaser.Math.Between(-size / 2, size / 2);
+          const width = Phaser.Math.Between(size / 8, size / 4);
+          const height = Phaser.Math.Between(size / 6, size / 3);
+
+          graphics.fillStyle(fillColor, 0.4);
+          graphics.fillEllipse(x, y, width, height);
         }
         break;
     }
@@ -140,47 +281,137 @@ export class PetRenderer {
     const graphics = this.scene.add.graphics();
     const color = this.hexToNumber(traits.secondaryColor);
 
-    graphics.fillStyle(color, 1);
-    graphics.lineStyle(2, 0x000000, 0.5);
-
     switch (feature) {
       case 'Wings':
-        // Simple wing shapes on sides
-        graphics.fillEllipse(-size / 2, 0, size / 3, size / 2);
-        graphics.fillEllipse(size / 2, 0, size / 3, size / 2);
+        // Enhanced wing shapes with multiple ellipses for organic look
+        graphics.fillStyle(color, 0.9);
+        graphics.lineStyle(2, 0x000000, 0.3);
+
+        // Left wing - layered ellipses
+        graphics.fillEllipse(-size / 2, 0, size / 2.5, size / 1.8);
+        graphics.strokeEllipse(-size / 2, 0, size / 2.5, size / 1.8);
+
+        // Wing feather details
+        graphics.fillStyle(color, 0.7);
+        graphics.fillEllipse(-size / 1.8, -size / 8, size / 4, size / 3);
+        graphics.fillEllipse(-size / 1.8, size / 8, size / 4, size / 3);
+
+        // Wing highlight
+        graphics.fillStyle(color, 0.4);
+        graphics.fillEllipse(-size / 2.2, -size / 8, size / 8, size / 4);
+
+        // Right wing - layered ellipses
+        graphics.fillStyle(color, 0.9);
+        graphics.fillEllipse(size / 2, 0, size / 2.5, size / 1.8);
+        graphics.strokeEllipse(size / 2, 0, size / 2.5, size / 1.8);
+
+        // Wing feather details
+        graphics.fillStyle(color, 0.7);
+        graphics.fillEllipse(size / 1.8, -size / 8, size / 4, size / 3);
+        graphics.fillEllipse(size / 1.8, size / 8, size / 4, size / 3);
+
+        // Right wing highlight
+        graphics.fillStyle(color, 0.4);
+        graphics.fillEllipse(size / 2.2, -size / 8, size / 8, size / 4);
         break;
 
       case 'Horns':
-        // Two horns on top
+        // Enhanced horns with gradient shading
+        graphics.lineStyle(2, 0x000000, 0.4);
+
+        // Left horn
+        graphics.fillStyle(color, 1);
         graphics.fillTriangle(
           -size / 4,
           -size / 2,
-          -size / 4 - 5,
-          -size / 2 - 15,
+          -size / 4 - 8,
+          -size / 2 - 20,
           -size / 4 + 5,
-          -size / 2 - 15
+          -size / 2 - 18
         );
+        // Horn highlight
+        graphics.fillStyle(color, 0.5);
+        graphics.fillTriangle(
+          -size / 4,
+          -size / 2,
+          -size / 4 - 3,
+          -size / 2 - 10,
+          -size / 4 + 2,
+          -size / 2 - 9
+        );
+
+        // Right horn
+        graphics.fillStyle(color, 1);
         graphics.fillTriangle(
           size / 4,
           -size / 2,
           size / 4 - 5,
-          -size / 2 - 15,
-          size / 4 + 5,
-          -size / 2 - 15
+          -size / 2 - 18,
+          size / 4 + 8,
+          -size / 2 - 20
+        );
+        // Horn highlight
+        graphics.fillStyle(color, 0.5);
+        graphics.fillTriangle(
+          size / 4,
+          -size / 2,
+          size / 4 - 2,
+          -size / 2 - 9,
+          size / 4 + 3,
+          -size / 2 - 10
         );
         break;
 
       case 'Tail Flame':
-        // Flame effect at bottom
-        graphics.fillStyle(0xff6600, 1);
-        graphics.fillTriangle(0, size / 2, -10, size / 2 + 20, 10, size / 2 + 20);
+        // Enhanced flame effect with gradient layers
+        graphics.fillStyle(0xff0000, 0.8);
+        graphics.fillTriangle(0, size / 2, -12, size / 2 + 25, 12, size / 2 + 25);
+
+        graphics.fillStyle(0xff6600, 0.9);
+        graphics.fillTriangle(0, size / 2 + 3, -8, size / 2 + 20, 8, size / 2 + 20);
+
+        graphics.fillStyle(0xffaa00, 1);
+        graphics.fillTriangle(0, size / 2 + 6, -5, size / 2 + 15, 5, size / 2 + 15);
+
+        // Bright tip
+        graphics.fillStyle(0xffff00, 1);
+        graphics.fillCircle(0, size / 2 + 8, 3);
         break;
 
       case 'Aura':
-        // Subtle glow ring
-        graphics.lineStyle(3, color, 0.3);
+        // Multi-layered glow rings
+        graphics.lineStyle(4, color, 0.15);
+        graphics.strokeCircle(0, 0, size / 2 + 15);
+
+        graphics.lineStyle(3, color, 0.25);
         graphics.strokeCircle(0, 0, size / 2 + 10);
+
+        graphics.lineStyle(2, color, 0.35);
+        graphics.strokeCircle(0, 0, size / 2 + 5);
+
+        // Add subtle particles (small dots around aura)
+        for (let i = 0; i < 8; i++) {
+          const angle = (Math.PI * 2 / 8) * i;
+          const x = Math.cos(angle) * (size / 2 + 12);
+          const y = Math.sin(angle) * (size / 2 + 12);
+
+          graphics.fillStyle(color, 0.4);
+          graphics.fillCircle(x, y, 2);
+        }
         return graphics;
+
+      case 'Third Eye':
+        // Mystical third eye on forehead
+        graphics.fillStyle(0xffffff, 1);
+        graphics.fillEllipse(0, -size / 3, size / 6, size / 8);
+
+        graphics.fillStyle(color, 1);
+        graphics.fillCircle(0, -size / 3, size / 12);
+
+        // Eye glow
+        graphics.fillStyle(color, 0.3);
+        graphics.fillCircle(0, -size / 3, size / 8);
+        break;
 
       default:
         return null;

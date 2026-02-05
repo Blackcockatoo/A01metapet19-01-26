@@ -63,8 +63,9 @@ export default function SpaceJewblesPage() {
       size: traits.physical.size,
       features: traits.physical.features,
       genomeSeed,
+      genome, // Pass full genome for heptatone and visual expression
     };
-  }, [traits, genomeSeed]);
+  }, [traits, genomeSeed, genome]);
 
   const handleGameEnd = useCallback(async (result: GameResult) => {
     setLastResult(result);
