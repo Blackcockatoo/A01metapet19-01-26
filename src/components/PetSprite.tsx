@@ -6,7 +6,7 @@ import { useStore } from '@/lib/store';
 import { EVOLUTION_VISUALS } from '@/lib/evolution';
 import { motion } from 'framer-motion';
 
-export const PetSprite = memo(function PetSprite() {
+export const PetSprite = memo(function PetSprite({ staticMode = false }: { staticMode?: boolean }) {
   const traits = useStore(s => s.traits);
   const vitals = useStore(s => s.vitals);
   const evolution = useStore(s => s.evolution);
@@ -133,15 +133,23 @@ export const PetSprite = memo(function PetSprite() {
   return (
     <motion.div
       className="w-full h-full flex items-center justify-center relative"
-      animate={{
-        scale: isHappy ? [1, 1.05, 1] : isTired ? 0.95 : 1,
-        y: isHungry ? [0, -5, 0] : 0,
-      }}
-      transition={{
-        duration: 2,
-        repeat: Number.POSITIVE_INFINITY,
-        ease: 'easeInOut',
-      }}
+      animate={
+        staticMode
+          ? { scale: 1, y: 0 }
+          : {
+              scale: isHappy ? [1, 1.05, 1] : isTired ? 0.95 : 1,
+              y: isHungry ? [0, -5, 0] : 0,
+            }
+      }
+      transition={
+        staticMode
+          ? { duration: 0 }
+          : {
+              duration: 2,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: 'easeInOut',
+            }
+      }
     >
       <motion.div
         className="absolute inset-0 rounded-3xl"
@@ -149,15 +157,23 @@ export const PetSprite = memo(function PetSprite() {
           background: `radial-gradient(circle at center, ${visuals.colors[0]}33, transparent 70%)`,
           filter: `blur(${(visuals.glowIntensity ?? 0.5) * 20}px)`
         }}
-        animate={{
-          opacity: [0.4, 0.8, 0.4],
-          scale: [0.95, 1.05, 0.95],
-        }}
-        transition={{
-          duration: 6 - (visuals.glowIntensity ?? 0.5) * 2,
-          repeat: Number.POSITIVE_INFINITY,
-          ease: 'easeInOut',
-        }}
+        animate={
+          staticMode
+            ? { opacity: 0.6, scale: 1 }
+            : {
+                opacity: [0.4, 0.8, 0.4],
+                scale: [0.95, 1.05, 0.95],
+              }
+        }
+        transition={
+          staticMode
+            ? { duration: 0 }
+            : {
+                duration: 6 - (visuals.glowIntensity ?? 0.5) * 2,
+                repeat: Number.POSITIVE_INFINITY,
+                ease: 'easeInOut',
+              }
+        }
       />
 
       <svg width="200" height="200" viewBox="0 0 200 200">
@@ -220,13 +236,15 @@ export const PetSprite = memo(function PetSprite() {
 
         {physical.features.includes('Tail Flame') && (
           <motion.g
-            animate={{
-              opacity: [0.7, 1, 0.7],
-            }}
-            transition={{
-              duration: 1,
-              repeat: Number.POSITIVE_INFINITY,
-            }}
+            animate={staticMode ? { opacity: 0.9 } : { opacity: [0.7, 1, 0.7] }}
+            transition={
+              staticMode
+                ? { duration: 0 }
+                : {
+                    duration: 1,
+                    repeat: Number.POSITIVE_INFINITY,
+                  }
+            }
           >
             <circle cx="100" cy="160" r="10" fill="#FF6B00" />
             <circle cx="100" cy="155" r="8" fill="#FFD700" />
@@ -242,14 +260,22 @@ export const PetSprite = memo(function PetSprite() {
             stroke={visuals.colors[1] || physical.primaryColor}
             strokeWidth="2"
             opacity="0.3"
-            animate={{
-              r: [85, 95, 85],
-              opacity: [0.2, 0.5, 0.2],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Number.POSITIVE_INFINITY,
-            }}
+            animate={
+              staticMode
+                ? { r: 90, opacity: 0.3 }
+                : {
+                    r: [85, 95, 85],
+                    opacity: [0.2, 0.5, 0.2],
+                  }
+            }
+            transition={
+              staticMode
+                ? { duration: 0 }
+                : {
+                    duration: 3,
+                    repeat: Number.POSITIVE_INFINITY,
+                  }
+            }
           />
         )}
 
