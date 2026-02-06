@@ -22,6 +22,7 @@ export class GameScene extends Phaser.Scene {
   // Game state
   private petData: any;
   private pet!: Phaser.GameObjects.Container;
+  private petTraits!: PhysicalTraits;
   private petBonuses: any;
   private highScore: number = 0;
 
@@ -86,6 +87,19 @@ export class GameScene extends Phaser.Scene {
 
     // Create player pet
     this.createPet();
+
+    this.narrativeSystem.setContext({
+      petTraits: {
+        bodyType: this.petTraits.bodyType,
+        pattern: this.petTraits.pattern,
+        elements: this.petData?.elements ?? [],
+      },
+      performance: {
+        bossCount: this.bossesDefeated,
+        upgradesUnlocked: this.getUnlockedUpgradeIds(),
+        maxCombo: 0,
+      },
+    });
 
     // Create groups for entities
     this.enemies = this.physics.add.group();
@@ -210,6 +224,7 @@ export class GameScene extends Phaser.Scene {
       size: this.petData?.size || 1,
       features: this.petData?.features || [],
     };
+    this.petTraits = petTraits;
 
     // Create larger pet sprite (180px instead of 60px)
     this.pet = this.petRenderer.createPetSprite(petTraits, this.petData?.genomeSeed || 0, 180);
@@ -412,8 +427,16 @@ export class GameScene extends Phaser.Scene {
         buyBtn.setInteractive();
         buyBtn.on('pointerdown', () => {
           if (this.upgradeSystem.purchase(upgrade.id)) {
+            this.narrativeSystem.updateContext({
+              performance: {
+                lastUpgradeId: upgrade.id,
+                upgradesUnlocked: this.getUnlockedUpgradeIds(),
+              },
+            });
+
             // Check for upgrade narrative
             this.narrativeSystem.checkUpgradeStory(upgrade.id);
+            this.narrativeSystem.checkContextualStory('upgradeUnlocked');
 
             this.hideUpgradePanel();
             this.showUpgradePanel(); // Refresh
@@ -762,7 +785,13 @@ export class GameScene extends Phaser.Scene {
     // Check for boss narrative
     if (isBoss) {
       this.bossesDefeated++;
+      this.narrativeSystem.updateContext({
+        performance: {
+          bossCount: this.bossesDefeated,
+        },
+      });
       this.narrativeSystem.checkBossStory(this.bossesDefeated);
+      this.narrativeSystem.checkContextualStory('bossDefeated');
       this.cameras.main.shake(300, 0.015);
     }
 
@@ -888,6 +917,7 @@ export class GameScene extends Phaser.Scene {
   private onWaveComplete(wave: number) {
     // Check for narrative
     this.narrativeSystem.checkWaveStory(wave);
+    this.narrativeSystem.checkContextualStory('waveComplete');
 
     const msg = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2, `Wave ${wave} Complete!`, {
       font: 'bold 48px Arial',
@@ -963,6 +993,13 @@ export class GameScene extends Phaser.Scene {
         });
       }
     }
+  }
+
+  private getUnlockedUpgradeIds(): string[] {
+    return this.upgradeSystem
+      .getAllUpgrades()
+      .filter((upgrade) => upgrade.level > 0)
+      .map((upgrade) => upgrade.id);
   }
 
   private showStory(story: StoryBeat) {

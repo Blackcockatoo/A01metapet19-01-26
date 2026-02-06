@@ -8,6 +8,22 @@ export interface StoryBeat {
   isImportant: boolean; // Show with special emphasis
 }
 
+export type NarrativeTrigger = 'bossDefeated' | 'upgradeUnlocked' | 'waveComplete';
+
+export interface ContextualStoryRequirements {
+  bodyType?: string[];
+  pattern?: string[];
+  elements?: string[];
+  upgradeIds?: string[];
+  bossCount?: number;
+  minCombo?: number;
+}
+
+export interface ContextualStoryBeat extends StoryBeat {
+  trigger: NarrativeTrigger;
+  requirements?: ContextualStoryRequirements;
+}
+
 export const STORY_BEATS: StoryBeat[] = [
   {
     id: 'intro',
@@ -191,6 +207,97 @@ export const STORY_BEATS: StoryBeat[] = [
     ],
     concept: 'Meta Truth',
     isImportant: true,
+  },
+];
+
+export const CONTEXTUAL_STORY_BEATS: ContextualStoryBeat[] = [
+  {
+    id: 'trait_cubic_first_boss',
+    wave: 0,
+    title: 'Cubic Resolve',
+    speaker: 'Mentor AI',
+    lines: [
+      "Your Cubic form held steady through the first boss.",
+      "That rigid geometry channels force into unshakable defense.",
+      "Remember this: the stronger the shape, the stronger the vow.",
+    ],
+    concept: 'Trait Resonance',
+    isImportant: true,
+    trigger: 'bossDefeated',
+    requirements: {
+      bodyType: ['Cubic'],
+      bossCount: 1,
+    },
+  },
+  {
+    id: 'trait_pattern_striped',
+    wave: 0,
+    title: 'Patterned Momentum',
+    speaker: 'Mentor AI',
+    lines: [
+      "Those stripes aren’t just decoration—they’re flow lines.",
+      "Patterns teach your pet to repeat winning paths.",
+      "The cosmos rewards a design that knows its rhythm.",
+    ],
+    concept: 'Pattern Dynamics',
+    isImportant: false,
+    trigger: 'bossDefeated',
+    requirements: {
+      pattern: ['Striped', 'Spotted'],
+      bossCount: 1,
+    },
+  },
+  {
+    id: 'trait_elemental_blaze',
+    wave: 0,
+    title: 'Elemental Echo',
+    speaker: 'Mentor AI',
+    lines: [
+      "I can feel Fire and Water intertwined in your pet.",
+      "Dual elements balance momentum with calm judgment.",
+      "Harness that polarity and your shots will sing.",
+    ],
+    concept: 'Elemental Alignment',
+    isImportant: false,
+    trigger: 'bossDefeated',
+    requirements: {
+      elements: ['Fire', 'Water'],
+      bossCount: 1,
+    },
+  },
+  {
+    id: 'milestone_multishot',
+    wave: 0,
+    title: 'Multi-Shot Milestone',
+    speaker: 'Mentor AI',
+    lines: [
+      "Multi-shot awakened. Your intent now branches like a constellation.",
+      "Each projectile is a thought made visible.",
+      "Guide them well, and the battlefield will bend around you.",
+    ],
+    concept: 'Upgrade Milestone',
+    isImportant: true,
+    trigger: 'upgradeUnlocked',
+    requirements: {
+      upgradeIds: ['multiShot'],
+    },
+  },
+  {
+    id: 'milestone_autofire',
+    wave: 0,
+    title: 'Autonomy Protocol',
+    speaker: 'Mentor AI',
+    lines: [
+      "Auto-fire engaged. Your pet now answers instinct.",
+      "This is trust given shape—bonded reflexes, steady and true.",
+      "Let the rhythm carry you through the long waves.",
+    ],
+    concept: 'Upgrade Milestone',
+    isImportant: false,
+    trigger: 'upgradeUnlocked',
+    requirements: {
+      upgradeIds: ['autoFire'],
+    },
   },
 ];
 
