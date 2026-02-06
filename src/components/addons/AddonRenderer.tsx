@@ -97,12 +97,14 @@ export const AddonRenderer: React.FC<AddonRendererProps> = ({
 
   const isLocked = positionOverride?.locked ?? false;
 
-  // Handle mouse down for dragging
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  const handlePointerDown = useCallback((e: React.PointerEvent<SVGGElement>) => {
     if (!draggable || isLocked) return;
+    if (e.button !== 0 && e.pointerType !== 'touch') return;
     e.preventDefault();
     e.stopPropagation();
+    setShowControls(true);
 
+    (e.currentTarget as SVGGElement).setPointerCapture?.(e.pointerId);
     setIsDragging(true);
     dragStartRef.current = {
       x: e.clientX,
@@ -111,7 +113,7 @@ export const AddonRenderer: React.FC<AddonRendererProps> = ({
       posY: position.y,
     };
 
-    const handleMouseMove = (moveEvent: MouseEvent) => {
+    const handlePointerMove = (moveEvent: PointerEvent) => {
       if (!dragStartRef.current) return;
 
       const dx = moveEvent.clientX - dragStartRef.current.x;
@@ -126,15 +128,17 @@ export const AddonRenderer: React.FC<AddonRendererProps> = ({
       onPositionChange?.(newX, newY);
     };
 
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
       setIsDragging(false);
       dragStartRef.current = null;
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
   }, [draggable, isLocked, position, onPositionChange]);
 
   // Animation transform
@@ -182,8 +186,8 @@ export const AddonRenderer: React.FC<AddonRendererProps> = ({
       opacity={opacity}
       onMouseEnter={() => draggable && setShowControls(true)}
       onMouseLeave={() => !isDragging && setShowControls(false)}
-      style={{ cursor: draggable && !isLocked ? 'grab' : 'default' }}
-      onMouseDown={handleMouseDown}
+      style={{ cursor: draggable && !isLocked ? 'grab' : 'default', touchAction: 'none' }}
+      onPointerDown={handlePointerDown}
     >
       {/* Drag indicator / selection highlight */}
       {draggable && showControls && (
