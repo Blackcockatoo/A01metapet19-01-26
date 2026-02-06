@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { useStore } from '@/lib/store';
 import { triggerHaptic } from '@/lib/haptics';
 import { UtensilsCrossed, Droplets, Sparkles, Moon } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
 /**
  * Floating action buttons near the pet for quick interactions
@@ -15,6 +16,7 @@ export function FloatingActions() {
   const play = useStore(state => state.play);
   const sleep = useStore(state => state.sleep);
   const systemState = useStore(state => state.systemState);
+  const { strings } = useLocale();
 
   const [activeAction, setActiveAction] = useState<string | null>(null);
 
@@ -34,7 +36,7 @@ export function FloatingActions() {
       action: feed,
       color: 'from-orange-500 to-red-500',
       activeColor: 'ring-orange-400',
-      label: 'Feed',
+      label: strings.core.actions.feed,
     },
     {
       name: 'clean',
@@ -42,7 +44,7 @@ export function FloatingActions() {
       action: clean,
       color: 'from-blue-500 to-cyan-500',
       activeColor: 'ring-blue-400',
-      label: 'Clean',
+      label: strings.core.actions.clean,
     },
     {
       name: 'play',
@@ -50,7 +52,7 @@ export function FloatingActions() {
       action: play,
       color: 'from-pink-500 to-purple-500',
       activeColor: 'ring-pink-400',
-      label: 'Play',
+      label: strings.core.actions.play,
     },
     {
       name: 'sleep',
@@ -58,7 +60,7 @@ export function FloatingActions() {
       action: sleep,
       color: 'from-indigo-500 to-violet-500',
       activeColor: 'ring-indigo-400',
-      label: 'Rest',
+      label: strings.core.actions.rest,
     },
   ];
 
@@ -80,6 +82,7 @@ export function FloatingActions() {
             shadow-lg shadow-black/30
             active:scale-95 transition-all duration-150
             touch-manipulation
+            focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white
             ${activeAction === name ? `ring-2 ${activeColor} ring-offset-2 ring-offset-slate-950` : ''}
             ${isSealed ? 'opacity-40 grayscale cursor-not-allowed active:scale-100' : ''}
           `}

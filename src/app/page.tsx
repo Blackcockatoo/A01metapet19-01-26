@@ -61,7 +61,9 @@ import {
   ChevronDown,
   ChevronUp,
   Award,
-  Users,
+  BookOpen,
+  GraduationCap,
+  Lock,
 } from 'lucide-react';
 import { PetResponseOverlay } from '@/components/PetResponseOverlay';
 import { DigitalKeyPanel } from '@/components/DigitalKeyPanel';
@@ -77,8 +79,9 @@ import { HydrationTracker, HydrationQuickButton } from '@/components/HydrationTr
 import { SleepTracker, SleepStatusButton } from '@/components/SleepTracker';
 import { AnxietyAnchor, EmergencyGroundingButton } from '@/components/AnxietyAnchor';
 import { WellnessSettings, WellnessSettingsButton } from '@/components/WellnessSettings';
+import { ClassroomModes } from '@/components/ClassroomModes';
 import { useWellnessStore } from '@/lib/wellness';
-import { ClassroomManager } from '@/components/ClassroomManager';
+import { useLocale, LOCALE_LABELS, SUPPORTED_LOCALES, type Locale } from '@/lib/i18n';
 
 interface PetSummary {
   id: string;
@@ -185,7 +188,8 @@ function CollapsibleSection({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-800/30 transition-colors touch-manipulation"
+        className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-800/30 transition-colors touch-manipulation focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
+        aria-expanded={isOpen}
       >
         <div className="flex items-center gap-2">
           {icon}
@@ -220,6 +224,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [genomeHash, setGenomeHash] = useState<GenomeHash | null>(null);
   const [createdAt, setCreatedAt] = useState<number | null>(null);
+  const [learningMode, setLearningMode] = useState<'sandbox' | 'curriculum'>('sandbox');
   const [persistenceActive, setPersistenceActive] = useState(false);
   const [persistenceSupported, setPersistenceSupported] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
@@ -249,6 +254,21 @@ export default function Home() {
   const [sleepOpen, setSleepOpen] = useState(false);
   const [anxietyOpen, setAnxietyOpen] = useState(false);
   const [wellnessSettingsOpen, setWellnessSettingsOpen] = useState(false);
+  const [lowBandwidthMode, setLowBandwidthMode] = useState(false);
+  const { locale, setLocale, strings } = useLocale();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const stored = window.localStorage.getItem('metapet-low-bandwidth');
+    if (stored === 'true') setLowBandwidthMode(true);
+  }, []);
+
+  const handleLowBandwidthToggle = (next: boolean) => {
+    setLowBandwidthMode(next);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('metapet-low-bandwidth', String(next));
+    }
+  };
   const [lastWellnessAction, setLastWellnessAction] = useState<'feed' | 'clean' | 'play' | 'sleep' | null>(null);
   const wellnessSetupCompleted = useWellnessStore(state => state.setupCompletedAt);
   const checkStreaks = useWellnessStore(state => state.checkStreaks);
@@ -1121,7 +1141,7 @@ export default function Home() {
   return (
     <AmbientBackground>
       {/* Ambient Particles */}
-      <AmbientParticles />
+      <AmbientParticles enabled={!lowBandwidthMode} />
 
       {/* Onboarding Tutorial for new users */}
       <OnboardingTutorial />
@@ -1135,13 +1155,17 @@ export default function Home() {
           {/* Pet Name & Type Toggle */}
           <div className="text-center px-4 mb-4">
             <div className="flex items-center justify-center gap-2 mb-2">
+              <label htmlFor="pet-name" className="sr-only">
+                {strings.core.nameLabel}
+              </label>
               <input
+                id="pet-name"
                 type="text"
                 value={petName}
                 onChange={event => setPetName(event.target.value)}
                 onBlur={() => void handleNameBlur()}
-                placeholder="Name your companion"
-                className="w-full max-w-[280px] text-2xl font-bold text-center bg-transparent border-none text-white placeholder:text-zinc-500 focus:outline-none focus:ring-0 sm:max-w-[360px] md:max-w-[420px]"
+                placeholder={strings.core.namePlaceholder}
+                className="w-full max-w-[280px] text-2xl font-bold text-center bg-transparent border-none text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950 sm:max-w-[360px] md:max-w-[420px]"
               />
             </div>
             <div className="flex items-center justify-center gap-2">
@@ -1150,22 +1174,24 @@ export default function Home() {
                 size="sm"
                 onClick={() => setPetType('geometric')}
                 className="text-xs h-7 touch-manipulation"
+                aria-pressed={petType === 'geometric'}
               >
-                Geometric
+                {strings.core.petType.geometric}
               </Button>
               <Button
                 variant={petType === 'auralia' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setPetType('auralia')}
                 className="text-xs h-7 touch-manipulation"
+                aria-pressed={petType === 'auralia'}
               >
-                Auralia
+                {strings.core.petType.auralia}
               </Button>
             </div>
           </div>
 
           {/* Pet Hero with Progress Rings */}
-          <PetHero className="py-4" />
+          <PetHero className="py-4" staticMode={lowBandwidthMode} />
 
           {/* Quick Actions */}
           <FloatingActions />
@@ -1179,7 +1205,7 @@ export default function Home() {
               className="border-purple-500/50 text-purple-300 hover:bg-purple-500/10 touch-manipulation"
             >
               <Award className="w-4 h-4 mr-2" />
-              View Certificate
+              {strings.core.viewCertificate}
             </Button>
           </div>
 
@@ -1228,7 +1254,7 @@ export default function Home() {
 
           {/* Evolution Progress */}
           <CollapsibleSection
-            title="Evolution"
+            title={strings.sections.evolution}
             icon={<Sparkles className="w-5 h-5 text-cyan-300" />}
             defaultOpen
           >
@@ -1238,7 +1264,7 @@ export default function Home() {
           {/* Mini Games */}
           <div id="mini-games">
             <CollapsibleSection
-              title="Mini-Games"
+              title={strings.sections.miniGames}
               icon={<Sparkles className="w-5 h-5 text-pink-400" />}
               defaultOpen
             >
@@ -1246,9 +1272,99 @@ export default function Home() {
             </CollapsibleSection>
           </div>
 
+          {/* Learning Modes */}
+          <CollapsibleSection
+            title="Learning Modes"
+            icon={<GraduationCap className="w-5 h-5 text-emerald-300" />}
+            defaultOpen
+          >
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/50 p-4">
+                <div>
+                  <p className="text-sm font-semibold text-white">Teacher toggle</p>
+                  <p className="text-xs text-zinc-400">
+                    Switch between free-form sandbox exploration and guided curriculum delivery.
+                  </p>
+                </div>
+                <label className="flex items-center gap-3 text-xs uppercase tracking-wide text-zinc-400">
+                  <span>{learningMode === 'curriculum' ? 'Curriculum' : 'Sandbox'}</span>
+                  <input
+                    type="checkbox"
+                    checked={learningMode === 'curriculum'}
+                    onChange={() =>
+                      setLearningMode(prevMode => (prevMode === 'sandbox' ? 'curriculum' : 'sandbox'))
+                    }
+                    className="relative h-6 w-11 appearance-none rounded-full border border-slate-700 bg-slate-900/70 transition before:absolute before:left-0.5 before:top-0.5 before:h-4 before:w-4 before:rounded-full before:bg-white/80 before:transition checked:border-emerald-400 checked:bg-emerald-500/80 checked:before:translate-x-5 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  />
+                </label>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div
+                  className={`space-y-3 rounded-xl border p-4 transition ${
+                    learningMode === 'sandbox'
+                      ? 'border-cyan-400/60 bg-cyan-500/10'
+                      : 'border-slate-800 bg-slate-950/40'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-cyan-300" />
+                    <span className="text-sm font-semibold text-white">Free-form sandbox mode</span>
+                  </div>
+                  <p className="text-xs text-zinc-400">
+                    Open exploration with flexible tools, creative prompts, and student-led discovery.
+                  </p>
+                  <ul className="space-y-2 text-xs text-zinc-300">
+                    <li>• Rapid prototyping and experimentation</li>
+                    <li>• Optional scaffolds and hints on demand</li>
+                    <li>• Peer collaboration and reflection notes</li>
+                  </ul>
+                </div>
+
+                <div
+                  className={`space-y-3 rounded-xl border p-4 transition ${
+                    learningMode === 'curriculum'
+                      ? 'border-emerald-400/60 bg-emerald-500/10'
+                      : 'border-slate-800 bg-slate-950/40'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-emerald-300" />
+                    <span className="text-sm font-semibold text-white">Guided curriculum mode</span>
+                  </div>
+                  <p className="text-xs text-zinc-400">
+                    Standards-aligned sequence with checkpoints, pacing guidance, and teacher visibility.
+                  </p>
+                  <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+                    <p className="text-xs font-semibold text-emerald-200">Standards mapping</p>
+                    <ul className="mt-2 space-y-1 text-xs text-zinc-300">
+                      <li>• NGSS: MS-ETS1-1, MS-ETS1-4</li>
+                      <li>• ISTE: 1.1 Empowered Learner, 1.4 Innovative Designer</li>
+                    </ul>
+                  </div>
+                  <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
+                    <p className="text-xs font-semibold text-zinc-200">Locked lesson objectives</p>
+                    <ul className="mt-2 space-y-2 text-xs text-zinc-300">
+                      {[
+                        'Define success criteria for an iterative prototype.',
+                        'Collect and interpret feedback to refine a design.',
+                        'Communicate findings with evidence-based reflection.',
+                      ].map(objective => (
+                        <li key={objective} className="flex items-start gap-2">
+                          <Lock className="mt-0.5 h-3.5 w-3.5 text-zinc-500" />
+                          <span>{objective}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CollapsibleSection>
+
           {/* Breeding Lab */}
           <CollapsibleSection
-            title="Breeding Lab"
+            title={strings.sections.breedingLab}
             icon={<FlaskConical className="w-5 h-5 text-pink-400" />}
           >
             <div className="space-y-4">
@@ -1386,6 +1502,77 @@ export default function Home() {
                   </Button>
                 </div>
               )}
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            title={strings.sections.classroomTools}
+            icon={<Shield className="w-5 h-5 text-emerald-300" />}
+          >
+            <div className="space-y-4">
+              <div className="flex flex-col gap-2">
+                <label htmlFor="locale-select" className="text-xs uppercase tracking-wide text-zinc-400">
+                  {strings.classroom.languageLabel}
+                </label>
+                <select
+                  id="locale-select"
+                  value={locale}
+                  onChange={event => setLocale(event.target.value as Locale)}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-3 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-400 touch-manipulation"
+                >
+                  {SUPPORTED_LOCALES.map(option => (
+                    <option key={option} value={option}>
+                      {LOCALE_LABELS[option]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-200">
+                      {strings.classroom.lowBandwidthTitle}
+                    </p>
+                    <p className="text-xs text-emerald-200/70">
+                      {strings.classroom.lowBandwidthDescription}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleLowBandwidthToggle(!lowBandwidthMode)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 ${
+                      lowBandwidthMode
+                        ? 'bg-emerald-400/20 text-emerald-100 border-emerald-400/40'
+                        : 'bg-slate-900 text-emerald-200 border-emerald-500/20'
+                    }`}
+                    aria-pressed={lowBandwidthMode}
+                  >
+                    {lowBandwidthMode
+                      ? strings.classroom.lowBandwidthOn
+                      : strings.classroom.lowBandwidthOff}
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-slate-800 bg-slate-950/40 p-4 space-y-3">
+                <div>
+                  <p className="text-sm font-semibold text-zinc-100">
+                    {strings.classroom.teacherPromptsTitle}
+                  </p>
+                  <p className="text-xs text-zinc-400">
+                    {strings.classroom.teacherPromptsDescription}
+                  </p>
+                </div>
+                <ul className="space-y-2">
+                  {strings.classroom.teacherPrompts.map(prompt => (
+                    <li key={prompt.title} className="rounded-lg border border-slate-800 bg-slate-900/60 p-3">
+                      <p className="text-sm font-semibold text-cyan-200">{prompt.title}</p>
+                      <p className="text-xs text-zinc-300 mt-1">{prompt.prompt}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </CollapsibleSection>
 
@@ -1589,12 +1776,12 @@ export default function Home() {
             <AchievementShelf />
           </CollapsibleSection>
 
-          {/* Classroom Management */}
+          {/* Classroom Modes */}
           <CollapsibleSection
-            title="Classroom Management"
-            icon={<Users className="w-5 h-5 text-indigo-300" />}
+            title="Classroom Modes"
+            icon={<Award className="w-5 h-5 text-cyan-300" />}
           >
-            <ClassroomManager />
+            <ClassroomModes />
           </CollapsibleSection>
         </div>
 
