@@ -97,12 +97,14 @@ export const AddonRenderer: React.FC<AddonRendererProps> = ({
 
   const isLocked = positionOverride?.locked ?? false;
 
-  // Handle mouse down for dragging
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  const handlePointerDown = useCallback((e: React.PointerEvent<SVGGElement>) => {
     if (!draggable || isLocked) return;
+    if (e.button !== 0 && e.pointerType !== 'touch') return;
     e.preventDefault();
     e.stopPropagation();
+    setShowControls(true);
 
+    (e.currentTarget as SVGGElement).setPointerCapture?.(e.pointerId);
     setIsDragging(true);
     dragStartRef.current = {
       x: e.clientX,
@@ -110,32 +112,31 @@ export const AddonRenderer: React.FC<AddonRendererProps> = ({
       posX: position.x,
       posY: position.y,
     };
-
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      if (!dragStartRef.current) return;
-
-      const dx = moveEvent.clientX - dragStartRef.current.x;
-      const dy = moveEvent.clientY - dragStartRef.current.y;
-
-      // Scale the movement based on SVG viewBox vs actual size
-      const scaleFactor = 400 / (document.querySelector('.auralia-pet-svg')?.getBoundingClientRect().width || 400);
-
-      const newX = dragStartRef.current.posX + dx * scaleFactor;
-      const newY = dragStartRef.current.posY + dy * scaleFactor;
-
-      onPositionChange?.(newX, newY);
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      dragStartRef.current = null;
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
   }, [draggable, isLocked, position, onPositionChange]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent<SVGGElement>) => {
+    if (!isDragging || !dragStartRef.current) return;
+    e.preventDefault();
+
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+
+    // Scale the movement based on SVG viewBox vs actual size
+    const scaleFactor = 400 / (document.querySelector('.auralia-pet-svg')?.getBoundingClientRect().width || 400);
+
+    const newX = dragStartRef.current.posX + dx * scaleFactor;
+    const newY = dragStartRef.current.posY + dy * scaleFactor;
+
+    onPositionChange?.(newX, newY);
+  }, [isDragging, onPositionChange]);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent<SVGGElement>) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    (e.currentTarget as SVGGElement).releasePointerCapture?.(e.pointerId);
+    setIsDragging(false);
+    dragStartRef.current = null;
+  }, [isDragging]);
 
   // Animation transform
   const animationTransform = useMemo(() => {
@@ -182,8 +183,11 @@ export const AddonRenderer: React.FC<AddonRendererProps> = ({
       opacity={opacity}
       onMouseEnter={() => draggable && setShowControls(true)}
       onMouseLeave={() => !isDragging && setShowControls(false)}
-      style={{ cursor: draggable && !isLocked ? 'grab' : 'default' }}
-      onMouseDown={handleMouseDown}
+      style={{ cursor: draggable && !isLocked ? 'grab' : 'default', touchAction: 'none' }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
     >
       {/* Drag indicator / selection highlight */}
       {draggable && showControls && (

@@ -230,11 +230,15 @@ export class GameScene extends Phaser.Scene {
     };
     this.petTraits = petTraits;
 
-    // Create larger pet sprite (180px instead of 60px)
-    this.pet = this.petRenderer.createPetSprite(petTraits, this.petData?.genomeSeed || 0, 180);
+    const petSize = Math.max(120, petTraits.size * 160);
+    this.pet = this.petRenderer.createPetSprite(
+      petTraits,
+      this.petData?.genomeSeed || 0,
+      petSize
+    );
 
     // Position lower to accommodate larger size
-    this.pet.setPosition(width / 2, height - 150);
+    this.pet.setPosition(width / 2, height - petSize * 0.45);
 
     this.petBonuses = this.petRenderer.calculateTraitBonuses(petTraits);
 

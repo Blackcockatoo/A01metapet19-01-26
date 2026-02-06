@@ -28,7 +28,12 @@ export class PetRenderer {
     const container = this.scene.add.container(0, 0);
 
     // 1. Body shape based on bodyType
-    const body = this.createBody(traits.bodyType, traits.primaryColor, size);
+    const body = this.createBody(
+      traits.bodyType,
+      traits.primaryColor,
+      traits.secondaryColor,
+      size
+    );
     container.add(body);
 
     // 2. Pattern overlay
@@ -111,38 +116,34 @@ export class PetRenderer {
             });
           });
 
-          // Schedule next blink
-          this.scene.time.addEvent({
-            delay: Phaser.Math.Between(3000, 6000),
-            callback: () => {},
-            loop: true,
-          });
         },
         loop: true,
       });
     }
   }
 
-  private createBody(bodyType: string, color: string, size: number): Phaser.GameObjects.Graphics {
+  private createBody(
+    bodyType: string,
+    color: string,
+    strokeColor: string,
+    size: number
+  ): Phaser.GameObjects.Graphics {
     const graphics = this.scene.add.graphics();
     const fillColor = this.hexToNumber(color);
+    const outlineColor = this.hexToNumber(strokeColor);
 
-    // Add gradient effect for more depth
     graphics.fillStyle(fillColor, 1);
+    graphics.lineStyle(3, outlineColor, 1);
 
     switch (bodyType) {
       case 'Spherical':
         graphics.fillCircle(0, 0, size / 2);
-        // Add highlight
-        graphics.fillStyle(fillColor, 0.3);
-        graphics.fillCircle(-size / 6, -size / 6, size / 4);
+        graphics.strokeCircle(0, 0, size / 2);
         break;
 
       case 'Cubic':
         graphics.fillRect(-size / 2, -size / 2, size, size);
-        // Add shading
-        graphics.fillStyle(0x000000, 0.15);
-        graphics.fillRect(-size / 2, size / 4, size, size / 4);
+        graphics.strokeRect(-size / 2, -size / 2, size, size);
         break;
 
       case 'Pyramidal':
@@ -151,58 +152,45 @@ export class PetRenderer {
           -size / 2, size / 2,
           size / 2, size / 2
         );
-        // Add highlight on top
-        graphics.fillStyle(fillColor, 0.3);
-        graphics.fillTriangle(
+        graphics.strokeTriangle(
           0, -size / 2,
-          -size / 4, 0,
-          size / 4, 0
+          -size / 2, size / 2,
+          size / 2, size / 2
         );
         break;
 
       case 'Cylindrical':
-        // Cylinder (vertical ellipse with depth)
-        graphics.fillEllipse(0, 0, size / 2, size / 1.5);
-        graphics.fillStyle(0x000000, 0.1);
-        graphics.fillEllipse(0, -size / 3, size / 2, size / 10);
+        graphics.fillEllipse(0, 0, size * 0.6, size * 1.2);
+        graphics.strokeEllipse(0, 0, size * 0.6, size * 1.2);
         break;
 
       case 'Toroidal':
-        // Donut shape
         graphics.fillCircle(0, 0, size / 2);
-        graphics.fillStyle(0x000000, 1);
-        graphics.fillCircle(0, 0, size / 4);
-        graphics.fillStyle(fillColor, 0.5);
-        graphics.fillCircle(0, 0, size / 4);
+        graphics.strokeCircle(0, 0, size / 2);
+        graphics.strokeCircle(0, 0, size / 4);
         break;
 
       case 'Crystalline':
-        // Crystal/gem shape (hexagon)
-        const points: Phaser.Geom.Point[] = [];
-        for (let i = 0; i < 6; i++) {
-          const angle = (Math.PI / 3) * i - Math.PI / 2;
-          points.push(
-            new Phaser.Geom.Point(
-              Math.cos(angle) * size / 2,
-              Math.sin(angle) * size / 2
-            )
-          );
-        }
-        graphics.fillPoints(points, true);
-        // Add facets
-        graphics.fillStyle(fillColor, 0.4);
-        for (let i = 0; i < 6; i++) {
-          if (i % 2 === 0) {
-            graphics.fillTriangle(0, 0, points[i].x, points[i].y, points[(i + 1) % 6].x, points[(i + 1) % 6].y);
-          }
-        }
+        graphics.fillPoints([
+          new Phaser.Geom.Point(0, -size / 2),
+          new Phaser.Geom.Point(size * 0.7, -size * 0.3),
+          new Phaser.Geom.Point(size * 0.5, size * 0.5),
+          new Phaser.Geom.Point(-size * 0.5, size * 0.5),
+          new Phaser.Geom.Point(-size * 0.7, -size * 0.3),
+        ], true);
+        graphics.strokePoints([
+          new Phaser.Geom.Point(0, -size / 2),
+          new Phaser.Geom.Point(size * 0.7, -size * 0.3),
+          new Phaser.Geom.Point(size * 0.5, size * 0.5),
+          new Phaser.Geom.Point(-size * 0.5, size * 0.5),
+          new Phaser.Geom.Point(-size * 0.7, -size * 0.3),
+        ], true);
         break;
 
       default:
         // Default to spherical
         graphics.fillCircle(0, 0, size / 2);
-        graphics.fillStyle(fillColor, 0.3);
-        graphics.fillCircle(-size / 6, -size / 6, size / 4);
+        graphics.strokeCircle(0, 0, size / 2);
     }
 
     return graphics;
