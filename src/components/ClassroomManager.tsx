@@ -42,13 +42,6 @@ const PROGRESS_STORAGE_KEY = 'metapet-classroom-progress';
 const ANALYTICS_STORAGE_KEY = 'metapet-classroom-analytics';
 
 const DEFAULT_STATUS: ProgressStatus = 'not-started';
-const EMPTY_ANALYTICS: AggregatedAnalytics = {
-  totalStudents: 0,
-  totalAssignments: 0,
-  completionRate: 0,
-  assignments: [],
-  updatedAt: 0,
-};
 
 const sanitizeAlias = (value: string) => value.trim().slice(0, 32);
 const sanitizeTitle = (value: string) => value.trim().slice(0, 60);
@@ -70,7 +63,6 @@ export function ClassroomManager() {
   const [students, setStudents] = useState<Student[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [progress, setProgress] = useState<ProgressMap>({});
-  const [analyticsResetAt, setAnalyticsResetAt] = useState<number | null>(null);
   const [newAlias, setNewAlias] = useState('');
   const [newTitle, setNewTitle] = useState('');
   const [newFocus, setNewFocus] = useState('Mindfulness');
@@ -131,11 +123,8 @@ export function ClassroomManager() {
   }, [assignments, progress, students]);
 
   useEffect(() => {
-    if (analyticsResetAt && analytics.updatedAt <= analyticsResetAt) {
-      return;
-    }
     window.localStorage.setItem(ANALYTICS_STORAGE_KEY, JSON.stringify(analytics));
-  }, [analytics, analyticsResetAt]);
+  }, [analytics]);
 
   const handleAddStudent = () => {
     const alias = sanitizeAlias(newAlias);
@@ -235,11 +224,7 @@ export function ClassroomManager() {
   const resetAnalytics = () => {
     if (!window.confirm('Clear aggregated analytics?')) return;
     window.localStorage.removeItem(ANALYTICS_STORAGE_KEY);
-    setAnalyticsResetAt(Date.now());
   };
-
-  const visibleAnalytics =
-    analyticsResetAt && analytics.updatedAt <= analyticsResetAt ? EMPTY_ANALYTICS : analytics;
 
   return (
     <div className="space-y-6">
@@ -416,7 +401,7 @@ export function ClassroomManager() {
                     </p>
                   </div>
                   <div className="text-xs text-zinc-400">
-                    {visibleAnalytics.assignments.find(item => item.id === assignment.id)?.completeCount ?? 0} / {students.length} complete
+                    {analytics.assignments.find(item => item.id === assignment.id)?.completeCount ?? 0} / {students.length} complete
                   </div>
                 </div>
                 <div className="mt-3 space-y-2">
@@ -454,22 +439,22 @@ export function ClassroomManager() {
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-3">
               <p className="text-xs text-zinc-500">Learners</p>
-              <p className="text-lg font-semibold text-zinc-100">{visibleAnalytics.totalStudents}</p>
+              <p className="text-lg font-semibold text-zinc-100">{analytics.totalStudents}</p>
             </div>
             <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-3">
               <p className="text-xs text-zinc-500">Assignments</p>
-              <p className="text-lg font-semibold text-zinc-100">{visibleAnalytics.totalAssignments}</p>
+              <p className="text-lg font-semibold text-zinc-100">{analytics.totalAssignments}</p>
             </div>
             <div className="col-span-2 rounded-lg border border-slate-800 bg-slate-950/60 p-3">
               <p className="text-xs text-zinc-500">Completion rate</p>
-              <p className="text-lg font-semibold text-zinc-100">{Math.round(visibleAnalytics.completionRate * 100)}%</p>
+              <p className="text-lg font-semibold text-zinc-100">{Math.round(analytics.completionRate * 100)}%</p>
             </div>
           </div>
           <div className="space-y-2">
-            {visibleAnalytics.assignments.length === 0 ? (
-              <p className="text-xs text-zinc-500">Analytics will appear after adding assignments or updating progress.</p>
+            {analytics.assignments.length === 0 ? (
+              <p className="text-xs text-zinc-500">Analytics will appear after adding assignments.</p>
             ) : (
-              visibleAnalytics.assignments.map(entry => (
+              analytics.assignments.map(entry => (
                 <div key={entry.id} className="rounded-lg border border-slate-800 bg-slate-950/60 p-3">
                   <p className="text-sm font-medium text-zinc-100">{entry.title}</p>
                   <p className="text-xs text-zinc-500">
