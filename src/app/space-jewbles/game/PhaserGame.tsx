@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 interface PhaserGameProps {
   petData: any;
@@ -13,11 +13,17 @@ interface PhaserGameProps {
 }
 
 export function PhaserGame({ petData, onGameEnd }: PhaserGameProps) {
-  const gameRef = useRef<Phaser.Game | null>(null);
+  const gameRef = useRef<import('phaser').Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const onGameEndRef = useRef(onGameEnd);
   const petDataRef = useRef(petData);
   const handleGameEndRef = useRef<((event: Event) => void) | null>(null);
+
+  const sendPetDataToMenuScene = useCallback(() => {
+    const menuScene = gameRef.current?.scene.getScene('MenuScene');
+    if (!menuScene) return;
+    menuScene.events.emit('petData', petDataRef.current);
+  }, []);
 
   if (!handleGameEndRef.current) {
     handleGameEndRef.current = (event: Event) => {
@@ -32,7 +38,10 @@ export function PhaserGame({ petData, onGameEnd }: PhaserGameProps) {
 
   useEffect(() => {
     petDataRef.current = petData;
-  }, [petData]);
+    if (gameRef.current?.scene.isActive('MenuScene')) {
+      sendPetDataToMenuScene();
+    }
+  }, [petData, sendPetDataToMenuScene]);
 
   useEffect(() => {
     if (!containerRef.current || typeof window === 'undefined') return;
@@ -53,13 +62,16 @@ export function PhaserGame({ petData, onGameEnd }: PhaserGameProps) {
           parent: containerRef.current!,
         });
 
-        // Send pet data to MenuScene when game is ready
-        gameRef.current.events.once('ready', () => {
-          const menuScene = gameRef.current?.scene.getScene('MenuScene');
-          if (menuScene) {
-            menuScene.events.emit('petData', petDataRef.current);
+        // Send pet data to MenuScene when it is created or becomes active
+        const menuScene = gameRef.current.scene.getScene('MenuScene');
+        if (menuScene) {
+          if (menuScene.scene.isActive()) {
+            sendPetDataToMenuScene();
+          } else {
+            menuScene.events.once('create', sendPetDataToMenuScene);
+            menuScene.events.once('wake', sendPetDataToMenuScene);
           }
-        });
+        }
       });
     });
 
@@ -71,7 +83,7 @@ export function PhaserGame({ petData, onGameEnd }: PhaserGameProps) {
         gameRef.current = null;
       }
     };
-  }, []);
+  }, [sendPetDataToMenuScene]);
 
   return (
     <div
