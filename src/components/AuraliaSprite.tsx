@@ -21,6 +21,7 @@ type AuraliaSpriteProps = {
   bond?: number;
   size?: 'small' | 'medium' | 'large';
   interactive?: boolean;
+  staticMode?: boolean;
   className?: string;
 };
 
@@ -31,6 +32,7 @@ const AuraliaSprite: React.FC<AuraliaSpriteProps> = ({
   bond = 50,
   size = 'medium',
   interactive = true,
+  staticMode = false,
   className = '',
 }) => {
   // Size configurations
@@ -78,6 +80,7 @@ const AuraliaSprite: React.FC<AuraliaSpriteProps> = ({
 
   // Breathing animation
   useEffect(() => {
+    if (staticMode) return;
     let animationFrame: number;
     let lastTime = Date.now();
 
@@ -92,11 +95,11 @@ const AuraliaSprite: React.FC<AuraliaSpriteProps> = ({
 
     animationFrame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationFrame);
-  }, [energy]);
+  }, [energy, staticMode]);
 
   // Eye movement - follows curiosity
   useEffect(() => {
-    if (!interactive || hovered) return;
+    if (staticMode || !interactive || hovered) return;
 
     const moveEyes = () => {
       if (aiMode === 'curious') {
@@ -120,10 +123,11 @@ const AuraliaSprite: React.FC<AuraliaSpriteProps> = ({
 
     const interval = setInterval(moveEyes, 50);
     return () => clearInterval(interval);
-  }, [interactive, aiMode, curiosity, hovered]);
+  }, [interactive, aiMode, curiosity, hovered, staticMode]);
 
   // Blinking
   useEffect(() => {
+    if (staticMode) return;
     const blink = () => {
       setIsBlinking(true);
       setTimeout(() => setIsBlinking(false), 120);
@@ -134,10 +138,11 @@ const AuraliaSprite: React.FC<AuraliaSpriteProps> = ({
     }, 3000 + Math.random() * 2000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [staticMode]);
 
   // AI mode cycling
   useEffect(() => {
+    if (staticMode) return;
     const cycle = () => {
       const roll = Math.random();
       if (roll < 0.3 && curiosity > 50) {
@@ -151,10 +156,11 @@ const AuraliaSprite: React.FC<AuraliaSpriteProps> = ({
 
     const interval = setInterval(cycle, 4000 + Math.random() * 3000);
     return () => clearInterval(interval);
-  }, [curiosity, bond]);
+  }, [curiosity, bond, staticMode]);
 
   // Particle system
   useEffect(() => {
+    if (staticMode) return;
     let animationFrame: number;
 
     const updateParticles = () => {
@@ -194,12 +200,12 @@ const AuraliaSprite: React.FC<AuraliaSpriteProps> = ({
 
     animationFrame = requestAnimationFrame(updateParticles);
     return () => cancelAnimationFrame(animationFrame);
-  }, [energy, center, colors, prng]);
+  }, [energy, center, colors, prng, staticMode]);
 
   // Mouse/Touch tracking for interactive mode
   const handlePointerMove = useCallback(
     (clientX: number, clientY: number) => {
-      if (!interactive || !svgRef.current) return;
+      if (staticMode || !interactive || !svgRef.current) return;
 
       const rect = svgRef.current.getBoundingClientRect();
       const x = ((clientX - rect.left) / rect.width) * sizeConfig.viewBox;
@@ -215,7 +221,7 @@ const AuraliaSprite: React.FC<AuraliaSpriteProps> = ({
         y: (dy / Math.max(dist, 1)) * Math.min(dist / 20, maxDist),
       });
     },
-    [interactive, svgRef, sizeConfig.viewBox, center]
+    [interactive, staticMode, svgRef, sizeConfig.viewBox, center]
   );
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {

@@ -1,14 +1,170 @@
 'use client';
 
-import { memo, type ComponentType } from 'react';
+import { memo, type ComponentType, useState } from 'react';
 
 import { useStore } from '@/lib/store';
-import { Sparkles, Palette, Brain, Zap, Orbit, Link2, Ban } from 'lucide-react';
+import { Sparkles, Palette, Brain, Zap, Orbit, Link2, Ban, Dna, Info } from 'lucide-react';
 import { GenomeJewbleRing } from './GenomeJewbleRing';
+
+type GeneticsPresetId = 'single' | 'multi' | 'polygenic';
+
+interface GeneticsLocus {
+  id: string;
+  name: string;
+  alleles: [string, string];
+  dominant: string;
+  dominantExplanation: string;
+  recessive: string;
+  recessiveExplanation: string;
+  effect: string;
+}
+
+interface PunnettData {
+  title: string;
+  parentA: string[];
+  parentB: string[];
+  cells: string[][];
+}
+
+interface GeneticsPreset {
+  id: GeneticsPresetId;
+  label: string;
+  description: string;
+  loci: GeneticsLocus[];
+  punnett: PunnettData;
+  phenotypeNotes: string[];
+}
+
+const GENETICS_PRESETS: GeneticsPreset[] = [
+  {
+    id: 'single',
+    label: 'Single-Trait',
+    description: 'One locus, two alleles, clear dominant/recessive outcomes.',
+    loci: [
+      {
+        id: 'fur-shimmer',
+        name: 'Fur Shimmer',
+        alleles: ['S', 's'],
+        dominant: 'S (Shimmer coat)',
+        dominantExplanation: 'Adds reflective sheen to the coat under bright light.',
+        recessive: 's (Matte coat)',
+        recessiveExplanation: 'No shimmer; coat appears velvety in diffuse light.',
+        effect: 'Controls how light interacts with the top coat layer.',
+      },
+    ],
+    punnett: {
+      title: 'Shimmer coat (S) vs matte coat (s)',
+      parentA: ['S', 's'],
+      parentB: ['S', 's'],
+      cells: [
+        ['SS', 'Ss'],
+        ['Ss', 'ss'],
+      ],
+    },
+    phenotypeNotes: [
+      '75% chance of shimmer highlight on the mane.',
+      '25% chance of matte-only coat with softer gradients.',
+    ],
+  },
+  {
+    id: 'multi',
+    label: 'Multi-Trait',
+    description: 'Two loci with independent assortment for classroom practice.',
+    loci: [
+      {
+        id: 'eye-glow',
+        name: 'Eye Glow',
+        alleles: ['G', 'g'],
+        dominant: 'G (Radiant eyes)',
+        dominantExplanation: 'Iridescent glow visible in low light scenes.',
+        recessive: 'g (Standard eyes)',
+        recessiveExplanation: 'Eyes match body palette without glow.',
+        effect: 'Adjusts pupil bloom intensity in creature render.',
+      },
+      {
+        id: 'crest-shape',
+        name: 'Crest Shape',
+        alleles: ['C', 'c'],
+        dominant: 'C (Crown crest)',
+        dominantExplanation: 'Tall crest with pointed silhouette.',
+        recessive: 'c (Leaf crest)',
+        recessiveExplanation: 'Rounded crest with softer edges.',
+        effect: 'Changes head outline and ear framing.',
+      },
+    ],
+    punnett: {
+      title: 'Radiant eyes (G) sample cross',
+      parentA: ['G', 'g'],
+      parentB: ['G', 'g'],
+      cells: [
+        ['GG', 'Gg'],
+        ['Gg', 'gg'],
+      ],
+    },
+    phenotypeNotes: [
+      'If at least one G, eyes glow during nighttime animations.',
+      'C allele makes crest appear taller by ~12%.',
+      'Recessive combo keeps a rounded silhouette and calmer eye highlights.',
+    ],
+  },
+  {
+    id: 'polygenic',
+    label: 'Polygenic',
+    description: 'Multiple loci blending together for continuous traits.',
+    loci: [
+      {
+        id: 'scale-density',
+        name: 'Scale Density',
+        alleles: ['D1', 'd1'],
+        dominant: 'D1 (Dense scales)',
+        dominantExplanation: 'Adds extra scale layers for a textured look.',
+        recessive: 'd1 (Sparse scales)',
+        recessiveExplanation: 'Fewer scales, smoother body gradient.',
+        effect: 'Modulates surface texture richness.',
+      },
+      {
+        id: 'tail-length',
+        name: 'Tail Length',
+        alleles: ['T1', 't1'],
+        dominant: 'T1 (Long tail)',
+        dominantExplanation: 'Longer tail with added sway animation frames.',
+        recessive: 't1 (Short tail)',
+        recessiveExplanation: 'Compact tail with tighter movements.',
+        effect: 'Controls tail segment count.',
+      },
+      {
+        id: 'pattern-contrast',
+        name: 'Pattern Contrast',
+        alleles: ['P1', 'p1'],
+        dominant: 'P1 (High contrast)',
+        dominantExplanation: 'Strong contrast between primary and secondary markings.',
+        recessive: 'p1 (Soft contrast)',
+        recessiveExplanation: 'Subtle transitions between markings.',
+        effect: 'Adjusts pattern color range.',
+      },
+    ],
+    punnett: {
+      title: 'Pattern contrast (P1) sample cross',
+      parentA: ['P1', 'p1'],
+      parentB: ['P1', 'p1'],
+      cells: [
+        ['P1P1', 'P1p1'],
+        ['P1p1', 'p1p1'],
+      ],
+    },
+    phenotypeNotes: [
+      'Polygenic blend shifts overall silhouette and texture intensity.',
+      'Higher dominant allele count nudges contrast and tail length upward.',
+      'Recessive-heavy outcomes produce softer gradients and compact motion.',
+    ],
+  },
+];
 
 export const TraitPanel = memo(function TraitPanel() {
   const traits = useStore(s => s.traits);
   const genome = useStore(s => s.genome);
+  const [presetId, setPresetId] = useState<GeneticsPresetId>('single');
+  const [showPredictions, setShowPredictions] = useState(true);
 
   if (!traits || !genome) {
     return (
@@ -19,6 +175,7 @@ export const TraitPanel = memo(function TraitPanel() {
   }
 
   const { physical, personality, latent, elementWeb } = traits;
+  const activePreset = GENETICS_PRESETS.find(preset => preset.id === presetId) ?? GENETICS_PRESETS[0];
 
   return (
     <div className="space-y-6">
@@ -166,6 +323,137 @@ export const TraitPanel = memo(function TraitPanel() {
           </div>
         </div>
       </section>
+
+      {/* Genetics Classroom */}
+      <section className="space-y-4 bg-slate-950/40 border border-slate-800 rounded-xl p-4 -mx-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-white">
+            <Dna className="w-5 h-5 text-purple-300" />
+            Genetics Classroom
+          </h3>
+          <div className="flex items-center gap-2 text-xs text-zinc-300">
+            <span>Show predictions</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showPredictions}
+              onClick={() => setShowPredictions(prev => !prev)}
+              className={`relative h-6 w-11 rounded-full transition ${showPredictions ? 'bg-purple-500' : 'bg-zinc-700'}`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition ${showPredictions ? 'left-5' : 'left-1'}`}
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {GENETICS_PRESETS.map(preset => (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => setPresetId(preset.id)}
+              className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                presetId === preset.id
+                  ? 'border-purple-400 bg-purple-500/20 text-purple-100'
+                  : 'border-slate-700 text-zinc-300 hover:border-purple-400/60 hover:text-purple-100'
+              }`}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-zinc-400">{activePreset.description}</p>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          {activePreset.loci.map(locus => (
+            <div key={locus.id} className="rounded-lg border border-slate-800 bg-slate-900/60 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-semibold text-white">{locus.name}</div>
+                  <div className="text-xs text-zinc-400">Alleles: {locus.alleles.join(' / ')}</div>
+                </div>
+                <span className="text-[11px] uppercase tracking-wide text-purple-300">Locus</span>
+              </div>
+              <div className="space-y-1 text-xs text-zinc-300">
+                <HoverDetail label="Dominant" value={locus.dominant} description={locus.dominantExplanation} />
+                <HoverDetail label="Recessive" value={locus.recessive} description={locus.recessiveExplanation} />
+                <div className="text-zinc-400">Effect: <span className="text-zinc-200">{locus.effect}</span></div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {showPredictions && (
+          <div className="grid gap-4 lg:grid-cols-[1.1fr,0.9fr]">
+            <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3">
+              <div className="text-xs uppercase tracking-wide text-zinc-400 mb-2">
+                Punnett-square prediction
+              </div>
+              <div className="text-sm font-semibold text-white mb-3">{activePreset.punnett.title}</div>
+              <div className="overflow-x-auto">
+                <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${activePreset.punnett.parentA.length + 1}, minmax(48px, 1fr))` }}>
+                  <div className="text-xs text-zinc-400 flex items-center justify-center">×</div>
+                  {activePreset.punnett.parentA.map(allele => (
+                    <div key={allele} className="text-xs text-purple-200 font-semibold flex items-center justify-center">
+                      {allele}
+                    </div>
+                  ))}
+                  {activePreset.punnett.parentB.map((parentAllele, rowIndex) => (
+                    <div key={`${parentAllele}-${rowIndex}`} className="contents">
+                      <div className="text-xs text-purple-200 font-semibold flex items-center justify-center">
+                        {parentAllele}
+                      </div>
+                      {activePreset.punnett.cells[rowIndex].map((cell, cellIndex) => (
+                        <div
+                          key={`${parentAllele}-${cellIndex}`}
+                          className="rounded-md border border-slate-800 bg-slate-950/60 py-2 text-center text-xs text-white"
+                        >
+                          {cell}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3 space-y-3">
+              <div>
+                <div className="text-xs uppercase tracking-wide text-zinc-400">Phenotype changes on the creature</div>
+                <ul className="mt-2 space-y-1 text-sm text-zinc-200">
+                  {activePreset.phenotypeNotes.map(note => (
+                    <li key={note} className="flex items-start gap-2">
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-purple-400" />
+                      <span>{note}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3 text-xs text-zinc-300">
+                <div className="text-[11px] uppercase tracking-wide text-zinc-400 mb-1">Current phenotype snapshot</div>
+                <div className="grid gap-2">
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">Body Type</span>
+                    <span className="text-white">{physical.bodyType}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">Pattern</span>
+                    <span className="text-white">{physical.pattern}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">Texture</span>
+                    <span className="text-white">{physical.texture}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">Primary Color</span>
+                    <span className="text-white">{physical.primaryColor}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
     </div>
   );
 });
@@ -274,4 +562,25 @@ function formatResidues(residues: number[]): string {
   }
 
   return residues.join(', ');
+}
+
+interface HoverDetailProps {
+  label: string;
+  value: string;
+  description: string;
+}
+
+function HoverDetail({ label, value, description }: HoverDetailProps) {
+  return (
+    <div className="flex items-center gap-1 text-zinc-300">
+      <span className="text-zinc-400">{label}:</span>
+      <span className="text-white">{value}</span>
+      <span className="relative group inline-flex">
+        <Info className="h-3.5 w-3.5 text-zinc-500" />
+        <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-48 -translate-x-1/2 rounded-lg border border-slate-700 bg-slate-950 p-2 text-[11px] text-zinc-200 opacity-0 shadow-xl transition group-hover:opacity-100">
+          {description}
+        </span>
+      </span>
+    </div>
+  );
 }
