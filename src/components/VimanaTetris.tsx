@@ -804,39 +804,39 @@ export function VimanaTetris({
           {/* Touch control buttons */}
           <div className="flex justify-center items-center gap-2">
             <button
-              onTouchStart={(e) => { e.stopPropagation(); moveLeft(); }}
+              onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); moveLeft(); }}
               onClick={moveLeft}
-              className="w-14 h-14 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-2xl active:bg-slate-700 select-none"
+              className="w-14 h-14 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-2xl active:bg-slate-700 select-none touch-manipulation"
             >
               ◀
             </button>
             <div className="flex flex-col gap-2">
               <button
-                onTouchStart={(e) => { e.stopPropagation(); rotate(); }}
+                onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); rotate(); }}
                 onClick={rotate}
-                className="w-14 h-14 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-xl active:bg-slate-700 select-none"
+                className="w-14 h-14 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-xl active:bg-slate-700 select-none touch-manipulation"
               >
                 ↻
               </button>
               <button
-                onTouchStart={(e) => { e.stopPropagation(); moveDown(); }}
+                onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); moveDown(); }}
                 onClick={moveDown}
-                className="w-14 h-14 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-2xl active:bg-slate-700 select-none"
+                className="w-14 h-14 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-2xl active:bg-slate-700 select-none touch-manipulation"
               >
                 ▼
               </button>
             </div>
             <button
-              onTouchStart={(e) => { e.stopPropagation(); moveRight(); }}
+              onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); moveRight(); }}
               onClick={moveRight}
-              className="w-14 h-14 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-2xl active:bg-slate-700 select-none"
+              className="w-14 h-14 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-2xl active:bg-slate-700 select-none touch-manipulation"
             >
               ▶
             </button>
             <button
-              onTouchStart={(e) => { e.stopPropagation(); hardDrop(); }}
+              onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); hardDrop(); }}
               onClick={hardDrop}
-              className="w-14 h-14 rounded-xl bg-amber-600/90 border border-amber-500 flex items-center justify-center text-lg font-bold active:bg-amber-500 select-none ml-2"
+              className="w-14 h-14 rounded-xl bg-amber-600/90 border border-amber-500 flex items-center justify-center text-lg font-bold active:bg-amber-500 select-none touch-manipulation ml-2"
             >
               ⬇
             </button>

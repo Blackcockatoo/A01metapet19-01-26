@@ -289,13 +289,13 @@ export function MiniGamesPanel({ petName }: MiniGamesPanelProps) {
       </div>
 
       {vimanaOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="relative w-full max-w-3xl">
-            <div className="absolute -top-10 right-0 flex gap-2">
-              <Button size="sm" variant="outline" onClick={handleCloseVimana}>
-                Close
-              </Button>
-            </div>
+        <div className="fixed inset-0 z-50 flex flex-col bg-black/70 p-2 sm:p-4 sm:items-center sm:justify-center">
+          <div className="flex justify-end py-2 sm:w-full sm:max-w-3xl shrink-0">
+            <Button size="sm" variant="outline" onClick={handleCloseVimana} className="touch-manipulation">
+              Close
+            </Button>
+          </div>
+          <div className="flex-1 min-h-0 w-full sm:max-w-3xl">
             <VimanaTetris
               petName={petName}
               genomeSeed={genomeSeed}
@@ -307,13 +307,13 @@ export function MiniGamesPanel({ petName }: MiniGamesPanelProps) {
       )}
 
       {safeCrackOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="relative w-full max-w-3xl">
-            <div className="absolute -top-10 right-0 flex gap-2">
-              <Button size="sm" variant="outline" onClick={handleCloseSafeCrack}>
-                Close
-              </Button>
-            </div>
+        <div className="fixed inset-0 z-50 flex flex-col bg-black/70 p-2 sm:p-4 sm:items-center sm:justify-center">
+          <div className="flex justify-end py-2 sm:w-full sm:max-w-3xl shrink-0">
+            <Button size="sm" variant="outline" onClick={handleCloseSafeCrack} className="touch-manipulation">
+              Close
+            </Button>
+          </div>
+          <div className="flex-1 min-h-0 w-full sm:max-w-3xl">
             <SafeCrackMini
               petName={petName}
               genomeSeed={genomeSeed}

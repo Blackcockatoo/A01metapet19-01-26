@@ -101,7 +101,7 @@ export default function SpaceJewblesPage() {
   }, []);
 
   return (
-    <div className="w-screen min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 flex flex-col overflow-hidden">
+    <div className={`w-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 flex flex-col overflow-hidden ${gameStarted ? 'h-[100dvh]' : 'min-h-screen'}`}>
       {/* Unlock Animation Overlay */}
       {showUnlockAnimation && newUnlocks.length > 0 && (
         <div
@@ -123,32 +123,32 @@ export default function SpaceJewblesPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
-        <Link href="/pet">
+      <div className="flex items-center justify-between p-2 sm:p-4 border-b border-slate-700/50 gap-2">
+        <Link href="/pet" className="shrink-0">
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2 text-slate-300 hover:text-white"
+            className="gap-1 sm:gap-2 text-slate-300 hover:text-white touch-manipulation px-2 sm:px-3"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Pet
+            <span className="hidden sm:inline">Back to Pet</span>
           </Button>
         </Link>
 
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+        <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent truncate">
           Space Jewbles
         </h1>
 
-        <div className="flex gap-4 text-sm">
-          <div className="flex items-center gap-2 text-amber-400">
-            <Trophy className="w-4 h-4" />
+        <div className="flex gap-2 sm:gap-4 text-xs sm:text-sm shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 text-amber-400">
+            <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span aria-live="polite">
-              High: {safeMiniGames.spaceJewblesHighScore.toLocaleString()}
+              {safeMiniGames.spaceJewblesHighScore.toLocaleString()}
             </span>
           </div>
-          <div className="flex items-center gap-2 text-cyan-400">
-            <Zap className="w-4 h-4" />
-            <span aria-live="polite">Wave: {safeMiniGames.spaceJewblesMaxWave}</span>
+          <div className="flex items-center gap-1 sm:gap-2 text-cyan-400">
+            <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span aria-live="polite">W{safeMiniGames.spaceJewblesMaxWave}</span>
           </div>
         </div>
       </div>
@@ -156,18 +156,18 @@ export default function SpaceJewblesPage() {
       {/* Game Area */}
       <div className="flex-1 relative">
         {!gameStarted ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
-            <div className="max-w-md w-full bg-slate-900/90 backdrop-blur-sm rounded-3xl border border-slate-700/50 p-8 text-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-4 sm:p-8">
+            <div className="max-w-md w-full bg-slate-900/90 backdrop-blur-sm rounded-3xl border border-slate-700/50 p-6 sm:p-8 text-center">
               {/* Animated title */}
-              <div className="text-6xl mb-6 animate-bounce">
+              <div className="text-4xl sm:text-6xl mb-4 sm:mb-6 animate-bounce">
                 <span className="text-cyan-400">S</span>
                 <span className="text-purple-400">P</span>
                 <span className="text-pink-400">A</span>
                 <span className="text-amber-400">C</span>
                 <span className="text-emerald-400">E</span>
               </div>
-              <h2 className="text-4xl font-bold text-white mb-2">JEWBLES</h2>
-              <p className="text-slate-400 mb-6">
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2">JEWBLES</h2>
+              <p className="text-slate-400 mb-4 sm:mb-6 text-sm sm:text-base">
                 Tap to attack! Idle to progress! Learn your pet&apos;s story!
               </p>
 
@@ -198,8 +198,8 @@ export default function SpaceJewblesPage() {
         )}
       </div>
 
-      {/* Bottom padding for nav */}
-      <div className="h-20" />
+      {/* Bottom padding for nav - hidden during gameplay to maximize game area */}
+      {!gameStarted && <div className="h-[calc(5rem+env(safe-area-inset-bottom))]" />}
     </div>
   );
 }

@@ -944,16 +944,16 @@ export function SafeCrackMini({
           {/* Touch control buttons */}
           <div className="flex justify-center items-center gap-4 px-2">
             <button
-              onTouchStart={(e) => { e.stopPropagation(); nudgeLeft(); }}
+              onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); nudgeLeft(); }}
               onClick={nudgeLeft}
-              className="w-20 h-20 rounded-xl bg-slate-800/90 border-2 border-slate-700 flex items-center justify-center text-3xl active:bg-slate-700 active:scale-95 transition-all select-none shadow-lg"
+              className="w-20 h-20 rounded-xl bg-slate-800/90 border-2 border-slate-700 flex items-center justify-center text-3xl active:bg-slate-700 active:scale-95 transition-all select-none shadow-lg touch-manipulation"
             >
               ◀
             </button>
             <button
-              onTouchStart={(e) => { e.stopPropagation(); handleCommit(); }}
+              onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); handleCommit(); }}
               onClick={handleCommit}
-              className={`w-24 h-20 rounded-xl border-2 flex items-center justify-center text-base font-bold select-none shadow-lg active:scale-95 transition-all ${
+              className={`w-24 h-20 rounded-xl border-2 flex items-center justify-center text-base font-bold select-none shadow-lg active:scale-95 transition-all touch-manipulation ${
                 gameState.readyToCommit
                   ? 'bg-green-600/90 border-green-500 text-white active:bg-green-500 animate-pulse'
                   : 'bg-amber-600/90 border-amber-500 text-slate-900 active:bg-amber-500'
@@ -962,9 +962,9 @@ export function SafeCrackMini({
               {gameState.readyToCommit ? 'COMMIT' : 'TRY'}
             </button>
             <button
-              onTouchStart={(e) => { e.stopPropagation(); nudgeRight(); }}
+              onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); nudgeRight(); }}
               onClick={nudgeRight}
-              className="w-20 h-20 rounded-xl bg-slate-800/90 border-2 border-slate-700 flex items-center justify-center text-3xl active:bg-slate-700 active:scale-95 transition-all select-none shadow-lg"
+              className="w-20 h-20 rounded-xl bg-slate-800/90 border-2 border-slate-700 flex items-center justify-center text-3xl active:bg-slate-700 active:scale-95 transition-all select-none shadow-lg touch-manipulation"
             >
               ▶
             </button>
