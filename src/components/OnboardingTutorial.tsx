@@ -11,45 +11,14 @@ import {
   ChevronRight,
   X
 } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
-interface OnboardingStep {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  tip?: string;
-}
-
-const ONBOARDING_STEPS: OnboardingStep[] = [
-  {
-    title: "Welcome to Meta-Pet!",
-    description: "Meet your new digital companion. A few quick steps will help you keep them thriving.",
-    icon: <Heart className="w-12 h-12 text-pink-400" />,
-    tip: "Check in daily to keep your pet happy."
-  },
-  {
-    title: "Feed Your Pet",
-    description: "Use the Feed action whenever hunger dips. Keeping them fed maintains mood and growth.",
-    icon: <UtensilsCrossed className="w-12 h-12 text-orange-400" />,
-    tip: "Feed before hunger gets too low to avoid penalties."
-  },
-  {
-    title: "Complete a Ritual",
-    description: "Rituals give your pet a daily boost. Pick one to keep their stats balanced.",
-    icon: <ClipboardList className="w-12 h-12 text-cyan-400" />,
-    tip: "Rituals are best done once per day."
-  },
-  {
-    title: "Play a Mini-Game",
-    description: "Mini-games add fun and rewards. Try one to keep your pet engaged.",
-    icon: <Gamepad2 className="w-12 h-12 text-purple-400" />,
-    tip: "Mini-games can boost mood or resources."
-  },
-  {
-    title: "Save or Export",
-    description: "Save your progress or export your pet to keep them safe across devices.",
-    icon: <Save className="w-12 h-12 text-emerald-400" />,
-    tip: "Exporting helps protect your pet's progress."
-  }
+const ONBOARDING_ICONS = [
+  <Heart key="heart" className="w-12 h-12 text-pink-400" />,
+  <UtensilsCrossed key="utensils" className="w-12 h-12 text-orange-400" />,
+  <ClipboardList key="clipboard" className="w-12 h-12 text-cyan-400" />,
+  <Gamepad2 key="gamepad" className="w-12 h-12 text-purple-400" />,
+  <Save key="save" className="w-12 h-12 text-emerald-400" />,
 ];
 
 const STORAGE_KEY = 'metapet-onboarding-complete';
@@ -63,6 +32,7 @@ export function OnboardingTutorial({ onComplete, forceShow = false }: Onboarding
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [hasChecked, setHasChecked] = useState(false);
+  const { strings } = useLocale();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -75,7 +45,7 @@ export function OnboardingTutorial({ onComplete, forceShow = false }: Onboarding
   }, [forceShow]);
 
   const handleNext = () => {
-    if (currentStep < ONBOARDING_STEPS.length - 1) {
+    if (currentStep < strings.onboarding.steps.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
       handleComplete();
@@ -96,8 +66,8 @@ export function OnboardingTutorial({ onComplete, forceShow = false }: Onboarding
 
   if (!hasChecked || !isVisible) return null;
 
-  const step = ONBOARDING_STEPS[currentStep];
-  const isLastStep = currentStep === ONBOARDING_STEPS.length - 1;
+  const step = strings.onboarding.steps[currentStep];
+  const isLastStep = currentStep === strings.onboarding.steps.length - 1;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
@@ -105,7 +75,7 @@ export function OnboardingTutorial({ onComplete, forceShow = false }: Onboarding
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
           <div className="flex items-center gap-2">
-            {ONBOARDING_STEPS.map((_, index) => (
+            {strings.onboarding.steps.map((_, index) => (
               <div
                 key={index}
                 className={`w-2 h-2 rounded-full transition-colors ${
@@ -121,7 +91,7 @@ export function OnboardingTutorial({ onComplete, forceShow = false }: Onboarding
           <button
             onClick={handleSkip}
             className="text-zinc-400 hover:text-white transition-colors"
-            aria-label="Skip tutorial"
+            aria-label={strings.onboarding.closeLabel}
           >
             <X className="w-5 h-5" />
           </button>
@@ -131,7 +101,7 @@ export function OnboardingTutorial({ onComplete, forceShow = false }: Onboarding
         <div className="p-6 text-center space-y-4">
           <div className="flex justify-center mb-4">
             <div className="p-4 bg-slate-800/50 rounded-full">
-              {step.icon}
+              {ONBOARDING_ICONS[currentStep]}
             </div>
           </div>
 
@@ -145,7 +115,7 @@ export function OnboardingTutorial({ onComplete, forceShow = false }: Onboarding
 
           {step.tip && (
             <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3 text-sm text-cyan-200">
-              💡 <span className="font-medium">Tip:</span> {step.tip}
+              💡 <span className="font-medium">{strings.onboarding.tipLabel}:</span> {step.tip}
             </div>
           )}
         </div>
@@ -153,7 +123,7 @@ export function OnboardingTutorial({ onComplete, forceShow = false }: Onboarding
         {/* Footer */}
         <div className="p-4 border-t border-slate-700/50 flex items-center justify-between">
           <span className="text-sm text-zinc-500">
-            {currentStep + 1} of {ONBOARDING_STEPS.length}
+            {currentStep + 1} {strings.onboarding.stepCount} {strings.onboarding.steps.length}
           </span>
 
           <div className="flex gap-2">
@@ -164,7 +134,7 @@ export function OnboardingTutorial({ onComplete, forceShow = false }: Onboarding
                 onClick={handleSkip}
                 className="text-zinc-400 hover:text-white"
               >
-                Skip
+                {strings.onboarding.skip}
               </Button>
             )}
             <Button
@@ -172,7 +142,7 @@ export function OnboardingTutorial({ onComplete, forceShow = false }: Onboarding
               size="sm"
               className="gap-1 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
             >
-              {isLastStep ? "Let's Go!" : 'Next'}
+              {isLastStep ? strings.onboarding.letsGo : strings.onboarding.next}
               {!isLastStep && <ChevronRight className="w-4 h-4" />}
             </Button>
           </div>
