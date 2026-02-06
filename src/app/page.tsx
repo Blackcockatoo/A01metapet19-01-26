@@ -76,6 +76,7 @@ import { HydrationTracker, HydrationQuickButton } from '@/components/HydrationTr
 import { SleepTracker, SleepStatusButton } from '@/components/SleepTracker';
 import { AnxietyAnchor, EmergencyGroundingButton } from '@/components/AnxietyAnchor';
 import { WellnessSettings, WellnessSettingsButton } from '@/components/WellnessSettings';
+import { ClassroomModes } from '@/components/ClassroomModes';
 import { useWellnessStore } from '@/lib/wellness';
 
 interface PetSummary {
@@ -1585,6 +1586,14 @@ export default function Home() {
             icon={<Sparkles className="w-5 h-5 text-amber-400" />}
           >
             <AchievementShelf />
+          </CollapsibleSection>
+
+          {/* Classroom Modes */}
+          <CollapsibleSection
+            title="Classroom Modes"
+            icon={<Award className="w-5 h-5 text-cyan-300" />}
+          >
+            <ClassroomModes />
           </CollapsibleSection>
         </div>
 
