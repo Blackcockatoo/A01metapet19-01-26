@@ -15,9 +15,29 @@ interface PhaserGameProps {
 export function PhaserGame({ petData, onGameEnd }: PhaserGameProps) {
   const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const onGameEndRef = useRef(onGameEnd);
+  const petDataRef = useRef(petData);
+  const handleGameEndRef = useRef<((event: Event) => void) | null>(null);
+
+  if (!handleGameEndRef.current) {
+    handleGameEndRef.current = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      onGameEndRef.current?.(customEvent.detail);
+    };
+  }
+
+  useEffect(() => {
+    onGameEndRef.current = onGameEnd;
+  }, [onGameEnd]);
+
+  useEffect(() => {
+    petDataRef.current = petData;
+  }, [petData]);
 
   useEffect(() => {
     if (!containerRef.current || typeof window === 'undefined') return;
+
+    window.addEventListener('gameEnd', handleGameEndRef.current as EventListener);
 
     // Dynamic import of Phaser to avoid SSR issues
     import('phaser').then((PhaserModule) => {
@@ -37,29 +57,21 @@ export function PhaserGame({ petData, onGameEnd }: PhaserGameProps) {
         gameRef.current.events.once('ready', () => {
           const menuScene = gameRef.current?.scene.getScene('MenuScene');
           if (menuScene) {
-            menuScene.events.emit('petData', petData);
+            menuScene.events.emit('petData', petDataRef.current);
           }
         });
-
-        // Listen for game end event from GameScene
-        const handleGameEnd = (event: CustomEvent) => {
-          if (onGameEnd) {
-            onGameEnd(event.detail);
-          }
-        };
-
-        window.addEventListener('gameEnd', handleGameEnd as EventListener);
       });
     });
 
     // Cleanup on unmount
     return () => {
+      window.removeEventListener('gameEnd', handleGameEndRef.current as EventListener);
       if (gameRef.current) {
         gameRef.current.destroy(true);
         gameRef.current = null;
       }
     };
-  }, [petData, onGameEnd]);
+  }, []);
 
   return (
     <div
