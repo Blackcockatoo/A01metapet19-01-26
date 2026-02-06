@@ -18,6 +18,8 @@ export class GameScene extends Phaser.Scene {
   private upgradeSystem!: UpgradeSystem;
   private narrativeSystem!: NarrativeSystem;
   private bossesDefeated: number = 0;
+  private mythicDrops: number = 0;
+  private runEnded: boolean = false;
 
   // Game state
   private petData: any;
@@ -44,6 +46,7 @@ export class GameScene extends Phaser.Scene {
   private audioPanel!: Phaser.GameObjects.Container;
   private audioButton!: Phaser.GameObjects.Container;
   private showingAudioSettings: boolean = false;
+  private endRunButton!: Phaser.GameObjects.Container;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -95,6 +98,7 @@ export class GameScene extends Phaser.Scene {
     this.createUI();
     this.createUpgradeButton();
     this.createAudioButton();
+    this.createEndRunButton();
 
     // Listen for auto-fire
     this.events.on('autoFire', () => {
@@ -286,6 +290,28 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.updateWeaponUI();
+  }
+
+  private createEndRunButton() {
+    const width = this.cameras.main.width;
+
+    this.endRunButton = this.add.container(width - 90, 24);
+
+    const bg = this.add.rectangle(0, 0, 100, 32, 0x222222, 0.8);
+    bg.setStrokeStyle(2, 0xff4444);
+    const label = this.add.text(0, 0, 'End Run', {
+      font: 'bold 14px Arial',
+      color: '#ff9999',
+    });
+    label.setOrigin(0.5);
+
+    this.endRunButton.add([bg, label]);
+    this.endRunButton.setSize(100, 32);
+    this.endRunButton.setInteractive();
+
+    this.endRunButton.on('pointerdown', () => {
+      this.endRun();
+    });
   }
 
   private createUpgradeButton() {
@@ -917,6 +943,8 @@ export class GameScene extends Phaser.Scene {
       highScore: Math.max(this.highScore, this.score),
       wave: this.waveSystem.getCurrentWave(),
       maxWave: this.waveSystem.getCurrentWave(),
+      bossesDefeated: this.bossesDefeated,
+      mythicDrops: this.mythicDrops,
       upgrades: this.upgradeSystem.exportSave(),
       idleState: this.idleSystem.getState(),
     });
@@ -976,6 +1004,23 @@ export class GameScene extends Phaser.Scene {
         this.scene.resume();
       },
     });
+  }
+
+  private endRun() {
+    if (this.runEnded) return;
+    this.runEnded = true;
+
+    const detail = {
+      score: this.score,
+      wave: this.waveSystem.getCurrentWave(),
+      bossesDefeated: this.bossesDefeated,
+      mythicDrops: this.mythicDrops,
+    };
+
+    window.dispatchEvent(new CustomEvent('gameEnd', { detail }));
+
+    this.scene.pause();
+    this.scene.stop();
   }
 
   shutdown() {
