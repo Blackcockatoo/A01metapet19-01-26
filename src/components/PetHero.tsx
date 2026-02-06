@@ -10,13 +10,14 @@ import { ProgressRing } from './ProgressRing';
 
 interface PetHeroProps {
   className?: string;
+  staticMode?: boolean;
 }
 
 /**
  * Pet Hero Section - The main focal point of the app
  * Supports gesture controls and shows the pet prominently
  */
-export function PetHero({ className = '' }: PetHeroProps) {
+export function PetHero({ className = '', staticMode = false }: PetHeroProps) {
   const petType = useStore(state => state.petType);
   const feed = useStore(state => state.feed);
   const play = useStore(state => state.play);
@@ -167,9 +168,9 @@ export function PetHero({ className = '' }: PetHeroProps) {
         {/* Pet Container */}
         <div className="relative w-64 h-64 flex items-center justify-center">
           {petType === 'geometric' ? (
-            <PetSprite />
+            <PetSprite staticMode={staticMode} />
           ) : (
-            <AuraliaSprite size="large" interactive />
+            <AuraliaSprite size="large" interactive staticMode={staticMode} />
           )}
 
           {/* Gesture Indicator Overlay */}

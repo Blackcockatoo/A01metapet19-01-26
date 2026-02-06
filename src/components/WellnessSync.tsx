@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Heart, X, Sparkles } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
 interface WellnessSyncProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ export function WellnessSync({ isOpen, onClose, lastAction }: WellnessSyncProps)
   const [selectedMood, setSelectedMood] = useState<UserMood | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [note, setNote] = useState('');
+  const { strings } = useLocale();
 
   const vitals = useStore(state => state.vitals);
   const reminderMode = useWellnessStore(state => state.reminderMode);
@@ -47,12 +49,7 @@ export function WellnessSync({ isOpen, onClose, lastAction }: WellnessSyncProps)
   };
 
   const timeContext = getTimeContext();
-  const greeting = {
-    morning: 'Good morning',
-    afternoon: 'Good afternoon',
-    evening: 'Good evening',
-    night: 'Late night',
-  }[timeContext];
+  const greeting = strings.wellness.greeting[timeContext];
 
   // Show action-triggered prompt
   useEffect(() => {
@@ -92,7 +89,7 @@ export function WellnessSync({ isOpen, onClose, lastAction }: WellnessSyncProps)
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-cyan-400">
               <Sparkles className="w-5 h-5" />
-              Wellness Reflection
+              {strings.wellness.reflectionTitle}
             </DialogTitle>
           </DialogHeader>
 
@@ -109,7 +106,7 @@ export function WellnessSync({ isOpen, onClose, lastAction }: WellnessSyncProps)
               onClick={() => setShowPrompt(false)}
               className="border-zinc-600"
             >
-              Dismiss
+              {strings.wellness.dismiss}
             </Button>
             <Button
               size="sm"
@@ -119,7 +116,7 @@ export function WellnessSync({ isOpen, onClose, lastAction }: WellnessSyncProps)
               }}
               className="bg-cyan-600 hover:bg-cyan-500"
             >
-              Log Self-Care
+              {strings.wellness.logSelfCare}
             </Button>
           </div>
         </DialogContent>
@@ -134,7 +131,7 @@ export function WellnessSync({ isOpen, onClose, lastAction }: WellnessSyncProps)
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-purple-400">
             <Heart className="w-5 h-5" />
-            {greeting}! How are you feeling?
+            {greeting}! {strings.wellness.checkInPrompt}
           </DialogTitle>
         </DialogHeader>
 
@@ -145,11 +142,13 @@ export function WellnessSync({ isOpen, onClose, lastAction }: WellnessSyncProps)
               <button
                 key={mood}
                 onClick={() => handleMoodSelect(mood)}
-                className={`flex flex-col items-center p-3 rounded-xl transition-all touch-manipulation ${
+                className={`flex flex-col items-center p-3 rounded-xl transition-all touch-manipulation focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-400 ${
                   selectedMood === mood
                     ? 'bg-purple-500/30 ring-2 ring-purple-400 scale-110'
                     : 'bg-zinc-800/50 hover:bg-zinc-700/50'
                 }`}
+                aria-pressed={selectedMood === mood}
+                aria-label={USER_MOOD_LABELS[mood]}
               >
                 <span className="text-2xl">{USER_MOOD_ICONS[mood]}</span>
                 <span className="text-xs text-zinc-400 mt-1">
@@ -163,22 +162,22 @@ export function WellnessSync({ isOpen, onClose, lastAction }: WellnessSyncProps)
           {selectedMood && (
             <div className="text-center space-y-2 animate-in fade-in">
               <p className="text-zinc-300">
-                {selectedMood === 'struggling' && "It's okay to have tough days. Your companion is here for you."}
-                {selectedMood === 'low' && "Taking it slow is fine. Small steps count."}
-                {selectedMood === 'neutral' && "A steady day. That's perfectly alright."}
-                {selectedMood === 'good' && "Nice! Your positive energy shows."}
-                {selectedMood === 'great' && "Wonderful! Your companion feels your joy."}
+                {selectedMood === 'struggling' && strings.wellness.feedback.struggling}
+                {selectedMood === 'low' && strings.wellness.feedback.low}
+                {selectedMood === 'neutral' && strings.wellness.feedback.neutral}
+                {selectedMood === 'good' && strings.wellness.feedback.good}
+                {selectedMood === 'great' && strings.wellness.feedback.great}
               </p>
 
               {/* Pet vitals mirror effect preview */}
               <div className="flex items-center justify-center gap-4 mt-4 p-3 bg-zinc-800/50 rounded-lg">
                 <div className="text-center">
-                  <p className="text-xs text-zinc-500">Your mood</p>
+                  <p className="text-xs text-zinc-500">{strings.wellness.yourMood}</p>
                   <p className="text-lg">{USER_MOOD_ICONS[selectedMood]}</p>
                 </div>
                 <span className="text-zinc-600">=</span>
                 <div className="text-center">
-                  <p className="text-xs text-zinc-500">Pet energy</p>
+                  <p className="text-xs text-zinc-500">{strings.wellness.petEnergy}</p>
                   <div className="h-2 w-16 bg-zinc-700 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all"
@@ -193,13 +192,14 @@ export function WellnessSync({ isOpen, onClose, lastAction }: WellnessSyncProps)
           {/* Optional note */}
           {selectedMood && (
             <div className="space-y-2">
-              <label className="text-xs text-zinc-500">
-                Add a note (optional)
+              <label className="text-xs text-zinc-500" htmlFor="wellness-note">
+                {strings.wellness.noteLabel}
               </label>
               <textarea
+                id="wellness-note"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="How's your day going?"
+                placeholder={strings.wellness.notePlaceholder}
                 className="w-full bg-zinc-800/50 border border-zinc-700 rounded-lg p-3 text-sm text-zinc-300 placeholder:text-zinc-600 resize-none"
                 rows={2}
               />
@@ -214,7 +214,7 @@ export function WellnessSync({ isOpen, onClose, lastAction }: WellnessSyncProps)
             onClick={onClose}
             className="border-zinc-600"
           >
-            Skip
+            {strings.wellness.skip}
           </Button>
           <Button
             size="sm"
@@ -222,7 +222,7 @@ export function WellnessSync({ isOpen, onClose, lastAction }: WellnessSyncProps)
             disabled={!selectedMood}
             className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50"
           >
-            Check In
+            {strings.wellness.checkIn}
           </Button>
         </div>
       </DialogContent>
@@ -233,6 +233,7 @@ export function WellnessSync({ isOpen, onClose, lastAction }: WellnessSyncProps)
 // Quick mood button for floating actions
 export function QuickMoodButton({ onClick }: { onClick: () => void }) {
   const enabledFeatures = useWellnessStore(state => state.enabledFeatures);
+  const { strings } = useLocale();
 
   if (!enabledFeatures.mirrorVitals) return null;
 
@@ -242,10 +243,11 @@ export function QuickMoodButton({ onClick }: { onClick: () => void }) {
         triggerHaptic('light');
         onClick();
       }}
-      className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 rounded-full text-purple-300 text-sm transition-all touch-manipulation"
+      className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 rounded-full text-purple-300 text-sm transition-all touch-manipulation focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-400"
+      aria-label={strings.wellness.quickMood}
     >
       <Heart className="w-4 h-4" />
-      <span>How are you?</span>
+      <span>{strings.wellness.quickMood}</span>
     </button>
   );
 }

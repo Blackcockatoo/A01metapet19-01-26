@@ -25,3 +25,38 @@ Raw DNA → DNA hash + mirror hash → PrimeTailId (crest payload + HMAC signatu
 ```
 
 The system only shares hashes and signatures. Raw DNA stays on-device.
+
+## Teacher Guide: Safe, Age-Appropriate Analogies
+
+Use these analogies to explain **digital DNA** without implying real genetics. Keep the focus on playful patterns, privacy, and choice.
+
+### Concept-to-Analogy Map
+
+- **Digital DNA (seed recipe):** Like a **plant seed packet** that lists traits a plant could grow (color, height, leaf shape). It is *not* a real organism—just a pattern recipe for a digital creature.
+- **Traits (grown features):** Like **animal traits** (striped fur, long ears) or **plant traits** (petal color). The traits are the visible results of the recipe.
+- **Hash (safety label):** Like a **lockbox label** on a seed kit—people can see the label to verify it’s the same kit, but they can’t open it to see the full recipe.
+- **PrimeTailId/Crest (ID badge):** Like a **zoo ID badge** or **plant tag** that shows verified info without exposing the full recipe.
+
+### Do / Don’t Guidance
+
+**Do:**
+- Emphasize that digital DNA is a **made-up pattern** for a fictional creature.
+- Connect traits to **harmless, observable features** (colors, shapes, behaviors).
+- Reinforce **privacy**: the full recipe stays private; only safe summaries are shared.
+- Encourage **curiosity and creativity**: “What traits might show up?”
+
+**Don’t:**
+- Compare digital DNA to a student’s **real DNA** or personal identity.
+- Suggest that digital traits predict **real-world abilities**.
+- Use language that implies **genetic testing** or real-world inheritance.
+- Frame the system as **ranking** or labeling people.
+
+### Optional “Ethics Checkpoints” Prompts
+
+Use these quick prompts to guide discussion:
+
+- **Consent:** “Who should decide when a digital creature’s recipe is shared?”
+- **Privacy:** “What details are safe to show publicly, and what should stay private?”
+- **Diversity:** “How do we celebrate different traits without ranking them?”
+- **Unintended Consequences:** “What could happen if people misunderstand these traits?”
+- **Fairness:** “How can we make sure everyone’s creature is treated respectfully?”

@@ -19,7 +19,7 @@ interface Particle {
  * Ambient floating particles that respond to pet mood
  * Creates a magical, living atmosphere
  */
-export function AmbientParticles() {
+export function AmbientParticles({ enabled = true }: { enabled?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const animationRef = useRef<number>(0);
@@ -75,6 +75,7 @@ export function AmbientParticles() {
   }, [vitals]);
 
   useEffect(() => {
+    if (!enabled) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -149,7 +150,9 @@ export function AmbientParticles() {
       window.removeEventListener('resize', resizeCanvas);
       cancelAnimationFrame(animationRef.current);
     };
-  }, [moodConfig]);
+  }, [moodConfig, enabled]);
+
+  if (!enabled) return null;
 
   return (
     <canvas

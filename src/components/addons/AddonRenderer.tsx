@@ -114,9 +114,8 @@ export const AddonRenderer: React.FC<AddonRendererProps> = ({
     };
   }, [draggable, isLocked, position, onPositionChange]);
 
-  const handlePointerMove = useCallback((e: React.PointerEvent<SVGGElement>) => {
-    if (!isDragging || !dragStartRef.current) return;
-    e.preventDefault();
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      if (!dragStartRef.current) return;
 
     const dx = e.clientX - dragStartRef.current.x;
     const dy = e.clientY - dragStartRef.current.y;
@@ -130,13 +129,18 @@ export const AddonRenderer: React.FC<AddonRendererProps> = ({
     onPositionChange?.(newX, newY);
   }, [isDragging, onPositionChange]);
 
-  const handlePointerUp = useCallback((e: React.PointerEvent<SVGGElement>) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    (e.currentTarget as SVGGElement).releasePointerCapture?.(e.pointerId);
-    setIsDragging(false);
-    dragStartRef.current = null;
-  }, [isDragging]);
+    const handlePointerUp = () => {
+      setIsDragging(false);
+      dragStartRef.current = null;
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+  }, [draggable, isLocked, position, onPositionChange]);
 
   // Animation transform
   const animationTransform = useMemo(() => {
@@ -185,9 +189,6 @@ export const AddonRenderer: React.FC<AddonRendererProps> = ({
       onMouseLeave={() => !isDragging && setShowControls(false)}
       style={{ cursor: draggable && !isLocked ? 'grab' : 'default', touchAction: 'none' }}
       onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
     >
       {/* Drag indicator / selection highlight */}
       {draggable && showControls && (
