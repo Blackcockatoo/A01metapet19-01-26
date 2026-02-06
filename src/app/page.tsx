@@ -61,6 +61,7 @@ import {
   ChevronDown,
   ChevronUp,
   Award,
+  Users,
 } from 'lucide-react';
 import { PetResponseOverlay } from '@/components/PetResponseOverlay';
 import { DigitalKeyPanel } from '@/components/DigitalKeyPanel';
@@ -77,6 +78,7 @@ import { SleepTracker, SleepStatusButton } from '@/components/SleepTracker';
 import { AnxietyAnchor, EmergencyGroundingButton } from '@/components/AnxietyAnchor';
 import { WellnessSettings, WellnessSettingsButton } from '@/components/WellnessSettings';
 import { useWellnessStore } from '@/lib/wellness';
+import { ClassroomManager } from '@/components/ClassroomManager';
 
 interface PetSummary {
   id: string;
@@ -1585,6 +1587,14 @@ export default function Home() {
             icon={<Sparkles className="w-5 h-5 text-amber-400" />}
           >
             <AchievementShelf />
+          </CollapsibleSection>
+
+          {/* Classroom Management */}
+          <CollapsibleSection
+            title="Classroom Management"
+            icon={<Users className="w-5 h-5 text-indigo-300" />}
+          >
+            <ClassroomManager />
           </CollapsibleSection>
         </div>
 
