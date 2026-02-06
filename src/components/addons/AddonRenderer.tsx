@@ -112,21 +112,22 @@ export const AddonRenderer: React.FC<AddonRendererProps> = ({
       posX: position.x,
       posY: position.y,
     };
+  }, [draggable, isLocked, position, onPositionChange]);
 
     const handlePointerMove = (moveEvent: PointerEvent) => {
       if (!dragStartRef.current) return;
 
-      const dx = moveEvent.clientX - dragStartRef.current.x;
-      const dy = moveEvent.clientY - dragStartRef.current.y;
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
 
-      // Scale the movement based on SVG viewBox vs actual size
-      const scaleFactor = 400 / (document.querySelector('.auralia-pet-svg')?.getBoundingClientRect().width || 400);
+    // Scale the movement based on SVG viewBox vs actual size
+    const scaleFactor = 400 / (document.querySelector('.auralia-pet-svg')?.getBoundingClientRect().width || 400);
 
-      const newX = dragStartRef.current.posX + dx * scaleFactor;
-      const newY = dragStartRef.current.posY + dy * scaleFactor;
+    const newX = dragStartRef.current.posX + dx * scaleFactor;
+    const newY = dragStartRef.current.posY + dy * scaleFactor;
 
-      onPositionChange?.(newX, newY);
-    };
+    onPositionChange?.(newX, newY);
+  }, [isDragging, onPositionChange]);
 
     const handlePointerUp = () => {
       setIsDragging(false);
