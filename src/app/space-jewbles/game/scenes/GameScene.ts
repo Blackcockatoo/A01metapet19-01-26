@@ -258,12 +258,21 @@ export class GameScene extends Phaser.Scene {
     this.weaponUI = this.add.container(width / 2, height - 40);
 
     const weaponCount = WEAPONS.length;
-    const spacing = 60;
-    const startX = -(weaponCount * spacing) / 2;
+    // Scale spacing based on canvas width for better mobile fit
+    const maxSpacing = 60;
+    const availableWidth = width - 80; // Leave margins
+    const spacing = Math.min(maxSpacing, availableWidth / weaponCount);
+    const startX = -(weaponCount * spacing) / 2 + spacing / 2;
 
     WEAPONS.forEach((weapon, index) => {
       const x = startX + index * spacing;
+      // Use larger hit area for better touch targets
       const bg = this.add.circle(x, 0, 25, 0x333333, 0.8);
+      bg.setInteractive(new Phaser.Geom.Circle(0, 0, 30), Phaser.Geom.Circle.Contains);
+      bg.on('pointerdown', () => {
+        this.weaponSystem.setWeapon(index);
+        this.updateWeaponUI();
+      });
       const text = this.add.text(x, 0, weapon.emoji, { font: '24px Arial' });
       text.setOrigin(0.5);
       const label = this.add.text(x, -30, `${index + 1}`, {
@@ -282,14 +291,14 @@ export class GameScene extends Phaser.Scene {
   private createUpgradeButton() {
     const width = this.cameras.main.width;
 
-    this.upgradeButton = this.add.container(width - 80, 80);
+    this.upgradeButton = this.add.container(width - 60, 80);
 
-    const bg = this.add.circle(0, 0, 30, 0x9966ff, 0.9);
-    const icon = this.add.text(0, 0, '⬆️', { font: '24px Arial' });
+    const bg = this.add.circle(0, 0, 32, 0x9966ff, 0.9);
+    const icon = this.add.text(0, 0, '⬆️', { font: '26px Arial' });
     icon.setOrigin(0.5);
 
     this.upgradeButton.add([bg, icon]);
-    this.upgradeButton.setSize(60, 60);
+    this.upgradeButton.setSize(64, 64);
     this.upgradeButton.setInteractive();
 
     this.upgradeButton.on('pointerdown', () => {

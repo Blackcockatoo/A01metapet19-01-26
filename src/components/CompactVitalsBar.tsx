@@ -88,7 +88,7 @@ function MiniStat({ icon, value, color, label }: MiniStatProps) {
           style={{ width: `${value}%` }}
         />
       </div>
-      <span className="text-[10px] text-zinc-500 hidden sm:block">{label}</span>
+      <span className="text-[10px] text-zinc-500">{label}</span>
     </div>
   );
 }

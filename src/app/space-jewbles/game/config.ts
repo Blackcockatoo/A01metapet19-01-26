@@ -25,6 +25,12 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
+  input: {
+    touch: {
+      capture: true, // Prevent default browser touch behaviors in game area
+    },
+    activePointers: 3, // Support multi-touch for mobile
+  },
   render: {
     pixelArt: false,
     antialias: true,
