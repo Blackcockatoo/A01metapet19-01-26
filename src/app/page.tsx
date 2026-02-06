@@ -61,6 +61,9 @@ import {
   ChevronDown,
   ChevronUp,
   Award,
+  BookOpen,
+  GraduationCap,
+  Lock,
 } from 'lucide-react';
 import { PetResponseOverlay } from '@/components/PetResponseOverlay';
 import { DigitalKeyPanel } from '@/components/DigitalKeyPanel';
@@ -218,6 +221,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [genomeHash, setGenomeHash] = useState<GenomeHash | null>(null);
   const [createdAt, setCreatedAt] = useState<number | null>(null);
+  const [learningMode, setLearningMode] = useState<'sandbox' | 'curriculum'>('sandbox');
   const [persistenceActive, setPersistenceActive] = useState(false);
   const [persistenceSupported, setPersistenceSupported] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
@@ -1243,6 +1247,96 @@ export default function Home() {
               <FeaturesDashboard />
             </CollapsibleSection>
           </div>
+
+          {/* Learning Modes */}
+          <CollapsibleSection
+            title="Learning Modes"
+            icon={<GraduationCap className="w-5 h-5 text-emerald-300" />}
+            defaultOpen
+          >
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/50 p-4">
+                <div>
+                  <p className="text-sm font-semibold text-white">Teacher toggle</p>
+                  <p className="text-xs text-zinc-400">
+                    Switch between free-form sandbox exploration and guided curriculum delivery.
+                  </p>
+                </div>
+                <label className="flex items-center gap-3 text-xs uppercase tracking-wide text-zinc-400">
+                  <span>{learningMode === 'curriculum' ? 'Curriculum' : 'Sandbox'}</span>
+                  <input
+                    type="checkbox"
+                    checked={learningMode === 'curriculum'}
+                    onChange={() =>
+                      setLearningMode(prevMode => (prevMode === 'sandbox' ? 'curriculum' : 'sandbox'))
+                    }
+                    className="relative h-6 w-11 appearance-none rounded-full border border-slate-700 bg-slate-900/70 transition before:absolute before:left-0.5 before:top-0.5 before:h-4 before:w-4 before:rounded-full before:bg-white/80 before:transition checked:border-emerald-400 checked:bg-emerald-500/80 checked:before:translate-x-5 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  />
+                </label>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div
+                  className={`space-y-3 rounded-xl border p-4 transition ${
+                    learningMode === 'sandbox'
+                      ? 'border-cyan-400/60 bg-cyan-500/10'
+                      : 'border-slate-800 bg-slate-950/40'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-cyan-300" />
+                    <span className="text-sm font-semibold text-white">Free-form sandbox mode</span>
+                  </div>
+                  <p className="text-xs text-zinc-400">
+                    Open exploration with flexible tools, creative prompts, and student-led discovery.
+                  </p>
+                  <ul className="space-y-2 text-xs text-zinc-300">
+                    <li>• Rapid prototyping and experimentation</li>
+                    <li>• Optional scaffolds and hints on demand</li>
+                    <li>• Peer collaboration and reflection notes</li>
+                  </ul>
+                </div>
+
+                <div
+                  className={`space-y-3 rounded-xl border p-4 transition ${
+                    learningMode === 'curriculum'
+                      ? 'border-emerald-400/60 bg-emerald-500/10'
+                      : 'border-slate-800 bg-slate-950/40'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-emerald-300" />
+                    <span className="text-sm font-semibold text-white">Guided curriculum mode</span>
+                  </div>
+                  <p className="text-xs text-zinc-400">
+                    Standards-aligned sequence with checkpoints, pacing guidance, and teacher visibility.
+                  </p>
+                  <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+                    <p className="text-xs font-semibold text-emerald-200">Standards mapping</p>
+                    <ul className="mt-2 space-y-1 text-xs text-zinc-300">
+                      <li>• NGSS: MS-ETS1-1, MS-ETS1-4</li>
+                      <li>• ISTE: 1.1 Empowered Learner, 1.4 Innovative Designer</li>
+                    </ul>
+                  </div>
+                  <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
+                    <p className="text-xs font-semibold text-zinc-200">Locked lesson objectives</p>
+                    <ul className="mt-2 space-y-2 text-xs text-zinc-300">
+                      {[
+                        'Define success criteria for an iterative prototype.',
+                        'Collect and interpret feedback to refine a design.',
+                        'Communicate findings with evidence-based reflection.',
+                      ].map(objective => (
+                        <li key={objective} className="flex items-start gap-2">
+                          <Lock className="mt-0.5 h-3.5 w-3.5 text-zinc-500" />
+                          <span>{objective}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CollapsibleSection>
 
           {/* Breeding Lab */}
           <CollapsibleSection
