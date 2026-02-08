@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { QuickNav } from "@/components/QuickNav";
+import LegalNotice from "@/components/LegalNotice";
 
 export default function ClientBody({
   children,
@@ -31,8 +32,11 @@ export default function ClientBody({
   }, []);
 
   return (
-    <div className="antialiased min-h-screen pb-[calc(6rem+env(safe-area-inset-bottom))]">
-      {children}
+    <div className="antialiased min-h-screen pb-[calc(6rem+env(safe-area-inset-bottom))] flex flex-col">
+      <div className="flex-1">{children}</div>
+      <footer className="px-4 pb-6 pt-4 text-center">
+        <LegalNotice />
+      </footer>
       <QuickNav />
     </div>
   );
