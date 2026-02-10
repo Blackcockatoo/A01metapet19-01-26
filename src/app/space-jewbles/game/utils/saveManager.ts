@@ -19,6 +19,7 @@ export class SaveManager {
    * Save game data to localStorage
    */
   static save(data: Partial<SaveData>): void {
+    if (typeof window === 'undefined') return;
     try {
       const saveData: SaveData = {
         version: SAVE_VERSION,
@@ -43,6 +44,7 @@ export class SaveManager {
    * Load game data from localStorage
    */
   static load(): SaveData | null {
+    if (typeof window === 'undefined') return null;
     try {
       const savedString = localStorage.getItem(SAVE_KEY);
       if (!savedString) return null;
@@ -66,6 +68,7 @@ export class SaveManager {
    * Check if save exists
    */
   static hasSave(): boolean {
+    if (typeof window === 'undefined') return false;
     return localStorage.getItem(SAVE_KEY) !== null;
   }
 
@@ -73,6 +76,7 @@ export class SaveManager {
    * Delete save data
    */
   static deleteSave(): void {
+    if (typeof window === 'undefined') return;
     localStorage.removeItem(SAVE_KEY);
   }
 

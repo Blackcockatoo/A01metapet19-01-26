@@ -208,6 +208,7 @@ export class NarrativeSystem {
    * Save seen stories to localStorage
    */
   private saveSeenStories(): void {
+    if (typeof window === 'undefined') return;
     try {
       const data = Array.from(this.seenStories);
       localStorage.setItem('space-jewbles-stories', JSON.stringify(data));
@@ -220,6 +221,7 @@ export class NarrativeSystem {
    * Load seen stories from localStorage
    */
   private loadSeenStories(): void {
+    if (typeof window === 'undefined') return;
     try {
       const savedData = localStorage.getItem('space-jewbles-stories');
       if (savedData) {
