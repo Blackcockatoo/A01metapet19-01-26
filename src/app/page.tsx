@@ -1597,6 +1597,25 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Digital DNA Hub */}
+          <div className="bg-gradient-to-r from-blue-500/10 via-amber-500/10 to-pink-500/10 rounded-2xl border border-blue-500/20 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <Dna className="w-6 h-6 text-blue-400" />
+                <div>
+                  <h2 className="text-lg font-bold text-white">Digital DNA Hub</h2>
+                  <p className="text-xs text-zinc-400">3D helix, mandala painting, particle field &amp; sound temple</p>
+                </div>
+              </div>
+              <Link
+                href="/digital-dna"
+                className="px-4 py-2 rounded-xl bg-blue-500/20 border border-blue-500/40 text-blue-200 text-sm font-medium hover:bg-blue-500/30 hover:border-blue-400 transition-colors touch-manipulation"
+              >
+                Explore
+              </Link>
+            </div>
+          </div>
+
           {/* Genome Traits */}
           <CollapsibleSection
             title="Genome Traits"
