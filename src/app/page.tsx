@@ -64,7 +64,9 @@ import {
   BookOpen,
   GraduationCap,
   Lock,
+  Orbit,
 } from 'lucide-react';
+import Link from 'next/link';
 import { PetResponseOverlay } from '@/components/PetResponseOverlay';
 import { DigitalKeyPanel } from '@/components/DigitalKeyPanel';
 import RitualLoop from '@/components/RitualLoop';
@@ -1575,6 +1577,25 @@ export default function Home() {
               </div>
             </div>
           </CollapsibleSection>
+
+          {/* Sacred Geometry & Sound */}
+          <div className="bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-cyan-500/10 rounded-2xl border border-amber-500/20 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <Orbit className="w-6 h-6 text-amber-400" />
+                <div>
+                  <h2 className="text-lg font-bold text-white">Sacred Geometry &amp; Sound</h2>
+                  <p className="text-xs text-zinc-400">Experience DNA as living geometry, music, and light</p>
+                </div>
+              </div>
+              <Link
+                href="/geometry-sound"
+                className="px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-sm font-medium hover:bg-amber-500/30 hover:border-amber-400 transition-colors touch-manipulation"
+              >
+                Enter
+              </Link>
+            </div>
+          </div>
 
           {/* Genome Traits */}
           <CollapsibleSection
