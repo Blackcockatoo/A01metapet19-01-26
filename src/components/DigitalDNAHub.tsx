@@ -59,6 +59,7 @@ export default function DigitalDNAHub() {
   const synthRef = useRef<Tone.PolySynth | null>(null);
   const particlesRef = useRef<Particle[]>([]);
   const mouseRef = useRef({ x: 0, y: 0, down: false });
+  const paintedPatternRef = useRef<PaintPoint[]>([]);
 
   const getSequence = useCallback(
     () => SEEDS[selectedSeed].split('').map(Number),
@@ -274,7 +275,7 @@ export default function DigitalDNAHub() {
         ctx.stroke();
       }
 
-      paintedPattern.forEach((pt) => {
+      paintedPatternRef.current.forEach((pt) => {
         ctx.beginPath();
         ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(255, 215, 0, 0.6)';
@@ -283,7 +284,10 @@ export default function DigitalDNAHub() {
     };
 
     const onDown = () => { mouseRef.current.down = true; };
-    const onUp = () => { mouseRef.current.down = false; };
+    const onUp = () => {
+      mouseRef.current.down = false;
+      setPaintedPattern([...paintedPatternRef.current]);
+    };
     const onMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
@@ -291,7 +295,7 @@ export default function DigitalDNAHub() {
       mouseRef.current.x = x;
       mouseRef.current.y = y;
       if (mouseRef.current.down) {
-        setPaintedPattern((prev) => [...prev, { x, y }]);
+        paintedPatternRef.current.push({ x, y });
         const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
         const digit = Math.floor((dist / 50) % 10);
         if (audioInitialized) playChord([digit]);
@@ -312,7 +316,16 @@ export default function DigitalDNAHub() {
       canvas.removeEventListener('mouseup', onUp);
       canvas.removeEventListener('mousemove', onMove);
     };
-  }, [activeMode, selectedSeed, harmony, paintedPattern, audioInitialized, getSequence, playChord]);
+  }, [activeMode, selectedSeed, harmony, audioInitialized, getSequence, playChord]);
+
+  useEffect(() => {
+    paintedPatternRef.current = paintedPattern;
+  }, [paintedPattern]);
+
+  const clearPaintedPattern = () => {
+    paintedPatternRef.current = [];
+    setPaintedPattern([]);
+  };
 
   // Particle field mode
   useEffect(() => {
@@ -501,7 +514,7 @@ export default function DigitalDNAHub() {
               </div>
               <div className="text-center mt-6">
                 <button
-                  onClick={() => setPaintedPattern([])}
+                  onClick={clearPaintedPattern}
                   className="px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-bold text-white shadow-lg shadow-purple-500/50 transition-all"
                 >
                   Clear Canvas
