@@ -207,11 +207,11 @@ export function useSyncConsciousness(
 
   useEffect(() => {
     updateVitals(vitals);
-  }, [vitals.energy, vitals.curiosity, vitals.bond, updateVitals]);
+  }, [vitals, updateVitals]);
 
   useEffect(() => {
     updatePosition(position);
-  }, [position.x, position.y, position.vx, position.vy, updatePosition]);
+  }, [position, updatePosition]);
 
   useEffect(() => {
     updateContext({ fieldResonance });

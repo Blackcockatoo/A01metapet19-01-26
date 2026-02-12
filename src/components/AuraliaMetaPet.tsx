@@ -1708,7 +1708,7 @@ const AuraliaMetaPet: React.FC<AuraliaMetaPetProps> = ({
 
     rafId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(rafId);
-  }, [eyeState.pupilSize, eyeState.emotion]);
+  }, [eyeState.pupilSize, eyeState.emotion, pupilSize]);
 
   // Addon animation loop
   useEffect(() => {

@@ -413,7 +413,7 @@ export class PetRenderer {
     const rightEye = this.scene.add.graphics();
 
     // Eye positioning based on body type
-    let eyeY = bodyType === 'Pyramidal' ? -size / 4 : -size / 6;
+    const eyeY = bodyType === 'Pyramidal' ? -size / 4 : -size / 6;
 
     leftEye.fillStyle(0xffffff, 1);
     leftEye.fillCircle(-size / 4, eyeY, size / 8);

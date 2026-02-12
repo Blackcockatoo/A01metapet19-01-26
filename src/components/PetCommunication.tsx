@@ -95,7 +95,7 @@ export const PetCommunication: React.FC<PetCommunicationProps> = ({
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [recentInteraction]);
+  }, [recentInteraction, generateNewMessage]);
 
   // Periodic idle messages
   useEffect(() => {

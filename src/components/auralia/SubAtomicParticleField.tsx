@@ -111,7 +111,7 @@ export function SubAtomicParticleField({
         opacity: (0.35 + (bondInfluence * (index % 7)) / 25) * intensityMod,
       };
     });
-  }, [bond, curiosity, energy, consciousParticleCount, consciousParticleSpeed, consciousParticleSize, consciousColorIntensity, flowPattern, size, isLowEndDevice]);
+  }, [bond, curiosity, energy, consciousParticleCount, consciousParticleSpeed, consciousParticleSize, consciousColorIntensity, flowPattern, isLowEndDevice]);
 
   // Skip rendering if not visible and reduce motion is on
   if (!isVisible && reduceMotion) {
