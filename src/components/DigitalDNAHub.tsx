@@ -384,9 +384,10 @@ export default function DigitalDNAHub() {
         const dy = mouseRef.current.y - p.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 200) {
+          const safeDist = Math.max(dist, 0.0001);
           const force = ((200 - dist) / 1000) * (consciousness / 50);
-          p.vx += (dx / dist) * force;
-          p.vy += (dy / dist) * force;
+          p.vx += (dx / safeDist) * force;
+          p.vy += (dy / safeDist) * force;
         }
         p.x += p.vx;
         p.y += p.vy;
