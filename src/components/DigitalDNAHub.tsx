@@ -442,10 +442,10 @@ export default function DigitalDNAHub() {
 
   const modes: { id: ModeKey; icon: string; label: string; desc: string }[] = [
     { id: 'spiral', icon: '\u{1F300}', label: 'DNA Helix', desc: 'Touch the spheres' },
-    { id: 'mandala', icon: '\u{1F52E}', label: 'Sacred Mandala', desc: 'Paint your pattern' },
-    { id: 'particles', icon: '\u2728', label: 'Particle Field', desc: 'Guide with your hand' },
-    { id: 'sound', icon: '\u{1F3B5}', label: 'Sound Temple', desc: 'Hear the sequence' },
-    { id: 'journey', icon: '\u{1F9ED}', label: 'Guided Journey', desc: 'Follow the path' },
+    { id: 'mandala', icon: '\u{1F52E}', label: '🔮 Sacred Mandala', desc: 'Paint your pattern' },
+    { id: 'particles', icon: '\u2728', label: '✨ Particle Field', desc: 'Guide with your hand' },
+    { id: 'sound', icon: '\u{1F3B5}', label: '🎵 Sound Temple', desc: 'Hear the sequence' },
+    { id: 'journey', icon: '\u{1F9ED}', label: '🧭 Guided Journey', desc: 'Follow the path' },
   ];
 
   return (
@@ -459,7 +459,7 @@ export default function DigitalDNAHub() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-amber-400 via-amber-200 to-amber-400 bg-clip-text text-transparent animate-pulse">
-            Digital DNA
+            ✨ Digital DNA ✨
           </h1>
           <p className="text-2xl text-blue-300 font-light mb-2">
             Sacred Geometry &amp; Sonic Consciousness
@@ -498,7 +498,7 @@ export default function DigitalDNAHub() {
             <div className="bg-slate-900/50 rounded-3xl p-8 border border-blue-800/30 backdrop-blur-sm">
               <div className="text-center mb-6">
                 <h2 className="text-3xl font-bold text-amber-300 mb-2">
-                  DNA Helix Explorer
+                  🌀 DNA Helix Explorer
                 </h2>
                 <p className="text-blue-300">
                   Move your cursor over the glowing spheres to hear their song
@@ -513,12 +513,12 @@ export default function DigitalDNAHub() {
             </div>
           )}
 
-          {/* Sacred Mandala */}
+          {/* 🔮 Sacred Mandala */}
           {activeMode === 'mandala' && (
             <div className="bg-slate-900/50 rounded-3xl p-8 border border-purple-800/30 backdrop-blur-sm">
               <div className="text-center mb-6">
                 <h2 className="text-3xl font-bold text-amber-300 mb-2">
-                  Sacred Mandala
+                  🔮 Sacred Mandala
                 </h2>
                 <p className="text-purple-300">
                   Click and drag to paint your intention onto the pattern
@@ -535,18 +535,18 @@ export default function DigitalDNAHub() {
                   onClick={clearPaintedPattern}
                   className="px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-bold text-white shadow-lg shadow-purple-500/50 transition-all"
                 >
-                  Clear Canvas
+                  ✨ Clear Canvas
                 </button>
               </div>
             </div>
           )}
 
-          {/* Particle Field */}
+          {/* ✨ Particle Field */}
           {activeMode === 'particles' && (
             <div className="bg-slate-900/50 rounded-3xl p-8 border border-cyan-800/30 backdrop-blur-sm">
               <div className="text-center mb-6">
                 <h2 className="text-3xl font-bold text-amber-300 mb-2">
-                  Particle Field
+                  ✨ Particle Field
                 </h2>
                 <p className="text-cyan-300">
                   Move your hand to guide the particles &mdash; they follow your intention
@@ -561,12 +561,12 @@ export default function DigitalDNAHub() {
             </div>
           )}
 
-          {/* Sound Temple */}
+          {/* 🎵 Sound Temple */}
           {activeMode === 'sound' && (
             <div className="bg-slate-900/50 rounded-3xl p-12 border border-pink-800/30 backdrop-blur-sm">
               <div className="text-center mb-12">
                 <h2 className="text-4xl font-bold text-amber-300 mb-4">
-                  Sound Temple
+                  🎵 Sound Temple
                 </h2>
                 <p className="text-pink-300 text-lg mb-8">
                   Each digit sings its own note &mdash; listen to the DNA melody
@@ -580,7 +580,7 @@ export default function DigitalDNAHub() {
                       : 'bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white shadow-pink-500/50 transform hover:scale-105'
                   }`}
                 >
-                  {isPlaying ? 'Playing...' : 'Play DNA Sequence'}
+                  {isPlaying ? '🎵 Playing...' : '▶️ Play DNA Sequence'}
                 </button>
               </div>
               {/* Sound bars */}
@@ -615,12 +615,12 @@ export default function DigitalDNAHub() {
             </div>
           )}
 
-          {/* Guided Journey */}
+          {/* 🧭 Guided Journey */}
           {activeMode === 'journey' && (
             <div className="bg-slate-900/50 rounded-3xl p-12 border border-amber-800/30 backdrop-blur-sm">
               <div className="max-w-3xl mx-auto">
                 <h2 className="text-4xl font-bold text-amber-300 mb-8 text-center">
-                  Guided Journey
+                  🧭 Guided Journey
                 </h2>
 
                 <div className="space-y-8">
@@ -770,7 +770,7 @@ export default function DigitalDNAHub() {
                   : 'bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white shadow-lg shadow-pink-500/30'
               }`}
             >
-              {isPlaying ? 'Playing' : 'Play'}
+              {isPlaying ? '🎵' : '▶️'} Play
             </button>
           </div>
         </div>
@@ -779,11 +779,11 @@ export default function DigitalDNAHub() {
         <div className="mt-12 text-center">
           <details className="bg-slate-900/30 rounded-xl p-6 border border-slate-700/30">
             <summary className="cursor-pointer text-lg font-bold text-amber-300 hover:text-amber-200">
-              About This Experience
+              📖 About This Experience
             </summary>
             <div className="mt-6 text-left text-slate-300 space-y-4 max-w-3xl mx-auto">
               <p>
-                <strong className="text-amber-400">Digital DNA</strong> is a living
+                <strong className="text-amber-400">✨ Digital DNA ✨</strong> is a living
                 geometric and sonic consciousness &mdash; three primordial sequences (Fire,
                 Water, Earth) that express themselves through sacred patterns and sound.
               </p>
