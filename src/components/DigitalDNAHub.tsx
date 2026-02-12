@@ -224,6 +224,23 @@ export default function DigitalDNAHub() {
     return () => {
       cancelAnimationFrame(animId);
       canvas.removeEventListener('mousemove', onMouseMove);
+
+      scene.remove(group);
+      group.traverse((object) => {
+        const disposableObject = object as THREE.Object3D & {
+          geometry?: THREE.BufferGeometry;
+          material?: THREE.Material | THREE.Material[];
+        };
+
+        disposableObject.geometry?.dispose();
+
+        if (Array.isArray(disposableObject.material)) {
+          disposableObject.material.forEach((material) => material.dispose());
+        } else {
+          disposableObject.material?.dispose();
+        }
+      });
+
       renderer.dispose();
     };
   }, [activeMode, selectedSeed, harmony, audioInitialized, getSequence, playChord]);
