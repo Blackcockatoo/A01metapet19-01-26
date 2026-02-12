@@ -101,6 +101,7 @@ export function AnxietyAnchor({ isOpen, onClose }: AnxietyAnchorProps) {
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
+  const completeExerciseRef = useRef<(completed: boolean) => void>(() => {});
 
   const clearTimers = useCallback(() => {
     if (timerRef.current) {
@@ -142,7 +143,7 @@ export function AnxietyAnchor({ isOpen, onClose }: AnxietyAnchorProps) {
         setProgress(overallProgress);
 
         if (elapsed >= exercise.duration) {
-          completeExercise(true);
+          completeExerciseRef.current(true);
         }
       }, 100);
     } else {
@@ -159,7 +160,7 @@ export function AnxietyAnchor({ isOpen, onClose }: AnxietyAnchorProps) {
         setProgress(Math.min((elapsed / exercise.duration) * 100, 100));
 
         if (elapsed >= exercise.duration) {
-          completeExercise(true);
+          completeExerciseRef.current(true);
         }
       }, 100);
     }
@@ -193,6 +194,11 @@ export function AnxietyAnchor({ isOpen, onClose }: AnxietyAnchorProps) {
       }, 2000);
     }
   }, [selectedLevel, activeExercise, logGroundingSession, clearTimers]);
+
+
+  useEffect(() => {
+    completeExerciseRef.current = completeExercise;
+  }, [completeExercise]);
 
   const handleClose = useCallback(() => {
     if (isActive) {
