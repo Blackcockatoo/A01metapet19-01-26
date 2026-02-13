@@ -471,9 +471,28 @@ Full spec: `docs/master-build-prompt.pdf` (attached by user)
 
 ---
 
-## License
+## Licensing
 
-TBD (likely MIT for core, CC for assets)
+This project uses split licensing:
+
+- **Source code** is licensed under the **MIT License**. See [`LICENSE`](./LICENSE).
+- **Project assets and documentation content** are licensed under **CC BY 4.0**, except where noted. See [`ASSET_LICENSES.md`](./ASSET_LICENSES.md).
+
+### Third-Party Content and Attribution
+
+The repository may include or reference third-party material that remains under its original upstream license.
+
+- **Expo documentation snippet**: `.expo/README.md` is from Expo and remains under Expo's upstream licensing terms.
+- **Dependency packages**: any locally installed `node_modules/` content remains licensed per each package's declared license.
+
+When adding third-party content, contributors must document:
+
+1. Source URL or upstream project
+2. Original author/maintainer
+3. Applicable license
+4. Any required attribution text
+
+Record those entries in `ASSET_LICENSES.md` before merging.
 
 ---
 
