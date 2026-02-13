@@ -83,6 +83,8 @@ import { SleepTracker, SleepStatusButton } from '@/components/SleepTracker';
 import { AnxietyAnchor, EmergencyGroundingButton } from '@/components/AnxietyAnchor';
 import { WellnessSettings, WellnessSettingsButton } from '@/components/WellnessSettings';
 import { ClassroomModes } from '@/components/ClassroomModes';
+import { ClassroomManager } from '@/components/ClassroomManager';
+import { EducationQueuePanel } from '@/components/EducationQueuePanel';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { useWellnessStore } from '@/lib/wellness';
 import { useEducationStore } from '@/lib/education';
