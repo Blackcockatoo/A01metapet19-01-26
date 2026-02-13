@@ -3,6 +3,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 import * as Tone from 'tone';
+import { useEducationStore } from '@/lib/education';
+
+export interface LessonContext {
+  lessonId: string;
+  studentAlias: string;
+  prePrompt: string | null;
+  postPrompt: string | null;
+}
 
 type SeedKey = 'red' | 'black' | 'blue';
 type ModeKey = 'spiral' | 'mandala' | 'sound' | 'particles' | 'journey';
@@ -44,7 +52,7 @@ function digitToColor(digit: number): string {
   return COLORS[digit];
 }
 
-export default function DigitalDNAHub() {
+export default function DigitalDNAHub({ lessonContext }: { lessonContext?: LessonContext }) {
   const [activeMode, setActiveMode] = useState<ModeKey>('spiral');
   const [selectedSeed, setSelectedSeed] = useState<SeedKey>('red');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -53,6 +61,14 @@ export default function DigitalDNAHub() {
   const [harmony, setHarmony] = useState(7);
   const [tempo, setTempo] = useState(120);
   const [paintedPattern, setPaintedPattern] = useState<PaintPoint[]>([]);
+  const [showPostPrompt, setShowPostPrompt] = useState(false);
+  const [postResponse, setPostResponse] = useState('');
+  const [preAcknowledged, setPreAcknowledged] = useState(!lessonContext?.prePrompt);
+
+  const incrementDnaInteraction = useEducationStore((s) => s.incrementDnaInteraction);
+  const recordPostResponse = useEducationStore((s) => s.recordPostResponse);
+  const completeLesson = useEducationStore((s) => s.completeLesson);
+  const interactionCountRef = useRef(0);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particleCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -60,6 +76,25 @@ export default function DigitalDNAHub() {
   const particlesRef = useRef<Particle[]>([]);
   const mouseRef = useRef({ x: 0, y: 0, down: false });
   const paintedPatternRef = useRef<PaintPoint[]>([]);
+
+  // Track canvas interactions for education mode
+  const trackInteraction = useCallback(() => {
+    if (!lessonContext) return;
+    interactionCountRef.current += 1;
+    // Batch to store every 5 interactions to avoid excessive writes
+    if (interactionCountRef.current % 5 === 0) {
+      incrementDnaInteraction(lessonContext.lessonId, lessonContext.studentAlias);
+    }
+  }, [lessonContext, incrementDnaInteraction]);
+
+  // Flush remaining interactions on unmount
+  useEffect(() => {
+    return () => {
+      if (lessonContext && interactionCountRef.current % 5 !== 0) {
+        incrementDnaInteraction(lessonContext.lessonId, lessonContext.studentAlias);
+      }
+    };
+  }, [lessonContext, incrementDnaInteraction]);
 
   const getSequence = useCallback(
     () => SEEDS[selectedSeed].split('').map(Number),
@@ -202,6 +237,7 @@ export default function DigitalDNAHub() {
         if (obj.userData.digit !== undefined) {
           obj.material.emissiveIntensity = 1.0;
           if (audioInitialized) playChord([obj.userData.digit as number]);
+          trackInteraction();
           setTimeout(() => {
             if (obj.material) obj.material.emissiveIntensity = 0.5;
           }, 200);
@@ -316,6 +352,7 @@ export default function DigitalDNAHub() {
         const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
         const digit = Math.floor((dist / 50) % 10);
         if (audioInitialized) playChord([digit]);
+        trackInteraction();
       }
     };
 
@@ -464,6 +501,11 @@ export default function DigitalDNAHub() {
           <p className="text-2xl text-blue-300 font-light mb-2">
             Sacred Geometry &amp; Sonic Consciousness
           </p>
+          {lessonContext && (
+            <p className="text-xs text-cyan-300 mt-1">
+              Lesson mode: {lessonContext.studentAlias}
+            </p>
+          )}
           <p className="text-sm text-slate-400 italic">
             Experience through sight, sound, and touch
           </p>
@@ -807,6 +849,71 @@ export default function DigitalDNAHub() {
             </div>
           </details>
         </div>
+
+        {/* Lesson mode: Finish button */}
+        {lessonContext && preAcknowledged && !showPostPrompt && (
+          <div className="fixed bottom-6 right-6 z-50">
+            <button
+              type="button"
+              onClick={() => {
+                if (lessonContext.postPrompt) {
+                  setShowPostPrompt(true);
+                } else {
+                  completeLesson(lessonContext.lessonId, lessonContext.studentAlias);
+                }
+              }}
+              className="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm shadow-lg shadow-emerald-500/30 transition"
+            >
+              Finish Lesson
+            </button>
+          </div>
+        )}
+
+        {/* Pre-prompt overlay */}
+        {lessonContext?.prePrompt && !preAcknowledged && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+            <div className="max-w-md mx-4 rounded-2xl border border-cyan-500/30 bg-slate-900 p-6 space-y-4">
+              <p className="text-lg font-semibold text-cyan-200">Before you begin...</p>
+              <p className="text-sm text-zinc-300">{lessonContext.prePrompt}</p>
+              <button
+                type="button"
+                onClick={() => setPreAcknowledged(true)}
+                className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-sm transition"
+              >
+                Got it, let&apos;s explore!
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Post-prompt dialog */}
+        {showPostPrompt && lessonContext?.postPrompt && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+            <div className="max-w-md mx-4 rounded-2xl border border-emerald-500/30 bg-slate-900 p-6 space-y-4">
+              <p className="text-lg font-semibold text-emerald-200">Reflect on your exploration</p>
+              <p className="text-sm text-zinc-300">{lessonContext.postPrompt}</p>
+              <textarea
+                value={postResponse}
+                onChange={(e) => setPostResponse(e.target.value)}
+                placeholder="Share your thoughts..."
+                className="w-full h-24 rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-zinc-100 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (postResponse.trim()) {
+                    recordPostResponse(lessonContext.lessonId, lessonContext.studentAlias, postResponse.trim());
+                  }
+                  completeLesson(lessonContext.lessonId, lessonContext.studentAlias);
+                  setShowPostPrompt(false);
+                }}
+                className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm transition"
+              >
+                Submit &amp; Complete
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

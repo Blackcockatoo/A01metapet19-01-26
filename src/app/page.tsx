@@ -85,6 +85,7 @@ import { WellnessSettings, WellnessSettingsButton } from '@/components/WellnessS
 import { ClassroomModes } from '@/components/ClassroomModes';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { useWellnessStore } from '@/lib/wellness';
+import { useEducationStore } from '@/lib/education';
 import { useLocale, LOCALE_LABELS, SUPPORTED_LOCALES, type Locale } from '@/lib/i18n';
 
 interface PetSummary {
@@ -229,6 +230,64 @@ function CollapsibleSection({
         )}
       </button>
       {isOpen && <div className="px-4 pb-4">{children}</div>}
+    </div>
+  );
+}
+
+function CurriculumQueueSection() {
+  const eduQueue = useEducationStore((s) => s.queue);
+  const eduProgress = useEducationStore((s) => s.lessonProgress);
+  const activateLesson = useEducationStore((s) => s.activateLesson);
+
+  const completedCount = eduProgress.filter((p) => p.status === 'completed').length;
+  const standards = eduQueue.flatMap((l) => l.standardsRef).filter(Boolean);
+
+  if (eduQueue.length === 0) {
+    return (
+      <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
+        <p className="text-xs font-semibold text-zinc-200">Lesson objectives</p>
+        <ul className="mt-2 space-y-2 text-xs text-zinc-300">
+          {[
+            'Define success criteria for an iterative prototype.',
+            'Collect and interpret feedback to refine a design.',
+            'Communicate findings with evidence-based reflection.',
+          ].map(objective => (
+            <li key={objective} className="flex items-start gap-2">
+              <Lock className="mt-0.5 h-3.5 w-3.5 text-zinc-500" />
+              <span>{objective}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-[11px] text-zinc-500">
+          Add lessons to the queue in the Classroom Manager to see your lesson path here.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold text-emerald-200">Queue Progress</p>
+          <p className="text-xs text-emerald-300">
+            {completedCount} of {eduQueue.length} lessons completed
+          </p>
+        </div>
+        {standards.length > 0 && (
+          <div className="mt-2">
+            <p className="text-[10px] text-emerald-200/70 uppercase tracking-wide">Standards</p>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {[...new Set(standards)].map((s) => (
+                <span key={s} className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-[10px] text-emerald-200">
+                  {s}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      <EducationQueuePanel mode="student" onLessonActivate={activateLesson} />
     </div>
   );
 }
@@ -1467,21 +1526,7 @@ export default function Home() {
                       <li>• ISTE: 1.1 Empowered Learner, 1.4 Innovative Designer</li>
                     </ul>
                   </div>
-                  <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
-                    <p className="text-xs font-semibold text-zinc-200">Locked lesson objectives</p>
-                    <ul className="mt-2 space-y-2 text-xs text-zinc-300">
-                      {[
-                        'Define success criteria for an iterative prototype.',
-                        'Collect and interpret feedback to refine a design.',
-                        'Communicate findings with evidence-based reflection.',
-                      ].map(objective => (
-                        <li key={objective} className="flex items-start gap-2">
-                          <Lock className="mt-0.5 h-3.5 w-3.5 text-zinc-500" />
-                          <span>{objective}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  <CurriculumQueueSection />
                 </div>
               </div>
             </div>
@@ -1697,6 +1742,15 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
+              </div>
+
+              {/* Classroom Manager */}
+              <div className="rounded-lg border border-slate-800 bg-slate-950/40 p-4 space-y-3">
+                <p className="text-sm font-semibold text-zinc-100">Classroom Manager</p>
+                <p className="text-xs text-zinc-400">
+                  Manage learner roster, assign activities, track progress, and build lesson queues.
+                </p>
+                <ClassroomManager />
               </div>
             </div>
           </CollapsibleSection>
