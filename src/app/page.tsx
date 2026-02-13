@@ -1768,7 +1768,7 @@ export default function Home() {
                 </div>
               </div>
               <Link
-                href="/geometry-sound.html"
+                href="/geometry-sound"
                 className="px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-sm font-medium hover:bg-amber-500/30 hover:border-amber-400 transition-colors touch-manipulation"
               >
                 Generate My Pet Resonance

@@ -774,8 +774,8 @@ export default function DigitalDNAHub({ lessonContext }: { lessonContext?: Lesso
         </div>
 
         {/* Universal Controls */}
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900/90 backdrop-blur-lg rounded-full px-8 py-4 border border-amber-600/30 shadow-2xl shadow-amber-500/20 z-50">
-          <div className="flex items-center gap-8">
+        <div className="fixed left-1/2 z-40 w-[min(95vw,56rem)] -translate-x-1/2 rounded-2xl border border-amber-600/30 bg-slate-900/90 px-4 py-3 shadow-2xl shadow-amber-500/20 backdrop-blur-lg bottom-[calc(6.25rem+env(safe-area-inset-bottom))] md:w-auto md:rounded-full md:px-8 md:py-4 md:bottom-[calc(6rem+env(safe-area-inset-bottom))]">
+          <div className="flex flex-wrap items-center justify-center gap-4 md:flex-nowrap md:gap-8">
             <div className="flex items-center gap-3">
               <span className="text-sm text-slate-400">DNA:</span>
               {(['red', 'blue', 'black'] as SeedKey[]).map((seed) => (
