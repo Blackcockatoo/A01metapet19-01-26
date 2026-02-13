@@ -365,6 +365,39 @@ export default function Home() {
   const wellnessSetupCompleted = useWellnessStore(state => state.setupCompletedAt);
   const checkStreaks = useWellnessStore(state => state.checkStreaks);
 
+  const elementProfile = useMemo(() => {
+    if (!traits) return 'fire';
+    const weighted = {
+      fire: traits.elementWeb.frontierAffinity,
+      water: traits.elementWeb.bridgeCount * 10,
+      earth: traits.elementWeb.voidDrift * 10,
+    };
+    return (Object.entries(weighted).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'fire') as 'fire' | 'water' | 'earth';
+  }, [traits]);
+
+  const resonanceIndex = useMemo(() => {
+    if (!traits) return 60;
+    const blend = (
+      traits.personality.energy +
+      traits.personality.curiosity +
+      traits.personality.playfulness +
+      traits.elementWeb.frontierAffinity
+    ) / 4;
+    return Math.max(0, Math.min(100, Math.round(blend)));
+  }, [traits]);
+
+  const geometrySoundHref = useMemo(() => {
+    const params = new URLSearchParams({
+      petId: currentPetId ?? PET_ID,
+      petName: petName.trim() || 'Meta Pet',
+      petType,
+      seed: genomeHash?.redHash?.slice(0, 24) ?? 'origin-seed',
+      elementProfile,
+      resonanceIndex: String(resonanceIndex),
+    });
+    return `/geometry-sound?${params.toString()}`;
+  }, [currentPetId, petName, petType, genomeHash, elementProfile, resonanceIndex]);
+
   const debouncedSave = useMemo(() => createDebouncedSave(1_000), []);
 
   const crestRef = useRef<PrimeTailID | null>(null);
@@ -1678,13 +1711,12 @@ export default function Home() {
                   <p className="text-xs text-zinc-400">Experience DNA as living geometry, music, and light</p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setSessionSheetOpen(true)}
+              <Link
+                href="/geometry-sound.html"
                 className="px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-sm font-medium hover:bg-amber-500/30 hover:border-amber-400 transition-colors touch-manipulation"
               >
-                Enter
-              </button>
+                Generate My Pet Resonance
+              </Link>
             </div>
           </div>
 

@@ -1,16 +1,22 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
 export default function GeometrySoundPage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const searchParams = useSearchParams();
-  const session = searchParams.get('session');
-  const iframeSrc = session
-    ? `/geometry-sound.html?session=${encodeURIComponent(session)}`
-    : '/geometry-sound.html';
+
+  const iframeSrc = useMemo(() => {
+    const params = new URLSearchParams();
+    const keys = ['petId', 'petName', 'petType', 'seed', 'elementProfile', 'resonanceIndex'];
+    keys.forEach(key => {
+      const value = searchParams.get(key);
+      if (value) params.set(key, value);
+    });
+    return `/geometry-sound.html?${params.toString()}`;
+  }, [searchParams]);
 
   useEffect(() => {
     const handleResize = () => {
