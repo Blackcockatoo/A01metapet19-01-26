@@ -1,10 +1,22 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 export default function GeometrySoundPage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const searchParams = useSearchParams();
+
+  const iframeSrc = useMemo(() => {
+    const params = new URLSearchParams();
+    const keys = ['petId', 'petName', 'petType', 'seed', 'elementProfile', 'resonanceIndex'];
+    keys.forEach(key => {
+      const value = searchParams.get(key);
+      if (value) params.set(key, value);
+    });
+    return `/geometry-sound.html?${params.toString()}`;
+  }, [searchParams]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -29,7 +41,7 @@ export default function GeometrySoundPage() {
       </Link>
       <iframe
         ref={iframeRef}
-        src="/geometry-sound.html"
+        src={iframeSrc}
         className="w-full border-none"
         style={{ height: '100vh' }}
         title="Sacred Geometry &amp; Sonic Consciousness"
