@@ -2,6 +2,8 @@
 
 **Working Demo:** Identity Core + Genome System + Live Vitals (v5)
 
+**Status as of:** 2026-02-13 (Version 8 docs refresh)
+
 ---
 
 ## What's Running Now
@@ -70,54 +72,30 @@ For a longer reference, see `docs/identity-glossary.md`.
 ## File Structure
 
 ```
-meta-pet/
+.
 ├── src/
+│   ├── app/                      # Next.js App Router pages
+│   │   ├── page.tsx              # Main dashboard
+│   │   ├── pet/page.tsx
+│   │   ├── identity/page.tsx
+│   │   ├── qr-messaging/page.tsx
+│   │   └── addons-demo/page.tsx
+│   ├── components/               # UI building blocks and feature panels
 │   ├── lib/
-│   │   ├── identity/
-│   │   │   ├── types.ts          # Core types
-│   │   │   ├── crest.ts          # PrimeTail ID minting
-│   │   │   └── hepta/
-│   │   │       ├── codec.ts      # Payload → base-7
-│   │   │       ├── ecc.ts        # 6×7 error correction
-│   │   │       ├── audio.ts      # HeptaCode → crest chime playback
-│   │   │       └── index.ts      # heptaEncode42/Decode42
-│   │   ├── genome/
-│   │   │   ├── types.ts          # Genome + trait types
-│   │   │   ├── encoder.ts        # Red60/Blue60/Black60 encoding
-│   │   │   ├── decoder.ts        # Trait derivation logic
-│   │   │   └── index.ts          # Public API
-│   │   ├── addons/               # Crypto-secured addon system
-│   │   │   ├── types.ts          # Addon interfaces
-│   │   │   ├── crypto.ts         # ECDSA P-256 signing/verification
-│   │   │   ├── catalog.tsx       # 12 addon templates (6 standard + 6 premium)
-│   │   │   ├── mint.ts           # Addon minting with dual signatures
-│   │   │   ├── store.ts          # Zustand inventory management
-│   │   │   ├── starter.ts        # Demo starter addon setup
-│   │   │   └── index.ts          # Public API
-│   │   ├── lineage/              # Heraldic lineage system
-│   │   │   ├── types.ts          # Coat of arms types
-│   │   │   ├── generator.ts      # CoA generation, breeding, analysis
-│   │   │   └── index.ts          # Public API
-│   │   └── store/
-│   │       └── index.ts          # Zustand (vitals + genome + tick)
-│   ├── components/
-│   │   ├── HUD.tsx               # Vitals + actions
-│   │   ├── TraitPanel.tsx        # Genome trait display
-│   │   ├── AuraliaMetaPet.tsx    # Main pet component (3000+ lines)
-│   │   ├── AuraliaSprite.tsx     # Visual pet (SVG + genome-driven)
-│   │   ├── HeptaTag.tsx          # 7-sided visual
-│   │   ├── SeedOfLifeGlyph.tsx   # Sacred geometry
-│   │   ├── addons/               # Addon UI components
-│   │   │   ├── AddonRenderer.tsx       # SVG addon rendering + drag
-│   │   │   ├── AddonInventoryPanel.tsx # Inventory management UI
-│   │   │   ├── PetProfilePanel.tsx     # Profile with CoA + addons
-│   │   │   └── CryptoKeyDisplay.tsx    # Key pair display
-│   │   └── lineage/              # Lineage UI components
-│   │       └── CoatOfArmsRenderer.tsx  # SVG coat of arms rendering
-│   └── app/
-│       ├── page.tsx              # Main demo
-│       ├── pet/page.tsx          # Pet viewer with addons
-│       └── addons-demo/page.tsx  # Addon system demo
+│   │   ├── identity/             # PrimeTail + HeptaCode modules
+│   │   ├── genome/               # Deterministic genome encode/decode
+│   │   ├── persistence/          # IndexedDB + sealed export/import
+│   │   ├── breeding/             # Breeding and inheritance utilities
+│   │   └── addons/               # Addon signing and inventory
+│   ├── store/index.ts            # Zustand app state
+│   ├── genome/                   # Public genome helpers
+│   └── vitals/                   # Tick and vitals mechanics
+├── docs/
+│   ├── feature-status.md
+│   └── security/threat-model.md
+├── public/
+├── package.json
+└── next.config.js
 ```
 
 ---
@@ -125,12 +103,17 @@ meta-pet/
 ## Run It
 
 ```bash
-cd meta-pet
-bun install
-bun dev
+npm install
+npm run dev
 ```
 
 Visit `http://localhost:3000`
+
+Quick verification:
+
+```bash
+npm run lint
+```
 
 ---
 
@@ -208,7 +191,7 @@ const hashes = await hashGenome(genome);
 
 ### 4. Live Vitals
 ```ts
-import { useStore } from '@/lib/store';
+import { useStore } from '@/index';
 
 const vitals = useStore(s => s.vitals);
 const feed = useStore(s => s.feed);
@@ -360,7 +343,6 @@ Changing the preset regenerates the digits with a fresh nonce and stores the cho
 - [x] Fix ECC to output exactly 42 digits
 - [x] Add audio chime (playHepta)
 - [x] Privacy presets (Stealth/Standard/Radiant)
-- [ ] Privacy presets (Stealth/Standard/Radiant)
 - [ ] Consent grants (pairwise, time-boxed)
 
 ### Phase 2: Game Loop ✅ COMPLETE
@@ -422,7 +404,7 @@ Changing the preset regenerates the digits with a fresh nonce and stores the cho
 - **Achievements: WORKING** (17 achievements, 4 tiers, progress tracking)
 - **Addon System: WORKING** (crypto-secured, 12 addons, drag positioning)
 - **Lineage System: WORKING** (heraldic coat of arms, breeding inheritance)
-- HeptaCode: **PARTIAL** (needs ECC fix)
+- HeptaCode: **WORKING** (ECC fixed to 42 digits, decode path and audio available)
 - Visual components: **WORKING**
 
 **Phases 1-4 All Complete:**
@@ -443,10 +425,31 @@ Changing the preset regenerates the digits with a fresh nonce and stores the cho
 - ✅ **12 addon templates (6 standard + 6 premium)**
 
 **Known Issues:**
-- HeptaCode ECC needs to output 42 digits (currently variable)
-- Need to test decode path
-- Audio (playHepta) not implemented yet
+- Expand decode-path fuzz testing coverage for malformed payloads
+- Add broader cross-browser audio gesture tests for `playHepta`
 - Some pre-existing linting warnings (not in new features)
+
+For frequently changing status details, see `docs/feature-status.md`.
+
+---
+
+## Security Claims
+
+Security language in this project is intentionally scoped to implementation details:
+
+- **Tamper-evidence for identity payloads** is implemented with HMAC signatures in `src/lib/identity/crest.ts`.
+- **Integrity checks for sealed exports/imports** are implemented in `src/lib/persistence/sealed.ts`.
+- **Addon authenticity checks** use ECDSA P-256 signing/verification in `src/lib/addons/crypto.ts`.
+- **HeptaCode transport encoding** is implemented in `src/lib/identity/hepta/*` and should be treated as an encoding/identity format, not a replacement for standardized end-to-end encrypted messaging.
+
+See `docs/security/threat-model.md` for trust boundaries, assumptions, and in/out-of-scope attacks.
+
+### Documentation security-claim review checklist
+
+- Any use of **secure**, **tamper-proof**, **tamper-evident**, **private**, or **quantum-resistant** must include a link to concrete code and threat-model scope.
+- Avoid **quantum-resistant** wording unless a standards-based post-quantum scheme is implemented and documented.
+- Claims must distinguish between **demo/prototype guarantees** and **production guarantees**.
+- PRs that alter security-sensitive behavior should update both implementation docs and `docs/security/threat-model.md`.
 
 **Recent Additions (v8):**
 - 🎭 Crypto-secured addon system with ECDSA P-256 signatures
