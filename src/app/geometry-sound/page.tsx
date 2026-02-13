@@ -2,9 +2,15 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 export default function GeometrySoundPage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const searchParams = useSearchParams();
+  const session = searchParams.get('session');
+  const iframeSrc = session
+    ? `/geometry-sound.html?session=${encodeURIComponent(session)}`
+    : '/geometry-sound.html';
 
   useEffect(() => {
     const handleResize = () => {
@@ -29,7 +35,7 @@ export default function GeometrySoundPage() {
       </Link>
       <iframe
         ref={iframeRef}
-        src="/geometry-sound.html"
+        src={iframeSrc}
         className="w-full border-none"
         style={{ height: '100vh' }}
         title="Sacred Geometry &amp; Sonic Consciousness"

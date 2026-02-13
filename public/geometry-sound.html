@@ -104,6 +104,13 @@ input[type=range]::-webkit-slider-thumb{
 }
 #play-btn:hover{background:rgba(201,168,76,0.3);transform:scale(1.1)}
 #play-btn.playing{background:var(--accent);color:var(--bg)}
+#remix-btn{
+  padding:8px 12px;border-radius:999px;border:1px solid rgba(201,168,76,0.35);
+  background:rgba(201,168,76,0.08);color:var(--accent);font-size:0.72rem;
+  letter-spacing:0.6px;cursor:pointer;transition:all 0.3s;display:none;
+}
+#remix-btn.show{display:inline-flex;align-items:center}
+#remix-btn:disabled{opacity:0.35;cursor:not-allowed}
 
 /* Journey overlay */
 #journey-overlay{
@@ -224,6 +231,7 @@ input[type=range]::-webkit-slider-thumb{
       <input type="range" id="awareness-slider" min="0" max="100" value="60" step="5">
     </div>
     <button id="play-btn" title="Play sequence">&#9654;</button>
+    <button id="remix-btn" title="Unlock controls after first run">Remix</button>
     <div class="ctrl-group">
       <span class="ctrl-label">Tempo</span>
       <span class="ctrl-val" id="tempo-val">120</span>
@@ -283,6 +291,23 @@ const DIGIT_COLORS_RGB = DIGIT_COLORS.map(hex => {
   return {r,g,b};
 });
 
+// ===== SESSION PROFILE =====
+function decodeSessionProfile() {
+  const params = new URLSearchParams(window.location.search);
+  const encoded = params.get('session');
+  if (!encoded) return null;
+  try {
+    const normalized = encoded.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
+    return JSON.parse(atob(padded));
+  } catch (error) {
+    console.warn('Failed to decode session profile', error);
+    return null;
+  }
+}
+
+const sessionProfile = decodeSessionProfile();
+
 // ===== STATE =====
 const state = {
   dna: 'fire',
@@ -295,6 +320,9 @@ const state = {
   mouseX: 0,
   mouseY: 0,
   mouseDown: false,
+  controlsLocked: Boolean(sessionProfile?.lockFirstRun),
+  canRemix: false,
+  firstPlaybackComplete: false,
 };
 
 function getDigits() {
@@ -333,6 +361,11 @@ function playSequence() {
       clearInterval(timer);
       state.playing = false;
       document.getElementById('play-btn').classList.remove('playing');
+      if (state.controlsLocked) {
+        state.firstPlaybackComplete = true;
+        state.canRemix = true;
+        syncRemixButton();
+      }
       return;
     }
     playNote(digits[i]);
@@ -987,13 +1020,15 @@ function nextJourney() {
   renderJourneyStep();
 }
 
-function setDNA(type) {
+function setDNA(type, force = false) {
+  if (state.controlsLocked && !force) return;
   state.dna = type;
   document.querySelectorAll('.dna-dot').forEach(d => d.classList.toggle('active', d.dataset.dna === type));
   rebuildActiveMode();
 }
 
-function setHarmony(val) {
+function setHarmony(val, force = false) {
+  if (state.controlsLocked && !force) return;
   state.harmony = val;
   document.getElementById('harmony-slider').value = val;
   document.getElementById('harmony-val').textContent = val;
@@ -1016,8 +1051,51 @@ function rebuildActiveMode() {
   }
 }
 
+function syncRemixButton() {
+  const remixBtn = document.getElementById('remix-btn');
+  remixBtn.classList.toggle('show', Boolean(sessionProfile?.lockFirstRun));
+  remixBtn.disabled = !state.canRemix || state.playing;
+}
+
+function setControlsLocked(locked) {
+  state.controlsLocked = locked;
+  const lockables = [
+    ...document.querySelectorAll('.mode-btn'),
+    ...document.querySelectorAll('.dna-dot'),
+    document.getElementById('harmony-slider'),
+    document.getElementById('awareness-slider'),
+    document.getElementById('tempo-slider'),
+  ];
+  lockables.forEach(el => {
+    if (!el) return;
+    el.toggleAttribute('disabled', locked);
+    el.style.pointerEvents = locked ? 'none' : '';
+    el.style.opacity = locked ? '0.45' : '';
+  });
+  syncRemixButton();
+}
+
+function applySessionProfile() {
+  if (!sessionProfile) return;
+  if (sessionProfile.dna) setDNA(sessionProfile.dna, true);
+  if (typeof sessionProfile.harmony === 'number') setHarmony(sessionProfile.harmony, true);
+  if (typeof sessionProfile.awareness === 'number') {
+    state.awareness = Math.max(0, Math.min(100, sessionProfile.awareness));
+    document.getElementById('awareness-slider').value = state.awareness;
+    document.getElementById('awareness-val').textContent = `${state.awareness}%`;
+  }
+  if (typeof sessionProfile.tempo === 'number') {
+    state.tempo = Math.max(60, Math.min(180, sessionProfile.tempo));
+    document.getElementById('tempo-slider').value = state.tempo;
+    document.getElementById('tempo-val').textContent = state.tempo;
+  }
+  if (sessionProfile.mode) switchMode(sessionProfile.mode, true);
+  if (sessionProfile.lockFirstRun) setControlsLocked(true);
+}
+
 // ===== MODE SWITCHING =====
-function switchMode(mode) {
+function switchMode(mode, force = false) {
+  if (state.controlsLocked && state.firstPlaybackComplete === false && !force) return;
   state.mode = mode;
 
   // Update buttons
@@ -1066,21 +1144,28 @@ function setupEvents() {
 
   // Sliders
   document.getElementById('harmony-slider').addEventListener('input', function() {
+    if (state.controlsLocked) return;
     state.harmony = +this.value;
     document.getElementById('harmony-val').textContent = this.value;
     rebuildActiveMode();
   });
   document.getElementById('awareness-slider').addEventListener('input', function() {
+    if (state.controlsLocked) return;
     state.awareness = +this.value;
     document.getElementById('awareness-val').textContent = this.value + '%';
   });
   document.getElementById('tempo-slider').addEventListener('input', function() {
+    if (state.controlsLocked) return;
     state.tempo = +this.value;
     document.getElementById('tempo-val').textContent = this.value;
   });
 
   // Play button
   document.getElementById('play-btn').addEventListener('click', playSequence);
+  document.getElementById('remix-btn').addEventListener('click', () => {
+    if (!state.canRemix) return;
+    setControlsLocked(false);
+  });
 
   // Info toggle
   document.getElementById('info-toggle').addEventListener('click', () => {
@@ -1194,8 +1279,8 @@ function updateCursor() {
 
 // Override switchMode to also update cursor
 const _origSwitch = switchMode;
-switchMode = function(mode) {
-  _origSwitch(mode);
+switchMode = function(mode, force = false) {
+  _origSwitch(mode, force);
   updateCursor();
 };
 
@@ -1204,6 +1289,8 @@ function init() {
   initStars();
   initHelix();
   setupEvents();
+  applySessionProfile();
+  syncRemixButton();
   updateCursor();
 }
 
