@@ -29,7 +29,7 @@ export default function QRMessagingRoute() {
 
         {/* Footer */}
         <div className="mt-12 text-center text-zinc-600 text-xs space-y-1">
-          <p>MOSS60 Ultimate — Quantum-Resistant Cryptographic Platform</p>
+          <p>MOSS60 Ultimate — Experimental Cryptographic Platform</p>
           <p>Base-60 Encoding • XOR Stream Cipher • Lucas Sequence Evolution</p>
         </div>
       </div>
