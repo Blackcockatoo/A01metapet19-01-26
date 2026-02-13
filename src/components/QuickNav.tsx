@@ -6,12 +6,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   ArrowDownToLine,
   ArrowLeft,
+  BookOpen,
   Dna,
   FlaskConical,
   Home,
   PawPrint,
   QrCode,
-  Rocket,
   UserCircle,
 } from 'lucide-react';
 
@@ -26,7 +26,7 @@ type BeforeInstallPromptEvent = Event & {
 const NAV_ITEMS = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/pet', label: 'Pet', icon: PawPrint },
-  { href: '/space-jewbles', label: 'Jewbles', icon: Rocket },
+  { href: '/school-game', label: 'School', icon: BookOpen },
   { href: '/identity', label: 'Identity', icon: UserCircle },
   { href: '/genome-explorer', label: 'Genome', icon: Dna },
 ];
