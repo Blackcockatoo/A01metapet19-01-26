@@ -3,6 +3,7 @@ const nextConfig = {
   output: 'export',
   experimental: {
     turbopackUseSystemTlsCerts: true,
+    optimizePackageImports: ['lucide-react'],
   },
   images: {
     unoptimized: true,
