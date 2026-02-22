@@ -171,6 +171,25 @@ const responseLibrary = {
       { text: 'Waiting... ⏳', emoji: '⏳', intensity: 'subtle' },
     ],
   },
+  education: {
+    lessonComplete: [
+      { text: 'Knowledge unlocked! 🧠', emoji: '🧠', intensity: 'intense' },
+      { text: 'Level up! ⬆️', emoji: '⬆️', intensity: 'intense' },
+      { text: 'BRAIN GAINS! 💪🧠', emoji: '💪', intensity: 'intense' },
+    ],
+    streakMilestone: [
+      { text: '3 IN A ROW! 🔥🔥🔥', emoji: '🔥', intensity: 'intense' },
+      { text: 'UNSTOPPABLE! ⚡', emoji: '⚡', intensity: 'intense' },
+    ],
+    quickFireWin: [
+      { text: 'Speed demon! ⚡', emoji: '⚡', intensity: 'intense' },
+      { text: 'Pattern CRUSHED! 🎯', emoji: '🎯', intensity: 'intense' },
+    ],
+    achievementUnlock: [
+      { text: 'NEW BADGE! 🏅', emoji: '🏅', intensity: 'intense' },
+      { text: 'Achievement get! 🌟', emoji: '🌟', intensity: 'intense' },
+    ],
+  },
 };
 
 /**
@@ -302,6 +321,30 @@ export function getResponse(
       }
       responseType = 'mood';
       duration = 2500;
+      break;
+    case 'edu_lesson_complete':
+      responses = responseLibrary.education.lessonComplete;
+      responseType = 'celebration';
+      duration = 3500;
+      audioTrigger = 'celebration';
+      break;
+    case 'edu_streak_milestone':
+      responses = responseLibrary.education.streakMilestone;
+      responseType = 'celebration';
+      duration = 3000;
+      audioTrigger = 'celebration';
+      break;
+    case 'edu_quickfire_win':
+      responses = responseLibrary.education.quickFireWin;
+      responseType = 'achievement';
+      duration = 2500;
+      audioTrigger = 'success';
+      break;
+    case 'edu_achievement':
+      responses = responseLibrary.education.achievementUnlock;
+      responseType = 'achievement';
+      duration = 4000;
+      audioTrigger = 'celebration';
       break;
     default:
       responses = [{ text: 'Hi there! 👋', emoji: '👋', intensity: 'subtle' }];

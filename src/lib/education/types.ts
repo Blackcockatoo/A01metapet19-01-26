@@ -74,6 +74,13 @@ export interface EducationQueueState {
   sessionStartedAt: number | null;
   sessionEndedAt: number | null;
   totalSessionsRun: number;
+  eduXP: EduXP;
+  vibeReactions: VibeSnapshot[];
+  classEnergy: ClassEnergy;
+  eduAchievements: EduAchievement[];
+  vibeReactionCount: number;
+  completedFocusAreas: Record<FocusArea, number>;
+  promptResponseCount: number;
 }
 
 /** Aggregated queue analytics (no aliases exposed) */
@@ -106,6 +113,75 @@ export interface StudentDNAProfile {
   /** Kid-friendly symbol derived from their pattern */
   learningSymbol: string;
   lastUpdatedAt: number;
+}
+
+// --- Memetic Education Types ---
+
+export type VibeReaction = 'fire' | 'brain' | 'sleeping' | 'mind-blown';
+
+export const VIBE_EMOJI: Record<VibeReaction, string> = {
+  fire: '\uD83D\uDD25',
+  brain: '\uD83E\uDDE0',
+  sleeping: '\uD83D\uDE34',
+  'mind-blown': '\uD83E\uDD2F',
+};
+
+export interface EduXP {
+  xp: number;
+  level: number;
+  streak: number;
+  bestStreak: number;
+  lastCompletedAt: number | null;
+}
+
+export interface VibeSnapshot {
+  lessonId: string;
+  reaction: VibeReaction;
+  timestamp: number;
+}
+
+export interface ClassEnergy {
+  /** 0-100 energy level, decays over time, boosted by completions/vibes */
+  level: number;
+  lastUpdatedAt: number;
+  contributionCount: number;
+}
+
+export type EduAchievementId =
+  | 'speedrunner'
+  | 'big-brain'
+  | 'streak-lord'
+  | 'vibe-king'
+  | 'class-catalyst'
+  | 'pattern-master'
+  | 'reflection-sage'
+  | 'first-lesson';
+
+export interface EduAchievement {
+  id: EduAchievementId;
+  name: string;
+  description: string;
+  emoji: string;
+  tier: 'bronze' | 'silver' | 'gold' | 'platinum';
+  unlockedAt: number | null;
+}
+
+export const EDU_ACHIEVEMENTS_CATALOG: EduAchievement[] = [
+  { id: 'first-lesson', name: 'First Steps', description: 'Complete your first lesson', emoji: '\uD83C\uDF1F', tier: 'bronze', unlockedAt: null },
+  { id: 'speedrunner', name: 'Speedrunner', description: 'Finish a lesson in under half the target time', emoji: '\u26A1', tier: 'silver', unlockedAt: null },
+  { id: 'big-brain', name: 'Big Brain', description: 'Ace a lesson with 10+ interactions', emoji: '\uD83E\uDDE0', tier: 'gold', unlockedAt: null },
+  { id: 'streak-lord', name: 'Streak Lord', description: 'Complete 5 lessons in a row', emoji: '\uD83D\uDD25', tier: 'gold', unlockedAt: null },
+  { id: 'vibe-king', name: 'Vibe King', description: 'Send 20 vibe reactions', emoji: '\uD83D\uDC51', tier: 'silver', unlockedAt: null },
+  { id: 'class-catalyst', name: 'Class Catalyst', description: 'Push class energy above 80', emoji: '\uD83D\uDE80', tier: 'gold', unlockedAt: null },
+  { id: 'pattern-master', name: 'Pattern Master', description: 'Complete 3 pattern-recognition lessons', emoji: '\uD83E\uDDEC', tier: 'silver', unlockedAt: null },
+  { id: 'reflection-sage', name: 'Reflection Sage', description: 'Answer all prompts for 5 lessons', emoji: '\uD83E\uDDD8', tier: 'platinum', unlockedAt: null },
+];
+
+export interface QuickFireChallenge {
+  id: string;
+  pattern: number[];
+  timeLimitMs: number;
+  xpReward: number;
 }
 
 /** Preset focus areas with kid-friendly labels */
@@ -142,5 +218,18 @@ export function createDefaultQueueState(): EducationQueueState {
     sessionStartedAt: null,
     sessionEndedAt: null,
     totalSessionsRun: 0,
+    eduXP: { xp: 0, level: 0, streak: 0, bestStreak: 0, lastCompletedAt: null },
+    vibeReactions: [],
+    classEnergy: { level: 0, lastUpdatedAt: 0, contributionCount: 0 },
+    eduAchievements: [...EDU_ACHIEVEMENTS_CATALOG],
+    vibeReactionCount: 0,
+    completedFocusAreas: {
+      'pattern-recognition': 0,
+      'sound-exploration': 0,
+      'geometry-creation': 0,
+      'reflection': 0,
+      'collaboration': 0,
+    },
+    promptResponseCount: 0,
   };
 }

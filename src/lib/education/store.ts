@@ -18,8 +18,14 @@ import {
   FocusArea,
   DnaMode,
   QueueAnalytics,
+  VibeReaction,
+  VibeSnapshot,
+  EduAchievementId,
+  QuickFireChallenge,
+  EDU_ACHIEVEMENTS_CATALOG,
   createDefaultQueueState,
 } from './types';
+import { generateMeditationPattern, validatePattern } from '@/lib/minigames';
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -51,6 +57,22 @@ interface EducationActions {
 
   // Analytics
   getQueueAnalytics: () => QueueAnalytics;
+
+  // Memetic education actions
+  sendVibeReaction: (lessonId: string, reaction: VibeReaction) => void;
+  awardXP: (amount: number) => void;
+  boostClassEnergy: (amount: number) => void;
+  getClassEnergyWithDecay: () => number;
+  completeLessonWithFlair: (lessonId: string, studentAlias: string) => EduAchievementId[];
+  checkEduAchievements: (context: {
+    lessonId: string;
+    timeSpentMs: number;
+    targetMinutes: number;
+    dnaInteractions: number;
+    focusArea: FocusArea;
+  }) => EduAchievementId[];
+  generateQuickFire: (difficulty?: number) => QuickFireChallenge;
+  scoreQuickFire: (challenge: QuickFireChallenge, userPattern: number[]) => { correct: boolean; xpEarned: number };
 
   // Reset
   reset: () => void;
@@ -232,12 +254,163 @@ export const useEducationStore = create<EducationStore>()(
         };
       },
 
+      // ---------- Memetic education ----------
+
+      sendVibeReaction: (lessonId, reaction) => set((state) => {
+        const snapshot: VibeSnapshot = { lessonId, reaction, timestamp: Date.now() };
+        const newCount = state.vibeReactionCount + 1;
+        const energy = Math.min(100, state.classEnergy.level + 3);
+        return {
+          vibeReactions: [...state.vibeReactions.slice(-49), snapshot],
+          vibeReactionCount: newCount,
+          classEnergy: { level: energy, lastUpdatedAt: Date.now(), contributionCount: state.classEnergy.contributionCount + 1 },
+        };
+      }),
+
+      awardXP: (amount) => set((state) => {
+        const newXP = state.eduXP.xp + amount;
+        return {
+          eduXP: {
+            ...state.eduXP,
+            xp: newXP,
+            level: Math.floor(newXP / 100),
+          },
+        };
+      }),
+
+      boostClassEnergy: (amount) => set((state) => ({
+        classEnergy: {
+          level: Math.min(100, state.classEnergy.level + amount),
+          lastUpdatedAt: Date.now(),
+          contributionCount: state.classEnergy.contributionCount + 1,
+        },
+      })),
+
+      getClassEnergyWithDecay: () => {
+        const state = get();
+        const elapsed = Date.now() - state.classEnergy.lastUpdatedAt;
+        const decayMinutes = elapsed / 60000;
+        return Math.max(0, state.classEnergy.level - decayMinutes * 0.5);
+      },
+
+      completeLessonWithFlair: (lessonId, studentAlias) => {
+        const state = get();
+        // Complete the lesson first
+        get().completeLesson(lessonId, studentAlias);
+
+        // Find lesson and progress data
+        const lesson = state.queue.find((l) => l.id === lessonId);
+        const progress = state.lessonProgress.find(
+          (p) => p.lessonId === lessonId && p.studentAlias === studentAlias
+        );
+        if (!lesson) return [];
+
+        // Award XP
+        get().awardXP(25);
+
+        // Update streak
+        const newStreak = state.eduXP.streak + 1;
+        const newBestStreak = Math.max(newStreak, state.eduXP.bestStreak);
+        set((s) => ({
+          eduXP: {
+            ...s.eduXP,
+            streak: newStreak,
+            bestStreak: newBestStreak,
+            lastCompletedAt: Date.now(),
+          },
+        }));
+
+        // Boost class energy
+        get().boostClassEnergy(10);
+
+        // Track focus area
+        set((s) => ({
+          completedFocusAreas: {
+            ...s.completedFocusAreas,
+            [lesson.focusArea]: (s.completedFocusAreas[lesson.focusArea] || 0) + 1,
+          },
+        }));
+
+        // Track prompt responses
+        if (progress?.preResponse && progress?.postResponse) {
+          set((s) => ({ promptResponseCount: s.promptResponseCount + 1 }));
+        }
+
+        // Check achievements
+        const newAchievements = get().checkEduAchievements({
+          lessonId,
+          timeSpentMs: progress?.timeSpentMs ?? 0,
+          targetMinutes: lesson.targetMinutes,
+          dnaInteractions: progress?.dnaInteractions ?? 0,
+          focusArea: lesson.focusArea,
+        });
+
+        return newAchievements;
+      },
+
+      checkEduAchievements: (context) => {
+        const state = get();
+        const newlyUnlocked: EduAchievementId[] = [];
+        const tryUnlock = (id: EduAchievementId) => {
+          const ach = state.eduAchievements.find((a) => a.id === id);
+          if (ach && !ach.unlockedAt) newlyUnlocked.push(id);
+        };
+
+        const completedCount = state.lessonProgress.filter((p) => p.status === 'completed').length;
+        if (completedCount >= 1) tryUnlock('first-lesson');
+        if (context.timeSpentMs > 0 && context.timeSpentMs < context.targetMinutes * 60000 * 0.5) tryUnlock('speedrunner');
+        if (context.dnaInteractions >= 10) tryUnlock('big-brain');
+        if (state.eduXP.streak >= 5) tryUnlock('streak-lord');
+        if (state.vibeReactionCount >= 20) tryUnlock('vibe-king');
+        if (state.classEnergy.level >= 80) tryUnlock('class-catalyst');
+        if (state.completedFocusAreas['pattern-recognition'] >= 3) tryUnlock('pattern-master');
+        if (state.promptResponseCount >= 5) tryUnlock('reflection-sage');
+
+        if (newlyUnlocked.length > 0) {
+          set((s) => ({
+            eduAchievements: s.eduAchievements.map((a) =>
+              newlyUnlocked.includes(a.id) ? { ...a, unlockedAt: Date.now() } : a
+            ),
+          }));
+        }
+        return newlyUnlocked;
+      },
+
+      generateQuickFire: (difficulty = 1) => {
+        const pattern = generateMeditationPattern(Date.now(), 4 + difficulty);
+        return {
+          id: generateId(),
+          pattern,
+          timeLimitMs: Math.max(5000, 15000 - difficulty * 2000),
+          xpReward: 10 + difficulty * 5,
+        };
+      },
+
+      scoreQuickFire: (challenge, userPattern) => {
+        const { correct } = validatePattern(challenge.pattern, userPattern);
+        const xpEarned = correct ? challenge.xpReward : 0;
+        if (xpEarned > 0) {
+          get().awardXP(xpEarned);
+          get().boostClassEnergy(5);
+        }
+        return { correct, xpEarned };
+      },
+
       // ---------- Reset ----------
 
       reset: () => set(createDefaultQueueState()),
     }),
     {
       name: 'metapet-education-queue',
+      version: 2,
+      migrate: (persisted: unknown, version: number) => {
+        const state = persisted as Record<string, unknown>;
+        if (version < 2) {
+          const defaults = createDefaultQueueState();
+          return { ...defaults, ...state };
+        }
+        return state;
+      },
     }
   )
 );
