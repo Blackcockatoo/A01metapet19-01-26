@@ -1,10 +1,15 @@
 'use client';
 
+import { useMemo } from 'react';
+import { motion } from 'framer-motion';
 import type { StudentDNAProfile } from '@/lib/education';
+import { useEducationStore } from '@/lib/education';
 
 interface StudentDNACardProps {
   profile: StudentDNAProfile;
   compact?: boolean;
+  showXP?: boolean;
+  showBadges?: boolean;
 }
 
 const MODE_COLORS: Record<string, string> = {
@@ -36,8 +41,22 @@ const ELEMENT_LABEL: Record<string, string> = {
   earth: 'Earth',
 };
 
-export function StudentDNACard({ profile, compact = false }: StudentDNACardProps) {
+const TIER_STYLES: Record<string, string> = {
+  platinum: 'bg-purple-500/20 border-purple-400/40 text-purple-200',
+  gold: 'bg-amber-500/20 border-amber-400/40 text-amber-200',
+  silver: 'bg-slate-400/20 border-slate-300/40 text-slate-200',
+  bronze: 'bg-orange-500/20 border-orange-400/40 text-orange-200',
+};
+
+export function StudentDNACard({ profile, compact = false, showXP = false, showBadges = false }: StudentDNACardProps) {
   const symbolChar = SYMBOL_EMOJI[profile.learningSymbol] ?? '\u2605';
+  const eduXP = useEducationStore((s) => s.eduXP);
+  const eduAchievements = useEducationStore((s) => s.eduAchievements);
+
+  const unlockedAchievements = useMemo(
+    () => eduAchievements.filter((a) => a.unlockedAt !== null),
+    [eduAchievements]
+  );
 
   if (compact) {
     return (
@@ -112,6 +131,47 @@ export function StudentDNACard({ profile, compact = false }: StudentDNACardProps
           />
         </div>
       </div>
+
+      {/* XP & Level Display */}
+      {showXP && (
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-lg font-bold text-amber-300">Lv {eduXP.level}</span>
+            <div className="w-20 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${eduXP.xp % 100}%` }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+              />
+            </div>
+          </div>
+          {eduXP.streak > 0 && (
+            <span className="text-xs text-orange-300">{'\uD83D\uDD25'} {eduXP.streak}</span>
+          )}
+        </div>
+      )}
+
+      {/* Achievement Badges */}
+      {showBadges && unlockedAchievements.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-[11px] text-zinc-500 uppercase tracking-wide">Badges</p>
+          <div className="flex flex-wrap gap-1.5">
+            {unlockedAchievements.map((ach) => (
+              <motion.div
+                key={ach.id}
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${TIER_STYLES[ach.tier] ?? TIER_STYLES.bronze}`}
+                title={ach.description}
+              >
+                {ach.emoji} {ach.name}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
